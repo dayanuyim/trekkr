@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Rudy-Map</title>
+    <meta charset="UTF-8" />
+    <link rel="stylesheet" href="https://openlayers.org/en/v5.3.0/css/ol.css" type="text/css">
+    <script src="https://cdn.rawgit.com/openlayers/openlayers.github.io/master/en/v5.3.0/build/ol.js"></script>
+
+  </head>
+  <body>
+    <div id="map" class="map"></div>
+    <script>
+      var map = new ol.Map({
+        target: 'map',
+        layers: [
+          new ol.layer.Tile({
+            source: new ol.source.XYZ({
+              url: 'http://rudy-daily.tile.basecamp.tw/{z}/{x}/{y}.png'
+            })
+          })
+        ],
+        view: new ol.View({
+          center: ol.proj.fromLonLat([121.535568, 25.046103]),
+          zoom: 12
+        })
+      });
+    </script>
+  </body>
+</html>
