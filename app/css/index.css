@@ -9,3 +9,7 @@ html, body {
     bottom: 0;
     width: 100%;
 }
+
+.ol-scale-line {
+    left: 50%;
+}
