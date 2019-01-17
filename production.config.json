@@ -1,0 +1,11 @@
+{
+  "serviceUrl": "http://localhost:7372",
+  "log": {
+      "format": "[:date[Asia/Taipei]] :remote-addr - :remote-user ${yellow(':method')} :url HTTP/:http-version ${green(':status')} :res[content-length] ms",
+      "dateFormat": "YYYY-MM-DD HH:mm:ss.SSS"
+  },
+  "security": {
+    "key": "./server.key",
+    "cert": "./server.pem"
+  }
+}

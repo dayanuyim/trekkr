@@ -3,6 +3,7 @@
 const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
+const CopyWebpackPlugin = require('copy-webpack-plugin')
 const webpack = require('webpack');
 
 module.exports = {
@@ -13,7 +14,6 @@ module.exports = {
       path: path.resolve(__dirname, 'dist'),
   },
   resolve: {
-      // Add `.ts` and `.tsx` as a resolvable extension.
       extensions: [".ts", ".tsx", ".js"]
   },
   plugins: [
@@ -32,6 +32,9 @@ module.exports = {
           filename: "[name].css",
           chunkFilename: "[id].css"
       }),
+      new CopyWebpackPlugin([
+          {from: 'app/data', to: 'data'}
+      ]),
   ],
   module: {
       rules: [{
