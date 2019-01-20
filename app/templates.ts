@@ -8,3 +8,10 @@ export const main = Handlebars.compile(`
         <div class="ol-popup-content"></div>
     </div>
 `);
+
+export const wptPopup = Handlebars.compile(`
+    <div class="wpt-name">{{name}}</div>
+    <div class="wpt-location">{{location}}</div>
+    <div class="wpt-elevation">{{#if elevation}}{{elevation}} H{{/if}}</div>
+    <div><code>{{license}}</code></div>
+`);

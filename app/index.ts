@@ -4,38 +4,57 @@ import '../node_modules/ol/ol.css';
 import './css/index.css';
 
 import {defaults as defaultControls, ScaleLine, OverviewMap, ZoomSlider} from 'ol/control';
+import {DragAndDrop, Modify} from 'ol/interaction';
 import {toSize} from 'ol/size';
 import {Map, View, Overlay} from 'ol';
-import GeoJSON from 'ol/format/GeoJSON';
-import {Tile as TileLayer, Vector as VectorLayer} from 'ol/layer.js';
+import {Tile as TileLayer, Vector as VectorLayer} from 'ol/layer';
 import VectorSource from 'ol/source/Vector';
-import TileJSON from 'ol/source/TileJSON.js';
+import TileJSON from 'ol/source/TileJSON';
 import XYZ from 'ol/source/XYZ';
 import OSM from 'ol/source/OSM';
-import GPX from 'ol/format/GPX';
+import {GPX, GeoJSON, IGC, KML, TopoJSON} from 'ol/format';
 import {fromLonLat} from 'ol/proj';
-import { Icon as IconStyle, Circle as CircleStyle, Fill, Stroke, Style } from 'ol/style.js';
+import { Icon as IconStyle, Circle as CircleStyle, Fill, Stroke, Style } from 'ol/style';
 import GeometryType from  'ol/geom/GeometryType';
+import {toStringXY} from 'ol/coordinate';
 
-import {fromTWD67, fromTWD97} from './coord';
+
+import {fromTWD67, toTWD67} from './coord';
+import symbols from './data/symbols';
 import * as templates from './templates';
 
-function getSymPath(sym)
+
+function toSymPath(sym, size=32)
 {
   const symDir = './images/sym';
-  return `${symDir}/${sym}@Freepik.png`;
+  return `${symDir}/${size}/${sym.filename}`;
+}
+
+function getSymbol(symName){
+  if(!symName)
+    return symbols['waypoint'];
+
+  const id = symName.toLowerCase();
+  const sym = symbols[id];
+  if(!sym){
+    console.log(`The symbol '${symName}' is not found`)
+    return symbols['waypoint'];
+  }
+  return sym;
 }
 
 const gpxStyle = (feature) => {
   switch (feature.getGeometry().getType()) {
     case 'Point': {
+      const sym = getSymbol(feature.get('sym'));
       return new Style({
         image: new IconStyle({
-          src: getSymPath(feature.get('sym')),
+          src: toSymPath(sym, 128),
           //rotateWithView: true,
           //size: toSize([32, 32]),
+          //opacity: 0.8,
+          //anchor: sym.anchor,
           scale: 0.25,
-          opacity: 0.8,
         }),
       });
       /*
@@ -72,16 +91,27 @@ const gpxStyle = (feature) => {
   }
 };
 
+//TODO what is exactly @cooriante?
+const toElevation = function(coordinate)
+{
+  const values = coordinate.toString().split(',');
+  return (values.length >= 3)? values[2]: 0.0;
+}
+
+function setWptPopupContent(overlay, feature)
+{
+  const name = feature.get('name') || feature.get('desc');
+  const license = getSymbol(feature.get('sym')).license;
+  const coordinates = feature.getGeometry().getCoordinates()
+  const elevation = toElevation(coordinates);
+  const location = toStringXY(toTWD67(coordinates)); //TODO allow to choose EPSG
+
+  const contentElem = overlay.getElement().querySelector('.ol-popup-content');
+  contentElem.innerHTML = templates.wptPopup({ name, location, elevation, license });
+}
 
 
-const _gpxDisplay = {
-};
-
-const gpxDisplay = feature => {
-  _gpxDisplay[feature.getGeometry().getType()](feature);
-};
-
-const displayFeatureInfo = function (map, pixel, coordinate) {
+const displayFeatureInfo = function (map, pixel) {
   let features = map.getFeaturesAtPixel(pixel);
   if (features == null || features.length <= 0) {
     map.getTarget().style.cursor = '';
@@ -99,13 +129,9 @@ const displayFeatureInfo = function (map, pixel, coordinate) {
   features.forEach(feature => {
     switch (feature.getGeometry().getType()) {
       case 'Point': {
-        //const name = feature.get('name');
-        //const sym = feature.get('sym');
-        //console.log(coordinate);
         //var hdms = toStringHDMS(toLonLat(coordinate));
         const overlay = map.getOverlayById('wpt-popup');
-        const contentElem = overlay.getElement().querySelector('.ol-popup-content');
-        contentElem.innerHTML = feature.get('desc') || feature.get('name');
+        setWptPopupContent(overlay, feature);
         overlay.setPosition(feature.getGeometry().getCoordinates());
         break;
       }
@@ -170,11 +196,22 @@ const layers = {
 };
 
 const createMap = () => {
-  return new Map({
+  const dragAndDropInteraction = new DragAndDrop({
+    formatConstructors: [
+      GPX,
+      GeoJSON,
+      IGC,
+      KML,
+      TopoJSON
+    ]
+  });
+
+  const map = new Map({
     controls: defaultControls().extend([
       new ScaleLine(),
       new OverviewMap(),
       new ZoomSlider(),
+      dragAndDropInteraction,
     ]),
     layers: [
       //layers.OSM,
@@ -191,6 +228,20 @@ const createMap = () => {
       zoom: 15,
     })
   });
+
+  dragAndDropInteraction.on('addfeatures', function(event) {
+    const source = new VectorSource({
+      features: event.features
+    });
+    map.addLayer(new VectorLayer({
+      source: source,
+      style: gpxStyle,
+    }));
+    map.getView().fit(source.getExtent());
+    map.addInteraction(new Modify({source}))
+  });
+
+  return map;
 };
 
 function createOverlay(id)
@@ -220,23 +271,22 @@ function createOverlay(id)
   document.body.innerHTML = templates.main();
   const mapElem = document.getElementById('map');
 
-  const wptOverlay = createOverlay('wpt-popup');
-
   const map = createMap();
   map.setTarget(mapElem);
-  map.addOverlay(wptOverlay)
+  map.addOverlay(createOverlay('wpt-popup'));
+
   map.on('pointermove', function(evt) {
     if (evt.dragging) {
       return;
     }
     // TODO what is the diff between 'originalevent' and 'event'?
     const pixel = map.getEventPixel(evt.originalEvent);
-    displayFeatureInfo(map, pixel, evt.coordinate);
+    displayFeatureInfo(map, pixel);
   });
 
 
   map.on('click', function(evt) {
-    //displayFeatureInfo(map, evt.pixel, evt.coordinate);
+    //displayFeatureInfo(map, evt.pixel);
     const overlay = map.getOverlayById('wpt-popup')
     overlay.setPosition(undefined);
   });

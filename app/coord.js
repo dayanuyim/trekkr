@@ -40,3 +40,5 @@ export const WGS84 = getProjection('EPSG:4326');
 
 export const fromTWD67 = getTransform(TWD67, 'EPSG:3857');
 export const fromTWD97 = getTransform(TWD97, 'EPSG:3857');
+export const toTWD67 = getTransform('EPSG:3857', TWD67);
+export const toTWD97 = getTransform('EPSG:3857', TWD97);
