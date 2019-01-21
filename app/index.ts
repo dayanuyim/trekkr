@@ -32,7 +32,7 @@ function toSymPath(sym, size=32)
 
 function getSymbol(symName){
   if(!symName)   // may be a track point
-    return null;
+    return undefined;
 
   const id = symName.toLowerCase();
   const sym = symbols[id];
@@ -100,16 +100,17 @@ const toElevation = function(coordinate)
   return (values.length >= 3)? Number(values[2]): 0.0;
 }
 
-function setWptPopupContent(overlay, feature)
+function setPtPopupContent(overlay, feature)
 {
-  const name = feature.get('name') || feature.get('desc');
+  const name = feature.get('name') || feature.get('desc');   //may undefined
+  //console.log(`point name: ${name}`);
   const coordinates = feature.getGeometry().getCoordinates()
   const elevation = toElevation(coordinates);
   const location = toStringXY(toTWD67(coordinates)); //TODO allow to choose EPSG
-  const symbol = getSymbol(feature.get('sym'));
+  const symbol = getSymbol(feature.get('sym'));      //may undefined
 
   const contentElem = overlay.getElement().querySelector('.ol-popup-content');
-  contentElem.innerHTML = templates.wptPopup({ wpt: {name, location, elevation}, symbol });
+  contentElem.innerHTML = templates.ptPopup({ pt: {name, location, elevation}, symbol });
 }
 
 
@@ -123,17 +124,16 @@ const displayFeatureInfo = function (map, pixel) {
   map.getTarget().style.cursor = 'pointer';
 
   /*
-  // prefer to show wpt solely
+  // prefer to show point solely
   const points = features.filter(feature => feature.getGeometry().getType() === 'Point');
   if (points.length >  0) 
     features = points;
     */
   features.forEach(feature => {
     switch (feature.getGeometry().getType()) {
-      case 'Point': {
-        //var hdms = toStringHDMS(toLonLat(coordinate));
-        const overlay = map.getOverlayById('wpt-popup');
-        setWptPopupContent(overlay, feature);
+      case 'Point': {   // Waypoint or Track point
+        const overlay = map.getOverlayById('pt-popup');
+        setPtPopupContent(overlay, feature);
         overlay.setPosition(feature.getGeometry().getCoordinates());
         break;
       }
@@ -143,8 +143,8 @@ const displayFeatureInfo = function (map, pixel) {
         break;
       }
       case 'MultiLineString': {
-        const name = feature.get('name');
-        console.log(name);
+        //const name = feature.get('name');
+        //console.log(`track name: ${name}`);
         break;
       }
     }
@@ -275,7 +275,7 @@ function createOverlay(id)
 
   const map = createMap();
   map.setTarget(mapElem);
-  map.addOverlay(createOverlay('wpt-popup'));
+  map.addOverlay(createOverlay('pt-popup'));
 
   map.on('pointermove', function(evt) {
     if (evt.dragging) {
@@ -289,7 +289,7 @@ function createOverlay(id)
 
   map.on('click', function(evt) {
     //displayFeatureInfo(map, evt.pixel);
-    const overlay = map.getOverlayById('wpt-popup')
+    const overlay = map.getOverlayById('pt-popup')
     overlay.setPosition(undefined);
   });
 
