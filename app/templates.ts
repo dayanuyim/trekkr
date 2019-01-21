@@ -1,5 +1,9 @@
 import * as Handlebars from '../node_modules/handlebars/dist/handlebars.js';
 
+Handlebars.registerHelper('fmtElevation', function(distance) {
+    return distance.toFixed(2);
+});
+
 export const main = Handlebars.compile(`
     <div id="map" class="ol-map-container"></div>
 
@@ -10,8 +14,15 @@ export const main = Handlebars.compile(`
 `);
 
 export const wptPopup = Handlebars.compile(`
-    <div class="wpt-name">{{name}}</div>
-    <div class="wpt-location">{{location}}</div>
-    <div class="wpt-elevation">{{#if elevation}}{{elevation}} H{{/if}}</div>
-    <div><code>{{license}}</code></div>
+    <div class="wpt-name">{{wpt/name}}</div>
+    <div class="wpt-location">{{wpt/location}}</div>
+    <div class="wpt-elevation">{{fmtElevation wpt/elevation}} H</div>
+    {{#if symbol}}
+        <footer class="sym-license">&copy; The icon made by
+            <a href="{{symbol/maker/url}}" target="_blank">{{symbol/maker/title}}</a> from
+            <a href="{{symbol/provider/url}}" target="_blank">{{symbol/provider/title}}</a> is licensed by
+            <a href="{{symbol/license/url}}" target="_blank">{{symbol/license/title}}</a>
+        </footer>
+    {{/if}}
+
 `);

@@ -18,7 +18,7 @@ module.exports = {
   },
   plugins: [
       new HtmlWebpackPlugin({
-          title: 'JustMaps',
+          title: 'Trekkr',
           favicon: 'app/images/favicon.png',
       }),
       new webpack.ProvidePlugin({

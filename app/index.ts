@@ -31,8 +31,8 @@ function toSymPath(sym, size=32)
 }
 
 function getSymbol(symName){
-  if(!symName)
-    return symbols['waypoint'];
+  if(!symName)   // may be a track point
+    return null;
 
   const id = symName.toLowerCase();
   const sym = symbols[id];
@@ -47,30 +47,32 @@ const gpxStyle = (feature) => {
   switch (feature.getGeometry().getType()) {
     case 'Point': {
       const sym = getSymbol(feature.get('sym'));
-      return new Style({
-        image: new IconStyle({
-          src: toSymPath(sym, 128),
-          //rotateWithView: true,
-          //size: toSize([32, 32]),
-          //opacity: 0.8,
-          //anchor: sym.anchor,
-          scale: 0.25,
-        }),
-      });
-      /*
-      return new Style({
-        image: new CircleStyle({
-          fill: new Fill({
-            color: 'rgba(255,255,0,0.4)'
+      if(sym){
+        return new Style({
+          image: new IconStyle({
+            src: toSymPath(sym, 128),
+            //rotateWithView: true,
+            //size: toSize([32, 32]),
+            //opacity: 0.8,
+            //anchor: sym.anchor,
+            scale: 0.25,
           }),
-          radius: 5,
-          stroke: new Stroke({
-            color: '#ff0',
-            width: 1
+        });
+      }
+      else {
+        return new Style({
+          image: new CircleStyle({
+            fill: new Fill({
+              color: 'rgba(255,255,0,0.4)'
+            }),
+            radius: 5,
+            stroke: new Stroke({
+              color: '#ff0',
+              width: 1
+            })
           })
-        })
-      });
-      */
+        });
+      }
     }
     case 'LineString': {
       return new Style({
@@ -95,19 +97,19 @@ const gpxStyle = (feature) => {
 const toElevation = function(coordinate)
 {
   const values = coordinate.toString().split(',');
-  return (values.length >= 3)? values[2]: 0.0;
+  return (values.length >= 3)? Number(values[2]): 0.0;
 }
 
 function setWptPopupContent(overlay, feature)
 {
   const name = feature.get('name') || feature.get('desc');
-  const license = getSymbol(feature.get('sym')).license;
   const coordinates = feature.getGeometry().getCoordinates()
   const elevation = toElevation(coordinates);
   const location = toStringXY(toTWD67(coordinates)); //TODO allow to choose EPSG
+  const symbol = getSymbol(feature.get('sym'));
 
   const contentElem = overlay.getElement().querySelector('.ol-popup-content');
-  contentElem.innerHTML = templates.wptPopup({ name, location, elevation, license });
+  contentElem.innerHTML = templates.wptPopup({ wpt: {name, location, elevation}, symbol });
 }
 
 
@@ -216,10 +218,10 @@ const createMap = () => {
     layers: [
       //layers.OSM,
       //layers.TAIWAN_COUNTIES,
-      //layers.RUDY,
-      //layers.EMAP_TRANS,
-      layers.EMAP,
-      layers.GPX_SAMPLE,
+      layers.RUDY,
+      layers.EMAP_TRANS,
+      //layers.EMAP,
+      //layers.GPX_SAMPLE,
     ],
     view: new View({
       //center: fromLonLat([120.929272, 23.555519]),

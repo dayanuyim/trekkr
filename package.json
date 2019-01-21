@@ -1,8 +1,8 @@
 {
-  "name": "JustMaps",
+  "name": "Trekkr",
   "version": "1.0.0",
   "privte": true,
-  "description": "Just Maps Viewer",
+  "description": "Viewer",
   "scripts": {
     "build": "webpack",
     "start": "nodemon --ignore './sessions' server.js",
