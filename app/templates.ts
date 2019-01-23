@@ -1,7 +1,7 @@
 import * as Handlebars from '../node_modules/handlebars/dist/handlebars.js';
 import {toTWD97, toTWD67} from './coord';
 import {toLonLat} from 'ol/proj';
-import {toStringXY} from 'ol/coordinate';
+import {toStringXY, format} from 'ol/coordinate';
 
 //TODO what is exactly @cooriante?
 Handlebars.registerHelper('ele', function(coordinate) {
@@ -21,6 +21,10 @@ Handlebars.registerHelper('wgs84', function(coordinate) {
     return toStringXY(toLonLat(coordinate), 7);
 });
 
+Handlebars.registerHelper('gmap', function(coordinate) {
+    return format(toLonLat(coordinate), 'https://www.google.com.tw/maps/@{y},{x},15z?hl=zh-TW', 7);
+});
+
 export const main = Handlebars.compile(`
     <div id="map" class="ol-map-container"></div>
 
@@ -35,7 +39,9 @@ export const ptPopup = Handlebars.compile(`
     <div class="pt-coord">
         <div><span class="pt-coord-title">TWD67</span> {{twd67 coordinate}}</div>
         <div><span class="pt-coord-title">TWD97</span> {{twd97 coordinate}}</div>
-        <div><span class="pt-coord-title">WGS84</span> {{wgs84 coordinate}}</div>
+        <div><span class="pt-coord-title">WGS84</span> {{wgs84 coordinate}}
+            <a href="{{gmap coordinate}}" target="_blank"><i class="fa fa-google" aria-hidden="true"></i></a>
+        </div>
     </div>
     <div class="pt-ele">
         <div><span class="pt-ele-title">ELE</span> {{ele coordinate}} H</div>

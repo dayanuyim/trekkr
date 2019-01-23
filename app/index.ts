@@ -1,6 +1,7 @@
 'use strict';
 
 import '../node_modules/ol/ol.css';
+import '../node_modules/font-awesome/css/font-awesome.min.css';
 import './css/index.css';
 
 import {defaults as defaultControls, ScaleLine, OverviewMap, ZoomSlider} from 'ol/control';
