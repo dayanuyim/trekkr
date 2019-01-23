@@ -93,24 +93,14 @@ const gpxStyle = (feature) => {
   }
 };
 
-//TODO what is exactly @cooriante?
-const toElevation = function(coordinate)
-{
-  const values = coordinate.toString().split(',');
-  return (values.length >= 3)? Number(values[2]): 0.0;
-}
-
 function setPtPopupContent(overlay, feature)
 {
   const name = feature.get('name') || feature.get('desc');   //may undefined
-  //console.log(`point name: ${name}`);
-  const coordinates = feature.getGeometry().getCoordinates()
-  const elevation = toElevation(coordinates);
-  const location = toStringXY(toTWD67(coordinates)); //TODO allow to choose EPSG
-  const symbol = getSymbol(feature.get('sym'));      //may undefined
+  const symbol = getSymbol(feature.get('sym'));              //may undefined
+  const coordinate = feature.getGeometry().getCoordinates(); //TODO why getCoordinate's' ???
 
   const contentElem = overlay.getElement().querySelector('.ol-popup-content');
-  contentElem.innerHTML = templates.ptPopup({ pt: {name, location, elevation}, symbol });
+  contentElem.innerHTML = templates.ptPopup({ name, coordinate, symbol });
 }
 
 
@@ -232,8 +222,16 @@ const createMap = () => {
   });
 
   dragAndDropInteraction.on('addfeatures', function(event) {
+    addGPXLayer(map, event.features);
+  });
+
+  return map;
+};
+
+function addGPXLayer(map, features)
+{
     const source = new VectorSource({
-      features: event.features
+      features,
     });
     map.addLayer(new VectorLayer({
       source: source,
@@ -241,10 +239,7 @@ const createMap = () => {
     }));
     map.getView().fit(source.getExtent());
     map.addInteraction(new Modify({source}))
-  });
-
-  return map;
-};
+}
 
 function createOverlay(id)
 {
@@ -267,6 +262,17 @@ function createOverlay(id)
   };
 
   return overlay;
+}
+
+function getQueryParameters()
+{
+  const query = window.location.search.substring(1);
+  return query.split('&')
+    .reduce((all, param) => {
+      const [key, value] = param.split('=');
+      all[key] = value;
+      return all;
+    }, {});
 }
 
 (async () => {
@@ -293,9 +299,24 @@ function createOverlay(id)
     overlay.setPosition(undefined);
   });
 
-
   map.on('singleclick', function(evt) {
   });
+
+  /*
+  const params = getQueryParameters();
+  if(params['gpx']){
+    console.log(params['gpx']);
+    const resp = await fetch(params['gpx'], {
+      mode: 'no-cors', // no-cors, cors, *same-origin
+      headers: new Headers({
+        'Access-Control-Allow-Origin': '*',
+        'Content-Type': 'application/gpx+xml'
+      }),
+    });
+    const txt = await resp.text();
+    addGPXLayer(map, txt);
+  }
+  */
 
   /*
   navigator.geolocation.getCurrentPosition(function(pos) {
