@@ -1,4 +1,4 @@
-import {get as getProjection, getTransform, Projection} from 'ol/proj';
+import {get as getProjection, getTransform, Projection, transform} from 'ol/proj';
 import {register} from 'ol/proj/proj4';
 import proj4 from 'proj4';
 
@@ -40,5 +40,14 @@ export const WGS84 = getProjection('EPSG:4326');
 
 export const fromTWD67 = getTransform(TWD67, 'EPSG:3857');
 export const fromTWD97 = getTransform(TWD97, 'EPSG:3857');
-export const toTWD67 = getTransform('EPSG:3857', TWD67);
-export const toTWD97 = getTransform('EPSG:3857', TWD97);
+
+// @coordinate: [X, Y, Height, Time]
+export const toTWD67 = (coordiante) => {
+    return transform(coordiante.slice(0, 2), 'EPSG:3857', TWD67)
+            .concat(coordiante.slice(2));
+}
+
+export const toTWD97 = (coordiante) => {
+    return transform(coordiante.slice(0, 2), 'EPSG:3857', TWD97)
+            .concat(coordiante.slice(2));
+}

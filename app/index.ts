@@ -264,7 +264,7 @@ function addGPXLayer(map, features)
       source: source,
       style: gpxStyle,
     }));
-    map.getView().fit(source.getExtent());
+    map.getView().fit(source.getExtent(), {maxZoom: 16});
     map.addInteraction(new Modify({source}))
 }
 

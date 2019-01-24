@@ -3,10 +3,9 @@ import {toTWD97, toTWD67} from './coord';
 import {toLonLat} from 'ol/proj';
 import {toStringXY, format} from 'ol/coordinate';
 
-//TODO what is exactly @cooriante?
 Handlebars.registerHelper('ele', function(coordinate) {
-  const values = coordinate.toString().split(',');
-  return (values.length >= 3)? Number(values[2]).toFixed(1): '0.0';
+    return (coordinate.length >= 3)?
+            coordinate[2].toFixed(1): '0.0';
 });
 
 Handlebars.registerHelper('twd67', function(coordinate) {
