@@ -1,7 +1,7 @@
 'use strict';
 
 import '../node_modules/ol/ol.css';
-import '../node_modules/font-awesome/css/font-awesome.min.css';
+//import '../node_modules/font-awesome/css/font-awesome.css';
 import './css/index.css';
 
 import {defaults as defaultControls, ScaleLine, OverviewMap, ZoomSlider} from 'ol/control';
@@ -94,14 +94,40 @@ const gpxStyle = (feature) => {
   }
 };
 
+// Remove .valueClass-active from all .valueClass, but .valueCalss-value
+function setSelectValue(selElem, valueClass, value)
+{
+  selElem.value = value;
+
+  // hide all coord value
+  document.querySelectorAll(`.${valueClass}`)
+    .forEach(el => el.classList.remove(`${valueClass}-active`));
+
+  // show curr coord value
+  document.querySelector(`.${valueClass}-${value}`)
+    .classList.add(`${valueClass}-active`);
+}
+
+let PrefCoord = 'twd67';
+
 function setPtPopupContent(overlay, feature)
 {
+  // get data
   const name = feature.get('name') || feature.get('desc');   //may undefined
   const symbol = getSymbol(feature.get('sym'));              //may undefined
   const coordinate = feature.getGeometry().getCoordinates(); //TODO why getCoordinate's' ???
 
+  // set view
   const contentElem = overlay.getElement().querySelector('.ol-popup-content');
   contentElem.innerHTML = templates.ptPopup({ name, coordinate, symbol });
+
+  // view control
+  const coordMenu = document.querySelector('.pt-coord-title') as HTMLSelectElement;
+  coordMenu.onchange = function () {
+    PrefCoord = coordMenu.options[coordMenu.selectedIndex].value;
+    setSelectValue(coordMenu, 'pt-coord-val', PrefCoord);
+  };
+  setSelectValue(coordMenu, 'pt-coord-val', PrefCoord);
 }
 
 

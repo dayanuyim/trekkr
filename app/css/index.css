@@ -24,7 +24,7 @@ html, body {
     border: 1px solid #cccccc;
     bottom: 12px;
     left: -50px;
-    min-width: 250px;
+    min-width: 265px;
 }
 .ol-popup:after, .ol-popup:before {
     top: 100%;
@@ -54,6 +54,7 @@ html, body {
     top: 2px;
     right: 8px;
 }
+
 .ol-popup-closer:after {
     content: "✖";
 }
@@ -62,16 +63,56 @@ html, body {
     font-weight: bold;
 }
 
-.pt-coord-title, .pt-ele-title {
-    font-weight: bold;
-    width: 4em;
-    display: inline-block;
+.pt-coord{
+    color: gray;
+    margin: 2px 0;
 }
 
-.pt-coord > div, .pt-ele > div{
+select, option {
+    -webkit-appearance: none; /* WebKit/Chromium */
+    -moz-appearance: none; /* Gecko */
+}
+  /* Internet Explorer 10–11 and Edge */
+select::-ms-expand {
+    display: none;
+}
+
+.pt-coord-title{
+    display: inline-block;
+    width: 60px;
+    text-align: right;
+    border: 0px;
+    color: gray;
+    font-weight: 500;
+    font-size: 95%;
+}
+
+.pt-coord-val{
+    font-size: 90%;
+    display: none;
+}
+
+.pt-coord-val-active{
+    display: inline;
+}
+
+.pt-gmap img {
+    width: 12px;
+    height: 12px;
+    border: 0;
+}
+
+.pt-ele{
     color: gray;
     font-size: 90%;
     margin: 2px 0;
+}
+
+.pt-ele-title {
+    text-align: right;
+    width: 60px;
+    font-weight: 500;
+    display: inline-block;
 }
 
 .sym-license {

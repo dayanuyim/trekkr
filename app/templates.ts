@@ -37,14 +37,24 @@ export const main = Handlebars.compile(`
 export const ptPopup = Handlebars.compile(`
     <div class="pt-name">{{name}}</div>
     <div class="pt-coord">
-        <div><span class="pt-coord-title">TWD67</span> {{twd67 coordinate}}</div>
-        <div><span class="pt-coord-title">TWD97</span> {{twd97 coordinate}}</div>
-        <div><span class="pt-coord-title">WGS84</span> {{wgs84 coordinate}}
-            <a href="{{gmap coordinate}}" target="_blank"><i class="fa fa-google" aria-hidden="true"></i></a>
-        </div>
+        <select class="pt-coord-title" dir="rtl">
+            <option value="twd67">TWD67</option>
+            <option value="twd97">TWD97</option>
+            <option value="wgs84">WGS84</option>
+        </select>
+
+        <span class="pt-coord-val pt-coord-val-twd67">{{twd67 coordinate}}</span>
+        <span class="pt-coord-val pt-coord-val-twd97">{{twd97 coordinate}}</span>
+        <span class="pt-coord-val pt-coord-val-wgs84">{{wgs84 coordinate}}</span>
+
+        <a class="pt-gmap" href="{{gmap coordinate}}" target="_blank">
+            <img src="./images/googleg.png" alt="Google G">
+        </a>
     </div>
+
     <div class="pt-ele">
-        <div><span class="pt-ele-title">ELE</span> {{ele coordinate}} H</div>
+        <span class="pt-ele-title">ELE.</span>
+        <span>{{ele coordinate}} m</span>
     </div>
     {{#if symbol}}
         <footer class="sym-license">&copy; The icon made by
