@@ -17,13 +17,19 @@ import {GPX, GeoJSON, IGC, KML, TopoJSON} from 'ol/format';
 import {fromLonLat} from 'ol/proj';
 import { Icon as IconStyle, Circle as CircleStyle, Fill, Stroke, Style } from 'ol/style';
 import GeometryType from  'ol/geom/GeometryType';
+import {toLonLat} from 'ol/proj';
 import {toStringXY} from 'ol/coordinate';
+import * as moment from 'moment-timezone';
+import * as tzlookup from "tz-lookup";
 
-
-import {fromTWD67, toTWD67} from './coord';
+import {toTWD97, toTWD67, fromTWD67} from './coord';
 import symbols from './data/symbols';
 import * as templates from './templates';
 
+const Opt = {
+  prefCoordSys: 'twd67',
+  tz: undefined,
+}
 
 function toSymPath(sym, size=32)
 {
@@ -94,40 +100,79 @@ const gpxStyle = (feature) => {
   }
 };
 
-// Remove .valueClass-active from all .valueClass, but .valueCalss-value
-function setSelectValue(selElem, valueClass, value)
+const TransTo = {
+  'twd67': (coord) => toStringXY(toTWD67(coord)),
+  'twd97': (coord) => toStringXY(toTWD97(coord)),
+  'wgs84': (coord) => toStringXY(toLonLat(coord), 7),
+};
+
+function setPtPopupCoord(selElem, coordSys)
 {
-  selElem.value = value;
+    selElem.value = coordSys;
 
-  // hide all coord value
-  document.querySelectorAll(`.${valueClass}`)
-    .forEach(el => el.classList.remove(`${valueClass}-active`));
-
-  // show curr coord value
-  document.querySelector(`.${valueClass}-${value}`)
-    .classList.add(`${valueClass}-active`);
+    const coordinate = selElem.getAttribute('data-pt-coord')
+                        .split(',')
+                        .map(v => Number(v));
+    
+    document.querySelector('.pt-coord-val').innerHTML = 
+      TransTo[coordSys](coordinate)
 }
 
-let PrefCoord = 'twd67';
+const getElevationFromCoords = (coordinates) => {
+  if(coordinates.length > 2 && coordinates[2] < 10000.0){
+    return coordinates[2];
+  }
+  return undefined;
+};
+
+function getLocalTimeFromCoords(coordinates)
+{
+  const epoch = getEpochFromCoords(coordinates);
+  if(!epoch)
+    return undefined;
+
+  //TODO the optimization is really needed?
+  if(!Opt.tz){
+    const [lon, lat] = toLonLat(coordinates);
+    Opt.tz = tzlookup(lat, lon);
+  }
+
+  return moment.unix(epoch).tz(Opt.tz);
+}
+
+function getEpochFromCoords(coordinates){
+  const last = coordinates.length -1;
+  if(coordinates.length > 2 && coordinates[last] > 10000.0){
+    return coordinates[last];
+  }
+  return undefined;
+};
 
 function setPtPopupContent(overlay, feature)
 {
   // get data
   const name = feature.get('name') || feature.get('desc');   //may undefined
   const symbol = getSymbol(feature.get('sym'));              //may undefined
-  const coordinate = feature.getGeometry().getCoordinates(); //TODO why getCoordinate's' ???
+  const coordinates = feature.getGeometry().getCoordinates();
+  //console.log(coordinates);
 
   // set view
   const contentElem = overlay.getElement().querySelector('.ol-popup-content');
-  contentElem.innerHTML = templates.ptPopup({ name, coordinate, symbol });
+  contentElem.innerHTML = templates.ptPopup({
+    name,
+    coordinate: coordinates.slice(0, 2),
+    ele: getElevationFromCoords(coordinates),
+    time: getLocalTimeFromCoords(coordinates),
+    symbol,
+  });
 
   // view control
   const coordMenu = document.querySelector('.pt-coord-title') as HTMLSelectElement;
   coordMenu.onchange = function () {
-    PrefCoord = coordMenu.options[coordMenu.selectedIndex].value;
-    setSelectValue(coordMenu, 'pt-coord-val', PrefCoord);
+    Opt.prefCoordSys = coordMenu.options[coordMenu.selectedIndex].value;
+    setPtPopupCoord(coordMenu, Opt.prefCoordSys)
   };
-  setSelectValue(coordMenu, 'pt-coord-val', PrefCoord);
+  setPtPopupCoord(coordMenu, Opt.prefCoordSys);
 }
 
 

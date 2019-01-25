@@ -1,27 +1,17 @@
 import * as Handlebars from '../node_modules/handlebars/dist/handlebars.js';
-import {toTWD97, toTWD67} from './coord';
 import {toLonLat} from 'ol/proj';
-import {toStringXY, format} from 'ol/coordinate';
-
-Handlebars.registerHelper('ele', function(coordinate) {
-    return (coordinate.length >= 3)?
-            coordinate[2].toFixed(1): '0.0';
-});
-
-Handlebars.registerHelper('twd67', function(coordinate) {
-    return toStringXY(toTWD67(coordinate));
-});
-
-Handlebars.registerHelper('twd97', function(coordinate) {
-    return toStringXY(toTWD97(coordinate));
-});
-
-Handlebars.registerHelper('wgs84', function(coordinate) {
-    return toStringXY(toLonLat(coordinate), 7);
-});
+import {format} from 'ol/coordinate';
 
 Handlebars.registerHelper('gmap', function(coordinate) {
     return format(toLonLat(coordinate), 'https://www.google.com.tw/maps/@{y},{x},15z?hl=zh-TW', 7);
+});
+
+Handlebars.registerHelper('fmtEle', function(ele) {
+    return ele.toFixed(1);
+});
+
+Handlebars.registerHelper('fmtTime', function(moment) {
+    return moment.format('YYYY-MM-DD HH:mm:ss');
 });
 
 export const main = Handlebars.compile(`
@@ -36,16 +26,12 @@ export const main = Handlebars.compile(`
 export const ptPopup = Handlebars.compile(`
     <div class="pt-name">{{name}}</div>
     <div class="pt-coord">
-        <select class="pt-coord-title" dir="rtl">
+        <select class="pt-coord-title" dir="rtl" data-pt-coord="{{coordinate}}">
             <option value="twd67">TWD67</option>
             <option value="twd97">TWD97</option>
             <option value="wgs84">WGS84</option>
         </select>
-
-        <span class="pt-coord-val pt-coord-val-twd67">{{twd67 coordinate}}</span>
-        <span class="pt-coord-val pt-coord-val-twd97">{{twd97 coordinate}}</span>
-        <span class="pt-coord-val pt-coord-val-wgs84">{{wgs84 coordinate}}</span>
-
+        <span class="pt-coord-val">N/A</span>
         <a class="pt-gmap" href="{{gmap coordinate}}" target="_blank">
             <img src="./images/googleg.png" alt="Google G">
         </a>
@@ -53,8 +39,14 @@ export const ptPopup = Handlebars.compile(`
 
     <div class="pt-ele">
         <span class="pt-ele-title">ELE.</span>
-        <span>{{ele coordinate}} m</span>
+        <span>{{#if ele}}{{fmtEle ele}} m{{else}}N/A{{/if}}</span>
     </div>
+
+    <div class="pt-time">
+        <span class="pt-title pt-time-title">TIME</span>
+        <span>{{#if time}}{{fmtTime time}}{{else}}N/A{{/if}}</span>
+    </div>
+
     {{#if symbol}}
         <footer class="sym-license">&copy; The icon made by
             <a href="{{symbol/maker/url}}" target="_blank">{{symbol/maker/title}}</a> from

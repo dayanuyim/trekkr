@@ -42,12 +42,14 @@ export const fromTWD67 = getTransform(TWD67, 'EPSG:3857');
 export const fromTWD97 = getTransform(TWD97, 'EPSG:3857');
 
 // @coordinate: [X, Y, Height, Time]
-export const toTWD67 = (coordiante) => {
-    return transform(coordiante.slice(0, 2), 'EPSG:3857', TWD67)
-            .concat(coordiante.slice(2));
+export const toTWD67 = (coordinate) => {
+    return (coordinate.length <= 2)?
+      transform(coordinate, 'EPSG:3857', TWD67):
+      transform(coordinate.slice(0, 2), 'EPSG:3857', TWD67).concat(coordinate.slice(2));
 }
 
-export const toTWD97 = (coordiante) => {
-    return transform(coordiante.slice(0, 2), 'EPSG:3857', TWD97)
-            .concat(coordiante.slice(2));
+export const toTWD97 = (coordinate) => {
+    return (coordinate.length <= 2)?
+      transform(coordinate, 'EPSG:3857', TWD97):
+      transform(coordinate.slice(0, 2), 'EPSG:3857', TWD97).concat(coordinate.slice(2));
 }
