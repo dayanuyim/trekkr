@@ -14,17 +14,34 @@ import TileJSON from 'ol/source/TileJSON';
 import XYZ from 'ol/source/XYZ';
 import OSM from 'ol/source/OSM';
 import {GPX, GeoJSON, IGC, KML, TopoJSON} from 'ol/format';
-import {fromLonLat} from 'ol/proj';
 import { Icon as IconStyle, Circle as CircleStyle, Fill, Stroke, Style } from 'ol/style';
 import GeometryType from  'ol/geom/GeometryType';
-import {toLonLat} from 'ol/proj';
+import {fromLonLat, toLonLat} from 'ol/proj';
 import {toStringXY} from 'ol/coordinate';
 import * as moment from 'moment-timezone';
 import * as tzlookup from "tz-lookup";
+import * as elevationApi from 'google-elevation-api';
 
 import {toTWD97, toTWD67, fromTWD67} from './coord';
 import symbols from './data/symbols';
+import conf from './data/conf';
 import * as templates from './templates';
+
+// Promisify and Accept only a location
+function googleElevation(lat, lon)
+{
+  return new Promise((resolve, reject)=>{
+    elevationApi({
+      key: conf.googleMapKey,
+      locations: [
+        [lat, lon],
+      ]
+    }, (err, locations) => {
+      if(err) reject(err);
+      else resolve(locations[0].elevation);
+    });
+  });
+}
 
 const Opt = {
   prefCoordSys: 'twd67',
@@ -118,7 +135,23 @@ function setPtPopupCoord(selElem, coordSys)
       TransTo[coordSys](coordinate)
 }
 
-const getElevationFromCoords = (coordinates) => {
+const getElevationFromCoords = async (coordinates) => {
+  const ele = _getElevationFromCoords(coordinates);
+  if(ele)
+    return {value: ele, est: false};
+
+  //get est. elevation from google
+  const [lon, lat] = toLonLat(coordinates);
+  try{
+    const ele = await googleElevation(lat, lon);
+    return {value: ele, est: true}
+  }catch(err){
+    console.log(`Google Elevation Error: ${err}`);
+    return undefined;
+  }
+};
+
+const _getElevationFromCoords = (coordinates) => {
   if(coordinates.length > 2 && coordinates[2] < 10000.0){
     return coordinates[2];
   }
@@ -148,7 +181,7 @@ function getEpochFromCoords(coordinates){
   return undefined;
 };
 
-function setPtPopupContent(overlay, feature)
+async function setPtPopupContent(overlay, feature)
 {
   // get data
   const name = feature.get('name') || feature.get('desc');   //may undefined
@@ -161,8 +194,8 @@ function setPtPopupContent(overlay, feature)
   contentElem.innerHTML = templates.ptPopup({
     name,
     coordinate: coordinates.slice(0, 2),
-    ele: getElevationFromCoords(coordinates),
     time: getLocalTimeFromCoords(coordinates),
+    ele: await getElevationFromCoords(coordinates),
     symbol,
   });
 
@@ -373,6 +406,7 @@ function getQueryParameters()
 
   map.on('singleclick', function(evt) {
   });
+
 
   /*
   const params = getQueryParameters();

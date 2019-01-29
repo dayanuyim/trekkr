@@ -37,15 +37,19 @@ export const ptPopup = Handlebars.compile(`
         </a>
     </div>
 
+    {{#if ele}}
     <div class="pt-ele">
         <span class="pt-ele-title">ELE.</span>
-        <span>{{#if ele}}{{fmtEle ele}} m{{else}}N/A{{/if}}</span>
+        <span>{{fmtEle ele.value}} m{{#if ele.est}} (est.){{/if}}</span>
     </div>
+    {{/if}}
 
+    {{#if time}}
     <div class="pt-time">
         <span class="pt-title pt-time-title">TIME</span>
-        <span>{{#if time}}{{fmtTime time}}{{else}}N/A{{/if}}</span>
+        <span>{{fmtTime time}}</span>
     </div>
+    {{/if}}
 
     {{#if symbol}}
         <footer class="sym-license">&copy; The icon made by
