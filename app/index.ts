@@ -183,6 +183,10 @@ function getEpochFromCoords(coordinates){
 
 async function setPtPopupContent(overlay, feature)
 {
+  //clear first
+  const contentElem = overlay.getElement().querySelector('.ol-popup-content');
+  contentElem.innerHTML = '';
+
   // get data
   const name = feature.get('name') || feature.get('desc');   //may undefined
   const symbol = getSymbol(feature.get('sym'));              //may undefined
@@ -190,7 +194,6 @@ async function setPtPopupContent(overlay, feature)
   //console.log(coordinates);
 
   // set view
-  const contentElem = overlay.getElement().querySelector('.ol-popup-content');
   contentElem.innerHTML = templates.ptPopup({
     name,
     coordinate: coordinates.slice(0, 2),
