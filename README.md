@@ -10,5 +10,5 @@ Install
 =======
  - npm install
  - npm start
-    - development mode, localhost:7372 (development.config.json)
- - npm build
+    - run development mode (development.config.json) in localhost:7372
+ - npm run build

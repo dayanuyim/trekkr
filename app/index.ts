@@ -4,7 +4,7 @@ import '../node_modules/ol/ol.css';
 //import '../node_modules/font-awesome/css/font-awesome.css';
 import './css/index.css';
 
-import {defaults as defaultControls, ScaleLine, OverviewMap, ZoomSlider} from 'ol/control';
+import {defaults as defaultControls, ScaleLine, OverviewMap, ZoomSlider, Control} from 'ol/control';
 import {DragAndDrop, Modify} from 'ol/interaction';
 import {toSize} from 'ol/size';
 import {Map, View, Overlay} from 'ol';
@@ -43,8 +43,47 @@ function googleElevation(lat, lon)
   });
 }
 
+function _readCookie(){
+    if(document.cookie){
+      try{
+        return JSON.parse(document.cookie);
+      }
+      catch(err){
+        console.log(`Parse Cookie Error: ${err}`);
+      }
+    }
+    return {};
+}
+
+function readCookie(){
+    var cookie = _readCookie();
+
+    if(!cookie['lon'] || !cookie['lat']){
+      const [lon, lat] = fromTWD67([241951, 2606008]);
+            //fromLonLat([120.929272, 23.555519]),
+            // fromTWD97([242780, 2605801]),
+      cookie['lon'] = lon;
+      cookie['lat'] = lat;
+    }
+
+    if(!cookie['zoom'])
+      cookie['zoom'] = 15;
+
+    if(!cookie['coordsys'])
+      cookie['coordsys'] = 'twd67';
+
+    //console.log(`read cookie: ${JSON.stringify(cookie)}`);
+    return cookie;
+}
+
+function writeCookie(){
+  //console.log(`write cookie: ${JSON.stringify(Cookie)}`);
+  document.cookie = JSON.stringify(Cookie);
+}
+
+const Cookie = readCookie();
+
 const Opt = {
-  prefCoordSys: 'twd67',
   tz: undefined,
 }
 
@@ -205,10 +244,11 @@ async function setPtPopupContent(overlay, feature)
   // view control
   const coordMenu = document.querySelector('.pt-coord-title') as HTMLSelectElement;
   coordMenu.onchange = function () {
-    Opt.prefCoordSys = coordMenu.options[coordMenu.selectedIndex].value;
-    setPtPopupCoord(coordMenu, Opt.prefCoordSys)
+    Cookie.coordsys = coordMenu.options[coordMenu.selectedIndex].value;
+    setPtPopupCoord(coordMenu, Cookie.coordsys)
+    writeCookie();
   };
-  setPtPopupCoord(coordMenu, Opt.prefCoordSys);
+  setPtPopupCoord(coordMenu, Cookie.coordsys);
 }
 
 
@@ -300,6 +340,32 @@ const layers = {
   }),
 };
 
+class SaveCookieControl extends Control{
+  constructor(options = {}){
+    var button = document.createElement('button');
+    button.innerHTML = '📍';
+
+    var element = document.createElement('div');
+    element.title = "Save Location"
+    element.className = 'save-cookie ol-unselectable ol-control';
+    element.appendChild(button);
+
+    super({
+      element: element,
+      target: options['target'],
+    });
+
+    button.addEventListener('click', this.saveCookie.bind(this), false);
+  }
+
+  saveCookie() {
+    const view = super.getMap().getView();
+    [Cookie.lon, Cookie.lat] = view.getCenter();
+    Cookie.zoom = view.getZoom();
+    writeCookie();
+  }
+}
+
 const createMap = () => {
   const dragAndDropInteraction = new DragAndDrop({
     formatConstructors: [
@@ -316,6 +382,7 @@ const createMap = () => {
       new ScaleLine(),
       new OverviewMap(),
       new ZoomSlider(),
+      //new SaveCookieControl(),
       dragAndDropInteraction,
     ]),
     layers: [
@@ -327,10 +394,8 @@ const createMap = () => {
       //layers.GPX_SAMPLE,
     ],
     view: new View({
-      //center: fromLonLat([120.929272, 23.555519]),
-      //center: fromTWD97([242780, 2605801]),
-      center: fromTWD67([241951, 2606008]),
-      zoom: 15,
+      center: [Cookie.lon, Cookie.lat],
+      zoom: Cookie.zoom,
     })
   });
 
@@ -387,7 +452,6 @@ function getQueryParameters()
       return all;
     }, {});
 }
-
 (async () => {
   document.body.innerHTML = templates.main();
   const mapElem = document.getElementById('map');
@@ -415,6 +479,11 @@ function getQueryParameters()
   map.on('singleclick', function(evt) {
   });
 
+  map.on('moveend', function(evt){
+    [Cookie.lon, Cookie.lat] = map.getView().getCenter();
+    Cookie.zoom = map.getView().getZoom();
+    writeCookie();
+  });
 
   /*
   const params = getQueryParameters();
