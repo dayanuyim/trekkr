@@ -253,10 +253,15 @@ const layers = {
   OSM: new TileLayer({
     source: new OSM(),
   }),
+  OSM_: new TileLayer({
+    source: new XYZ({
+      url: 'https://{a-c}.tile.openstreetmap.org/{z}/{x}/{y}.png'
+    })
+  }),
   RUDY: new TileLayer({
     source: new XYZ({
-      url: 'http://rudy-daily.tile.basecamp.tw/{z}/{x}/{y}.png'
-      //url: 'https://{a-c}.tile.openstreetmap.org/{z}/{x}/{y}.png'
+      //url: 'http://rudy-daily.tile.basecamp.tw/{z}/{x}/{y}.png'
+      url: 'https://rs.happyman.idv.tw/map/rudy/{z}/{x}/{y}.png'
     })
   }),
   EMAP: new TileLayer({
