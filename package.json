@@ -9,6 +9,10 @@
     "test": "mocha --watch --reporter min"
   },
   "devDependencies": {
+    "@types/proj4": "^2.5.0",
+    "ol": "^5.1.2",
+    "proj4": "^2.5.0",
+    "google-elevation-api": "^1.0.0",
     "bootstrap": "^4.1.3",
     "css-loader": "^1.0.1",
     "file-loader": "^2.0.0",
@@ -29,21 +33,16 @@
     "webpack-dev-middleware": "^3.4.0"
   },
   "dependencies": {
-    "@types/proj4": "^2.5.0",
-    "cheerio": "^1.0.0-rc.2",
     "colors": "^1.3.3",
     "copy-webpack-plugin": "^4.6.0",
     "express": "^4.16.3",
     "express-file-store": "^1.0.3",
     "express-session": "^1.15.6",
-    "google-elevation-api": "^1.0.0",
     "moment": "^2.24.0",
     "moment-timezone": "^0.5.23",
     "morgan": "^1.9.1",
     "nconf": "^0.10.0",
     "nodemon": "^1.18.4",
-    "ol": "^5.1.2",
-    "proj4": "^2.5.0",
     "session-file-store": "^1.2.0"
   }
 }
