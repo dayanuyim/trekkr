@@ -301,7 +301,8 @@ const layers = {
   RUDY: new TileLayer({
     source: new XYZ({
       //url: 'http://rudy-daily.tile.basecamp.tw/{z}/{x}/{y}.png'
-      url: 'https://rs.happyman.idv.tw/map/rudy/{z}/{x}/{y}.png'
+      url: 'http://rudy.tile.basecamp.tw/{z}/{x}/{y}.png'
+      //url: 'https://rs.happyman.idv.tw/map/rudy/{z}/{x}/{y}.png'
     })
   }),
   EMAP: new TileLayer({
