@@ -7,7 +7,7 @@ import {toTWD97, toTWD67} from './coord';
 import * as moment from 'moment-timezone';
 import * as templates from './templates';
 import {toSymPath, getSymbol, getElevationByCoords, getLocalTimeByCoords} from './common'
-import {clearChildren, htmlToElement} from './dom-utils';
+import {tagIf} from './dom-utils';
 import Cookie from './cookie';
 
 const toXY = {
@@ -169,19 +169,16 @@ export default class PtPopupOverlay extends Overlay{
         this.pt_ele = ele? `${fmtEle(ele.value)} m${ele.est? '(est.)': ''}`: '-';
         this.pt_time = time? fmtTime(time): '-';
 
-        this.setUrlContent(this._sym_maker,    symbol? symbol.maker: undefined);
-        this.setUrlContent(this._sym_provider, symbol? symbol.provider: undefined);
-        this.setUrlContent(this._sym_license,  symbol? symbol.license: undefined);
+        tagIf(!symbol, this._sym_copyright, 'hidden');
+        if(symbol){
+            this.setUrlContent(this._sym_maker,    symbol.maker);
+            this.setUrlContent(this._sym_provider, symbol.provider);
+            this.setUrlContent(this._sym_license,  symbol.license);
+        }
     }
 
     private setUrlContent(el: HTMLAnchorElement, sym){
-        if(sym){
-            el.href = sym.url;
-            el.textContent = sym.title;
-        }
-        else{
-            el.removeAttribute('href');
-            el.textContent = '-';
-        }
+        el.href = sym.url;
+        el.textContent = sym.title;
     }
 }
