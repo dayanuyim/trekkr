@@ -11,7 +11,65 @@ Handlebars.registerHelper('fmtEle', function(ele) {
 });
 
 Handlebars.registerHelper('fmtTime', function(moment) {
-    return moment.format('YYYY-MM-DD HH:mm:ss');
+    return moment? moment.format('YYYY-MM-DD HH:mm:ss'): '-';
+});
+
+Handlebars.registerHelper("selop", (value, selected, text, attrs, options)=>{
+    if(value === selected)
+        attrs += " selected";
+    return new Handlebars.SafeString(`<option value="${value}" ${attrs}>${text}</option>`);
+});
+
+export const ptPopup = Handlebars.compile(`
+    <div class="pt-name">{{name}}</div>
+    <div class="pt-coord" data-pt-coord="{{coordinate}}">
+        <select class="pt-coord-title" dir="rtl">
+            {{selop ""      coordsys "?"  "disabled hidden"}}
+            {{selop "twd67" coordsys "TWD67"}}
+            {{selop "twd97" coordsys "TWD97"}}
+            {{selop "wgs84" coordsys "WGS84"}}
+        </select>
+        <span class="pt-coord-value">N/A</span>
+        <a class="pt-gmap" href="{{gmap coordinate}}" target="_blank">
+            <img src="./images/googleg.png" alt="Google G">
+        </a>
+    </div>
+
+    <div class="pt-ele">
+        <span class="pt-ele-title">ELE.</span>
+        <span class="pt-ele-value">{{fmtEle ele.value}} m{{#if ele.est}} (est.){{/if}}</span>
+    </div>
+
+    <div class="pt-time">
+        <span class="pt-time-title">TIME</span>
+        <span class="pt-time-value">{{fmtTime time}}</span>
+    </div>
+
+    <footer class="sym-copyright">&copy; The icon made by
+        <a class="sym-maker" href="{{symbol/maker/url}}" target="_blank">{{symbol/maker/title}}</a> from
+        <a class="sym-provider" href="{{symbol/provider/url}}" target="_blank">{{symbol/provider/title}}</a> is licensed by
+        <a class="sym-license" href="{{symbol/license/url}}" target="_blank">{{symbol/license/title}}</a>
+    </footer>
+
+`);
+
+Handlebars.registerHelper("ptPopup", (data, options)=>{
+    data = Object.assign({
+        name: '',
+        coordsys: '',
+        coordinate: [0, 0],
+        time: undefined,
+        ele: {
+            value: 0,
+            est: false,
+        },
+        symbol: {
+            maker: { title: '', url: '' },
+            provider: { title: '', url: '' },
+            license: { title: '', url: '' },
+        }
+    }, data);
+    return new Handlebars.SafeString(ptPopup(data));
 });
 
 export const main = Handlebars.compile(`
@@ -19,44 +77,8 @@ export const main = Handlebars.compile(`
 
     <div id="pt-popup" class="ol-popup">
         <a href="#" class="ol-popup-closer"></a>
-        <div class="ol-popup-content"></div>
+        <div class="ol-popup-content">
+            {{ptPopup}}
+        </div>
     </div>
-`);
-
-export const ptPopup = Handlebars.compile(`
-    <div class="pt-name">{{name}}</div>
-    <div class="pt-coord">
-        <select class="pt-coord-title" dir="rtl" data-pt-coord="{{coordinate}}">
-            <option value="twd67">TWD67</option>
-            <option value="twd97">TWD97</option>
-            <option value="wgs84">WGS84</option>
-        </select>
-        <span class="pt-coord-val">N/A</span>
-        <a class="pt-gmap" href="{{gmap coordinate}}" target="_blank">
-            <img src="./images/googleg.png" alt="Google G">
-        </a>
-    </div>
-
-    {{#if ele}}
-    <div class="pt-ele">
-        <span class="pt-ele-title">ELE.</span>
-        <span>{{fmtEle ele.value}} m{{#if ele.est}} (est.){{/if}}</span>
-    </div>
-    {{/if}}
-
-    {{#if time}}
-    <div class="pt-time">
-        <span class="pt-title pt-time-title">TIME</span>
-        <span>{{fmtTime time}}</span>
-    </div>
-    {{/if}}
-
-    {{#if symbol}}
-        <footer class="sym-license">&copy; The icon made by
-            <a href="{{symbol/maker/url}}" target="_blank">{{symbol/maker/title}}</a> from
-            <a href="{{symbol/provider/url}}" target="_blank">{{symbol/provider/title}}</a> is licensed by
-            <a href="{{symbol/license/url}}" target="_blank">{{symbol/license/title}}</a>
-        </footer>
-    {{/if}}
-
 `);

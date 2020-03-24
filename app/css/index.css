@@ -115,13 +115,13 @@ select::-ms-expand {
 }
 
 
-.sym-license {
+.sym-copyright {
     color: gray;
     font-size: x-small;
 }
-.sym-license a:link{
+.sym-copyright a:link{
     color: gray;
 }
-.sym-license a:visited{
+.sym-copyright a:visited{
     color: gray;
 }
