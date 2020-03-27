@@ -1,5 +1,5 @@
 import {defaults as defaultControls, ScaleLine, OverviewMap, ZoomSlider, Control} from 'ol/control';
-import {DragAndDrop, Modify} from 'ol/interaction';
+import {defaults as defaultInteractions, DragAndDrop, Modify, Select} from 'ol/interaction';
 import {toSize} from 'ol/size';
 import {Map, View, Overlay} from 'ol';
 import {Tile as TileLayer, Vector as VectorLayer} from 'ol/layer';
@@ -8,115 +8,15 @@ import TileJSON from 'ol/source/TileJSON';
 import XYZ from 'ol/source/XYZ';
 import OSM from 'ol/source/OSM';
 import {GPX, GeoJSON, IGC, KML, TopoJSON} from 'ol/format';
+
 import { Icon as IconStyle, Circle as CircleStyle, Fill, Stroke, Style } from 'ol/style';
 import GeometryType from  'ol/geom/GeometryType';
 
-import {getSymbol, toSymPath} from './common'
+import {partition} from './utils';
+import {getSymbol, toSymPath, gpxStyle} from './common'
 import PtPopupOverlay from './pt-popup';
 import Cookie from './cookie';
-
-const gpxStyle = (feature) => {
-  switch (feature.getGeometry().getType()) {
-    case 'Point': {
-      const sym = getSymbol(feature.get('sym'));
-      if(sym){
-        return new Style({
-          image: new IconStyle({
-            src: toSymPath(sym, 128),
-            //rotateWithView: true,
-            //size: toSize([32, 32]),
-            //opacity: 0.8,
-            //anchor: sym.anchor,
-            scale: 0.25,
-          }),
-        });
-      }
-      else {
-        return new Style({
-          image: new CircleStyle({
-            fill: new Fill({
-              color: 'rgba(255,255,0,0.4)'
-            }),
-            radius: 5,
-            stroke: new Stroke({
-              color: '#ff0',
-              width: 1
-            })
-          })
-        });
-      }
-    }
-    case 'LineString': {
-      return new Style({
-        stroke: new Stroke({
-          color: '#f00',
-          width: 3
-        })
-      });
-    }
-    case 'MultiLineString': {
-      return new Style({
-        stroke: new Stroke({
-          color: '#8B008B',
-          width: 3
-        })
-      });
-    }
-  }
-};
-
-
-const layers = {
-  OSM: new TileLayer({
-    source: new OSM(),
-  }),
-  OSM_: new TileLayer({
-    source: new XYZ({
-      url: 'https://{a-c}.tile.openstreetmap.org/{z}/{x}/{y}.png'
-    })
-  }),
-  RUDY: new TileLayer({
-    source: new XYZ({
-      //url: 'http://rudy-daily.tile.basecamp.tw/{z}/{x}/{y}.png'
-      url: 'http://rudy.tile.basecamp.tw/{z}/{x}/{y}.png'
-      //url: 'https://rs.happyman.idv.tw/map/rudy/{z}/{x}/{y}.png'
-    })
-  }),
-  EMAP: new TileLayer({
-    source: new XYZ({
-      url: 'http://wmts.nlsc.gov.tw/wmts/EMAP5/default/EPSG:3857/{z}/{y}/{x}'
-    })
-  }),
-  EMAP_TRANS: new TileLayer({
-    source: new XYZ({
-      url: 'http://wmts.nlsc.gov.tw/wmts/EMAP2/default/EPSG:3857/{z}/{y}/{x}'
-    })
-  }),
-  COUNTRIES: new VectorLayer({
-    source: new VectorSource({
-      format: new GeoJSON(),
-      url: './data/countries.json'
-    })
-  }),
-  TAIWAN_COUNTIES: new VectorLayer({
-    source: new VectorSource({
-      format: new GeoJSON(),
-      url: './data/taiwan-counties.json',
-    }),
-    opacity: 0.3,
-  }),
-  GPX_SAMPLE: new VectorLayer({
-    source: new VectorSource({
-      url: './data/sample.gpx',
-      format: new GPX(/*{
-        readExtensions: (x) => {
-          console.log(x);
-        }
-      }*/),
-    }),
-    style: gpxStyle,
-  }),
-};
+import Layers from './layer-grp';
 
 export const createMap = (target) => {
   const map = new Map({
@@ -126,19 +26,18 @@ export const createMap = (target) => {
       new OverviewMap(),
       new ZoomSlider(),
       //new SaveCookieControl(),
-      genDragGpxInteraction(),
     ]),
-    layers: [
-      //layers.OSM,
-      //layers.TAIWAN_COUNTIES,
-      layers.RUDY,
-      layers.EMAP_TRANS,
-      //layers.EMAP,
-      //layers.GPX_SAMPLE,
-    ],
+    interactions: defaultInteractions().extend([
+      genDragGpxInteraction(),
+      //new Select(),
+    ]),
+    //layers: [
+      //layers.RUDY,
+      //layers.NLSC_LG,
+    //],
     view: new View({
-      center: [Cookie.get().x, Cookie.get().y],
-      zoom: Cookie.get().zoom,
+      center: Cookie.xy,
+      zoom: Cookie.zoom,
     }),
     overlays: [
         new PtPopupOverlay(document.getElementById('pt-popup')),
@@ -156,7 +55,7 @@ function genDragGpxInteraction(){
       GeoJSON,
       IGC,
       KML,
-      TopoJSON
+      TopoJSON,
     ]
   });
 
@@ -172,11 +71,11 @@ function addGPXLayer(map, features)
       features,
     });
     map.addLayer(new VectorLayer({
-      source: source,
+      source,
       style: gpxStyle,
     }));
     map.getView().fit(source.getExtent(), {maxZoom: 16});
-    map.addInteraction(new Modify({source}))
+    map.addInteraction(new Modify({source})); //feature trkpt as 'Point', instead of 'MultiLineString'
 }
 
 /*
@@ -191,14 +90,6 @@ function getQueryParameters()
     }, {});
 }
 */
-function saveCookie(map)
-{
-    const cookie = Cookie.get();
-    [cookie.x, cookie.y] = map.getView().getCenter();
-    cookie.zoom = map.getView().getZoom();
-    cookie.save();
-}
-
 function initEvents(map)
 {
   map.on('pointermove', function(e) {
@@ -215,26 +106,26 @@ function initEvents(map)
   map.on('singleclick', function(e) {
   });
 
-  map.on('moveend', function(e){
-    saveCookie(e.map);
+  //map.getView().on('change', function(e){, 
+  map.on('moveend', function(e){   //invoked only when view is locked down
+    updateCookie(e.map.getView());
+  });
+}
+
+function updateCookie(view)
+{
+  Cookie.update({
+    xy: view.getCenter(),
+    zoom: view.getZoom(),
   });
 }
 
 const showHoverFeatures = function (e) {
   const pixel = e.map.getEventPixel(e.originalEvent); // TODO: what is the diff between 'originalevent' and 'event'?
-  const features = e.map.getFeaturesAtPixel(pixel);
 
-  e.map.getTarget().style.cursor = (features.length > 0)? 'pointer': '';
-
-  /*
-  // prefer to show point solely
-  const points = features.filter(feature => feature.getGeometry().getType() === 'Point');
-  if (points.length >  0) 
-    features = points;
-    */
-  features.forEach(feature => {
+  const hit = e.map.forEachFeatureAtPixel(pixel, feature => {
     switch (feature.getGeometry().getType()) {
-      case 'Point': {   // Waypoint or Track point
+      case 'Point': {   // TODO: Waypoint or Track point
         const overlay = e.map.getOverlayById('pt-popup');
         overlay.popContent(feature);
         break;
@@ -245,10 +136,38 @@ const showHoverFeatures = function (e) {
         break;
       }
       case 'MultiLineString': {
-        //const name = feature.get('name');
-        //console.log(`track name: ${name}`);
+        //console.log(feature.getGeometry().getCoordinates());
+        const name = feature.get('name');
+        console.log(`track name: ${name}`);
         break;
       }
     }
+    return true;
   });
+
+  e.map.getTarget().style.cursor = hit? 'pointer': '';
 };
+
+//layers[0] is the most bottom layer; 
+//layers[n-1] is the most top layer
+export function setLayers(map, layers_setting)
+{
+  const in_right_pos = (arr, idx, elem) => arr.getLength() > idx && arr.item(idx) === elem;
+
+  layers_setting = layers_setting.map(ly => Object.assign({
+    obj: Layers[ly.id]
+  }, ly));
+  const [en, dis] = partition(layers_setting, ly => ly.enabled);
+
+  const layers = map.getLayers();
+
+  //rmeove all layers disabled in setting, buf reverse the most top layers, like gpx
+  dis.forEach(ly => layers.remove(ly.obj));
+
+  en.forEach((ly, idx) => {
+    if(!in_right_pos(layers, idx, ly.obj)){
+      layers.remove(ly.obj); //in case the layer is added but not in right place
+      layers.insertAt(idx, ly.obj);
+    }
+  });
+}

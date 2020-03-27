@@ -73,12 +73,38 @@ Handlebars.registerHelper("ptPopup", (data, options)=>{
 });
 
 export const main = Handlebars.compile(`
-    <div id="map" class="ol-map-container"></div>
-
     <div id="pt-popup" class="ol-popup">
         <a href="#" class="ol-popup-closer"></a>
         <div class="ol-popup-content">
             {{ptPopup}}
         </div>
     </div>
+
+    <div class="settings collapsed">
+        <div class="settings-ctrl">
+            <button class="btn-toggle ol-button"><i class="fa fa-cog"></i></button>
+        </div>
+        <div class="settings-main">
+            <div class="layer-grp">
+                <!-- TODO: load layers from config -->
+                <ul class="layer-legend">
+                    <!--
+                    <li><input type="checkbox" data-layer-id="COUNTRIES">全球國界</li>
+                    -->
+                    <li><input type="checkbox" data-layer-id="GPX_SAMPLE">測試GPX</li>
+                    <li><input type="checkbox" data-layer-id="TW_COUNTIES">台灣縣界</li>
+                    <li><input type="checkbox" data-layer-id="NLSC_LG">通用地圖(標誌)</li>
+                </ul>
+                <ul class="layer-base">
+                    <li><input type="checkbox" data-layer-id="RUDY">魯地圖</li>
+                    <li><input type="checkbox" data-layer-id="NLSC">通用地圖</li>
+                    <li><input type="checkbox" data-layer-id="OSM">OSM開放街圖</li>
+                    <li><input type="checkbox" data-layer-id="JP_GSI">日本地理院</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div id="map" class="ol-map-container"></div>
+
 `);

@@ -131,9 +131,7 @@ export default class PtPopupOverlay extends Overlay{
 
             this.pt_coord_value = toXY[coordsys](this.pt_coord)
 
-            const cookie = Cookie.get();
-            cookie.coordsys = coordsys;
-            cookie.save();
+            Cookie.update({coordsys});
         };
     }
 
@@ -144,17 +142,17 @@ export default class PtPopupOverlay extends Overlay{
 
         // get data
         const name = feature.get('name') || feature.get('desc');   //may undefined
-        const symbol = getSymbol(feature.get('sym'));              //may undefined
+        const sym = feature.get('sym');              //may undefined
         const coordinates = feature.getGeometry().getCoordinates();
         //console.log(coordinates);
 
         this.setContent({
             name,
-            coordsys: Cookie.get().coordsys,
+            coordsys: Cookie.coordsys,
             coordinate: coordinates.slice(0, 2),
             time: getLocalTimeByCoords(coordinates),
             ele: await getElevationByCoords(coordinates),
-            symbol,
+            symbol: getSymbol(sym),
         });
     }
 

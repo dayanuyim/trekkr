@@ -7,8 +7,69 @@ html, body {
     display: none;
 }
 
-.tooltip-inner {
-    white-space: nowrap;
+.ol-button {
+    display: block;
+    margin: 1px;
+    padding: 0;
+    color: white;
+    font-size: 1.14em;
+    font-weight: bold;
+    text-decoration: none;
+    text-align: center;
+    height: 1.375em;
+    width: 1.375em;
+    line-height: .4em;
+    background-color: rgba(0,60,136,0.5);
+    border: none;
+    border-radius: 2px;
+}
+/*============ Map List ==================*/
+
+.settings {
+    position: absolute;
+    top: 0;
+    right: 0;
+    padding: .5em;
+    opacity: 85%;
+    z-index: 9;
+    min-width: 2em;
+    height: 100vh;
+    background: #f8f8f8;
+    border-left: solid 1px #f0f0f0;
+}
+
+.settings-ctrl {
+    float: right;
+}
+
+.settings .layer-grp {
+    color: #222;
+/*
+    width: 30vw;
+    height: 100vh;
+*/
+}
+
+.layer-grp ul{
+    padding: 0;
+}
+.layer-grp li{
+    list-style-type: none;
+}
+
+/* ---------------------------------------*/
+.settings.collapsed {
+    background: transparent;
+    border-left-width: 0;
+}
+.settings.collapsed .settings-main{
+    display: none;
+}
+
+/*============= Map ======================*/
+
+#map{
+    /*margin-left: 100*/
 }
 
 .ol-map-container {
@@ -19,7 +80,7 @@ html, body {
 }
 
 .ol-scale-line {
-    left: 50%;
+    left: calc(50% - 50px);
 }
 
 .save-cookie {
@@ -29,6 +90,13 @@ html, body {
 
 .ol-touch .save-cookie {
     top: 80px;
+}
+
+
+/*========================================*/
+
+.tooltip-inner {
+    white-space: nowrap;
 }
 
 .ol-popup {

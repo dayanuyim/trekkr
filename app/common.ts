@@ -1,14 +1,32 @@
 'use strict';
+
 import * as moment from 'moment-timezone';
 import tzlookup from 'tz-lookup';
 import {fromLonLat, toLonLat} from 'ol/proj';
-import {googleElevation} from './utils';
+import elevationApi from 'google-elevation-api';
+import conf from './data/conf';
 import symbols from './data/symbols';
+import { Icon as IconStyle, Circle as CircleStyle, Fill, Stroke, Style } from 'ol/style';
 
 const Opt = {
   tz: undefined,
 }
 
+// Promisify and Accept only a location
+export function googleElevation(lat, lon)
+{
+  return new Promise((resolve, reject)=>{
+    elevationApi({
+      key: conf.googleMapKey,
+      locations: [
+        [lat, lon],
+      ]
+    }, (err, locations) => {
+      if(err) reject(err);
+      else resolve(locations[0].elevation);
+    });
+  });
+}
 function getElevationOfCoords (coordinates) {
   if(coordinates.length > 2 && coordinates[2] < 10000.0){
     return coordinates[2];
@@ -73,3 +91,54 @@ export function getSymbol(symName){
   }
   return sym;
 }
+
+export const gpxStyle = (feature) => {
+  switch (feature.getGeometry().getType()) {
+    case 'Point': {
+      const sym = getSymbol(feature.get('sym'));
+      if(sym){
+        return new Style({
+          image: new IconStyle({
+            src: toSymPath(sym, 128),
+            //rotateWithView: true,
+            //size: toSize([32, 32]),
+            //opacity: 0.8,
+            //anchor: sym.anchor,
+            scale: 0.25,
+          }),
+        });
+      }
+      else {
+        return new Style({
+          image: new CircleStyle({
+            fill: new Fill({
+              color: 'rgba(255,255,0,0.4)'
+            }),
+            radius: 5,
+            stroke: new Stroke({
+              color: '#ff0',
+              width: 1
+            })
+          })
+        });
+      }
+    }
+    case 'LineString': {
+      return new Style({
+        stroke: new Stroke({
+          color: '#f00',
+          width: 3
+        })
+      });
+    }
+    case 'MultiLineString': {
+      return new Style({
+        stroke: new Stroke({
+          color: '#8B008B',
+          width: 3
+        })
+      });
+    }
+  }
+};
+

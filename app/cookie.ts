@@ -2,7 +2,7 @@
 //import {fromLonLat} from 'ol/proj';
 //import {Control} from 'ol/control';
 
-export default class Cookie{
+class Cookie{
     static instance = undefined;
     static get() {
         if (!Cookie.instance)
@@ -11,17 +11,28 @@ export default class Cookie{
     }
 
     //default properties
-    //[this.x, this.y] = fromLonLat([120.929272, 23.555519]);
-    x = 13461784.981041275;
-    y = 2699338.9447048027;
+    //xy = fromLonLat([120.929272, 23.555519]);
+    xy = [13461784.981041275, 2699338.9447048027];
     zoom = 15;
     coordsys = 'twd67';
+    layers = [
+        //bottom
+        { id: 'JP_GSI'     , enabled: false, opacity: 1.00, },
+        { id: 'OSM'        , enabled:  true, opacity: 1.00, },
+        { id: 'NLSC'       , enabled: false, opacity: 1.00, },
+        { id: 'RUDY'       , enabled: false, opacity: 1.00, },
+        { id: 'NLSC_LG'    , enabled:  true, opacity: 1.00, },
+        { id: 'TW_COUNTIES', enabled: false, opacity: 1.00, },
+        //{ id: 'COUNTRIES'  , enabled: false, opacity: 1.00, },
+        { id: 'GPX_SAMPLE' , enabled: false, opacity: 1.00, },
+        //top
+    ];
 
     private constructor(){
-        Object.assign(this, this.read())
+        Object.assign(this, this.load())
     }
 
-    private read() {
+    private load() {
         if (document.cookie) {
             try {
                 return JSON.parse(document.cookie);
@@ -30,11 +41,12 @@ export default class Cookie{
                 console.log(`Parse Cookie Error: ${err}`);
             }
         }
-        return {};
+        return undefined;
     }
 
-    public save() {
-        //console.log(`write cookie: ${JSON.stringify(Cookie)}`);
+    public update(modified) {
+        if(modified)
+            Object.assign(this, modified)
         document.cookie = JSON.stringify(this);
     }
 }
@@ -67,3 +79,5 @@ class SaveCookieControl extends Control{
   }
 }
 */
+
+export default Cookie.get();

@@ -1,19 +1,9 @@
 'use strict';
-import elevationApi from 'google-elevation-api';
-import conf from './data/conf';
 
-// Promisify and Accept only a location
-export function googleElevation(lat, lon)
-{
-  return new Promise((resolve, reject)=>{
-    elevationApi({
-      key: conf.googleMapKey,
-      locations: [
-        [lat, lon],
-      ]
-    }, (err, locations) => {
-      if(err) reject(err);
-      else resolve(locations[0].elevation);
-    });
+export function partition(array, cond_fn) {
+  const [pos, neg] = [[], []];
+  array.forEach(elem => {
+    cond_fn(elem)? pos.push(elem): neg.push(elem);
   });
+  return [pos, neg];
 }
