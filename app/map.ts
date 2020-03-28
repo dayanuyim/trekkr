@@ -12,7 +12,7 @@ import {GPX, GeoJSON, IGC, KML, TopoJSON} from 'ol/format';
 import { Icon as IconStyle, Circle as CircleStyle, Fill, Stroke, Style } from 'ol/style';
 import GeometryType from  'ol/geom/GeometryType';
 
-import {partition} from './utils';
+import {partition} from './lib/utils';
 import {getSymbol, toSymPath, gpxStyle} from './common'
 import PtPopupOverlay from './pt-popup';
 import Cookie from './cookie';
@@ -148,16 +148,17 @@ const showHoverFeatures = function (e) {
   e.map.getTarget().style.cursor = hit? 'pointer': '';
 };
 
-//layers[0] is the most bottom layer; 
-//layers[n-1] is the most top layer
-export function setLayers(map, layers_setting)
+//Note: OL and conf is anti-order.
+//OL:
+//  layers[0] is the most bottom layer; 
+//  layers[n-1] is the most top layer
+export function setLayers(map, conf)
 {
   const in_right_pos = (arr, idx, elem) => arr.getLength() > idx && arr.item(idx) === elem;
+  const with_obj = (layer) => Object.assign({obj: Layers[layer.id]}, layer);
 
-  layers_setting = layers_setting.map(ly => Object.assign({
-    obj: Layers[ly.id]
-  }, ly));
-  const [en, dis] = partition(layers_setting, ly => ly.enabled);
+  conf = conf.reverse().map(with_obj);
+  const [en, dis] = partition(conf, ly => ly.checked);
 
   const layers = map.getLayers();
 

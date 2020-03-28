@@ -7,7 +7,7 @@ import {toTWD97, toTWD67} from './coord';
 import * as moment from 'moment-timezone';
 import * as templates from './templates';
 import {toSymPath, getSymbol, getElevationByCoords, getLocalTimeByCoords} from './common'
-import {tagIf} from './dom-utils';
+import {tagIf} from './lib/dom-utils';
 import Cookie from './cookie';
 
 const toXY = {

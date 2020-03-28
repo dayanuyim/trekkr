@@ -1,51 +1,87 @@
 
 'use strict';
+import * as templates from './templates';
 import {setLayers} from './map';
 import Layers from './layer-grp';
 import Cookie from './cookie';
+import {partition} from './lib/utils';
 
-const settings_listenify = (fn) => { return (e) => fn((e.target.closest('.settings')), e.currentTarget, e); }
+class Layer {
+    static of(el: HTMLElement){
+        return new Layer(el);
+    }
 
-let _btn_toggle: HTMLButtonElement;
-let _layer_grp: HTMLElement;
-let _layers: HTMLInputElement[];
+    _base: HTMLElement;
+    get _checkbox(){ return this._base.querySelector('input');}
 
-function initElements() {
-    _btn_toggle = document.querySelector<HTMLButtonElement>('.settings button.btn-toggle');
-    _layer_grp = document.querySelector<HTMLElement>('.settings .layer-grp');
-    _layers = Array.from(_layer_grp.querySelectorAll<HTMLInputElement>('input[type="checkbox"]'));
+    get legend(){ return this._base.parentElement.classList.contains('layer-legend');}
+    get id(){ return this._base.getAttribute('data-layer-id');}
+    get type(){ return this._base.getAttribute('data-layer-type');}
+    get url(){ return this._base.getAttribute('data-layer-url');}
+    get desc(){ return this._base.textContent.trim();}
+
+    set onchange(value){ this._checkbox.onchange = value};
+
+    constructor(el: HTMLElement){
+        this._base = el;
+    }
+
+    obj() {
+        return {
+            id: this.id,
+            legend: this.legend,
+            type: this.type,
+            url: this.url,
+            desc: this.desc,
+            checked: this._checkbox.checked,
+            opacity: 1.00,
+        };
+    }
 }
 
-function getLayersSetting() {
-    return _layers.map(el => {
-        const id = el.getAttribute('data-layer-id');
-        return {
-            id,
-            enabled: el.checked,
-            opacity: 1.00,
-        }
-    }).reverse();  //align the order of OL: [0]button -> [n-1]top
+class Settings{
+    static of(el: HTMLElement){
+        return new Settings(el);
+    }
+    //static listenify = (fn) => { return (e) => fn(Settings.of(e.target.closest('.settings')), e.currentTarget, e); }
+
+    _base: HTMLElement;
+    get _btn_toggle() { return this._base.querySelector<HTMLButtonElement>('button.btn-toggle'); }
+    get _layers(){ return Array.from(this._base.querySelectorAll('.layer-grp li')); }
+
+    get layers(){ return this._layers.map(Layer.of); }
+
+    map;
+
+    constructor(el: HTMLElement){
+        this._base = el;
+        this._base.innerHTML = templates.settings({layers: Cookie.layers});
+        this.init();
+    }
+
+    init(){
+        this._btn_toggle.onclick = () => this._base.classList.toggle('collapsed');
+
+        this.layers.forEach(ly => {
+            ly.onchange = (e) => {
+                const conf = this.getLayersConf();
+                if(this.map) setLayers(this.map, conf);
+                Cookie.update({ layers: conf })
+            };
+        });
+    }
+
+    getLayersConf() {
+        return this.layers.map(ly => ly.obj());
+    }
+
+    setMap(map){
+        this.map = map;
+        setLayers(map, this.getLayersConf());  //for init
+    }
 }
 
 export function init(map) {
-    initElements();
-
-    _btn_toggle.onclick = settings_listenify(el => el.classList.toggle('collapsed'));
-
-    _layers.forEach(el => {
-        // layer changed
-        el.onchange = (e) => {
-            const s = getLayersSetting();
-            setLayers(map, s);
-            Cookie.update({ layers: s })
-        }
-
-        // init settings by cookie
-        const id = el.getAttribute('data-layer-id');
-        const layer = Cookie.layers.find(l => l.id === id);
-        el.checked = layer && layer.enabled;
-    });
-
-    // init layer
-    setLayers(map, getLayersSetting())
+    const s = Settings.of(document.body.querySelector('.settings'));
+    s.setMap(map);
 }

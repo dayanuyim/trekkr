@@ -5,7 +5,7 @@ import tzlookup from 'tz-lookup';
 import {fromLonLat, toLonLat} from 'ol/proj';
 import elevationApi from 'google-elevation-api';
 import conf from './data/conf';
-import symbols from './data/symbols';
+import symbols from './data/symbols.json';
 import { Icon as IconStyle, Circle as CircleStyle, Fill, Stroke, Style } from 'ol/style';
 
 const Opt = {

@@ -42,7 +42,10 @@ html, body {
     float: right;
 }
 
-.settings .layer-grp {
+.settings-main .layer-grp {
+    margin-top: 2em;
+}
+.settings-main .layer-grp {
     color: #222;
 /*
     width: 30vw;
@@ -50,10 +53,10 @@ html, body {
 */
 }
 
-.layer-grp ul{
+.settings-main .layer-grp ul{
     padding: 0;
 }
-.layer-grp li{
+.settings-main .layer-grp li{
     list-style-type: none;
 }
 

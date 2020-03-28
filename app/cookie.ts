@@ -1,6 +1,7 @@
 'use strict';
 //import {fromLonLat} from 'ol/proj';
 //import {Control} from 'ol/control';
+import layer_conf from './data/layer-conf';
 
 class Cookie{
     static instance = undefined;
@@ -12,24 +13,16 @@ class Cookie{
 
     //default properties
     //xy = fromLonLat([120.929272, 23.555519]);
+    version = 1;
     xy = [13461784.981041275, 2699338.9447048027];
     zoom = 15;
     coordsys = 'twd67';
-    layers = [
-        //bottom
-        { id: 'JP_GSI'     , enabled: false, opacity: 1.00, },
-        { id: 'OSM'        , enabled:  true, opacity: 1.00, },
-        { id: 'NLSC'       , enabled: false, opacity: 1.00, },
-        { id: 'RUDY'       , enabled: false, opacity: 1.00, },
-        { id: 'NLSC_LG'    , enabled:  true, opacity: 1.00, },
-        { id: 'TW_COUNTIES', enabled: false, opacity: 1.00, },
-        //{ id: 'COUNTRIES'  , enabled: false, opacity: 1.00, },
-        { id: 'GPX_SAMPLE' , enabled: false, opacity: 1.00, },
-        //top
-    ];
+    layers = layer_conf;
 
     private constructor(){
-        Object.assign(this, this.load())
+        const orig = this.load();
+        if(orig && orig.version && orig.version === this.version)
+            Object.assign(this, orig);
     }
 
     private load() {
