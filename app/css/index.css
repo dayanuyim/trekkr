@@ -23,6 +23,18 @@ html, body {
     border: none;
     border-radius: 2px;
 }
+
+/* Remove input[type=number] Arrows/Spinners */
+/* Chrome, Safari, Edge, Opera */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+/* Firefox */
+input[type=number] {
+  -moz-appearance:textfield;
+}
 /*============ Map List ==================*/
 
 .settings {
@@ -42,22 +54,39 @@ html, body {
     float: right;
 }
 
-.settings-main .layer-grp {
-    margin-top: 2em;
-}
-.settings-main .layer-grp {
-    color: #222;
-/*
-    width: 30vw;
-    height: 100vh;
-*/
+.settings-main {
+    min-width: 250px;
 }
 
-.settings-main .layer-grp ul{
+#layer-grp ul{
     padding: 0;
-}
-.settings-main .layer-grp li{
+    margin: 0.5em 0 1em 0;
     list-style-type: none;
+}
+#layer-grp li .ly-checked:checked ~ *{
+    color: #222;
+}
+#layer-grp li .ly-checked ~ *{
+    color: gray;
+}
+
+#layer-grp li .ly-desc {
+    display: inline-block;
+    min-width: 10em;
+}
+
+#layer-grp li .ly-opacity{
+    transform: scale(1.2) translate(4px, -1px);
+    text-align: right;
+    margin-right: 3px;
+    border: none;
+    background-color: transparent;
+}
+#layer-grp li .ly-opacity:hover{
+    background-color: white;
+}
+#layer-grp li .ly-opacity+i{
+    transform: scale(0.8);
 }
 
 /* ---------------------------------------*/

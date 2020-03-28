@@ -77,7 +77,12 @@ Handlebars.registerHelper("ptPopup", (data, options)=>{
 Handlebars.registerHelper("layer", (layer, options) => {
     const {id, type, url, desc, checked, opacity} = layer;
     return new Handlebars.SafeString(`
-        <li data-layer-id="${id}" data-layer-type=${type} data-layer-url=${url}><input type="checkbox" ${checked? 'checked': ''}>${desc}</li>
+        <li data-layer-id="${id}" data-layer-type=${type} data-layer-url=${url}>
+            <input class="ly-checked" type="checkbox" ${checked? 'checked': ''}><!--
+         --><span class="ly-desc">${desc}</span>
+            <input class="ly-opacity" type="number" max="100" min="0" step="5" value=${Math.floor(opacity*100)}>
+            <i class="fa fa-percent"></i>
+        </li>
 `)});
 
 export const settings = Handlebars.compile(`
@@ -85,7 +90,12 @@ export const settings = Handlebars.compile(`
         <button class="btn-toggle ol-button"><i class="fa fa-cog"></i></button>
     </div>
     <div class="settings-main">
-        <div class="layer-grp">
+        <div class="tab">
+            <button class="tablink" data-content="layer-grp">圖層</button>
+            <button class="tablink" data-content="options">設定</button>
+        </div>
+
+        <div id="layer-grp" class="tabcontent">
             <ul class="layer-legend">
                 {{#each layers}}
                     {{#if legend}}
@@ -100,6 +110,10 @@ export const settings = Handlebars.compile(`
                     {{/unless}}
                 {{/each}}
             </ul>
+        </div>
+
+        <div id="options" class="tabcontent">
+            <span>Comming Soon...</span>
         </div>
     </div>
 `);

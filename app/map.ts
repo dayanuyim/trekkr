@@ -16,7 +16,7 @@ import {partition} from './lib/utils';
 import {getSymbol, toSymPath, gpxStyle} from './common'
 import PtPopupOverlay from './pt-popup';
 import Cookie from './cookie';
-import Layers from './layer-grp';
+import LayerGrp from './layer-grp';
 
 export const createMap = (target) => {
   const map = new Map({
@@ -155,20 +155,22 @@ const showHoverFeatures = function (e) {
 export function setLayers(map, conf)
 {
   const in_right_pos = (arr, idx, elem) => arr.getLength() > idx && arr.item(idx) === elem;
-  const with_obj = (layer) => Object.assign({obj: Layers[layer.id]}, layer);
+  const layerOf = (cnf) => LayerGrp[cnf.id];
 
-  conf = conf.reverse().map(with_obj);
-  const [en, dis] = partition(conf, ly => ly.checked);
+  conf = conf.slice().reverse();
+  const [en, dis] = partition(conf, cnf => cnf.checked);
 
   const layers = map.getLayers();
 
   //rmeove all layers disabled in setting, buf reverse the most top layers, like gpx
-  dis.forEach(ly => layers.remove(ly.obj));
+  dis.forEach(cnf => layers.remove(layerOf(cnf)));
 
-  en.forEach((ly, idx) => {
-    if(!in_right_pos(layers, idx, ly.obj)){
-      layers.remove(ly.obj); //in case the layer is added but not in right place
-      layers.insertAt(idx, ly.obj);
+  en.forEach((cnf, idx) => {
+    const layer = layerOf(cnf);
+    if(!in_right_pos(layers, idx, layer)){
+      layers.remove(layer); //in case the layer is added but not in right place
+      layers.insertAt(idx, layer);
+      layer.setOpacity(cnf.opacity);
     }
   });
 }
