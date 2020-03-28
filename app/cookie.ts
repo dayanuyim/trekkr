@@ -13,7 +13,7 @@ class Cookie{
 
     //default properties
     //xy = fromLonLat([120.929272, 23.555519]);
-    version = 1;
+    version = 2;
     xy = [13461784.981041275, 2699338.9447048027];
     zoom = 15;
     coordsys = 'twd67';
@@ -22,12 +22,14 @@ class Cookie{
     private constructor(){
         const orig = this.load();
         if(orig && orig.version && orig.version === this.version)
-            Object.assign(this, orig);
+            Object.assign(this, this.recover(orig));
+        //console.log('cookie', JSON.stringify(this, null, 2));
     }
 
     private load() {
         if (document.cookie) {
             try {
+                console.log(document.cookie.substring(1330));
                 return JSON.parse(document.cookie);
             }
             catch (err) {
@@ -37,10 +39,31 @@ class Cookie{
         return undefined;
     }
 
-    public update(modified) {
+    public update(modified?) {
         if(modified)
             Object.assign(this, modified)
-        document.cookie = JSON.stringify(this);
+
+        const value = JSON.stringify(this.strip());
+        if(value.length >= 4096)
+            console.warn(`The cookie size is larger 4096: ${value.length}`)
+        document.cookie = value;
+    }
+
+    public strip(){
+        return Object.assign({}, this, {
+            layers: this.layers.map(({id, checked, opacity}) => ({id, checked, opacity}))
+        })
+    }
+
+    public recover(orig){
+        const def_layers = {};
+        this.layers.forEach(ly => def_layers[ly.id] = ly);
+
+        orig.layers.forEach(layer => {
+            const {legend, type, url, desc} = def_layers[layer.id];
+            Object.assign(layer, {legend, type, url, desc});
+        });
+        return orig;
     }
 }
 

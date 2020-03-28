@@ -1,6 +1,8 @@
 html, body {
     margin: 0;
     height: 100%;
+    font-family: Arial, Helvetica, sans-serif;
+    overflow: hidden;
 }
 
 .hidden {
@@ -72,13 +74,14 @@ input[type=number] {
 
 #layer-grp li .ly-desc {
     display: inline-block;
-    min-width: 10em;
+    min-width: 14.5em;
 }
 
 #layer-grp li .ly-opacity{
     transform: scale(1.2) translate(4px, -1px);
     text-align: right;
     margin-right: 3px;
+    width: 28px;
     border: none;
     background-color: transparent;
 }

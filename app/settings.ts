@@ -84,7 +84,6 @@ class Settings{
                 Cookie.update({ layers: conf })
 
                 if(this.map) setLayers(this.map, conf);
-                console.log(conf);
             };
 
             layer.onopacity = (e) =>{
@@ -92,7 +91,6 @@ class Settings{
                 //console.log('layers conf:', JSON.stringify(conf, null, 2));
                 Cookie.update({ layers: conf })
 
-                console.log(e.target.value);
                 layer.ol_layer.setOpacity(layer.opacity);
             }
         });
