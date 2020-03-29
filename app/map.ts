@@ -121,9 +121,7 @@ function updateCookie(view)
 }
 
 const showHoverFeatures = function (e) {
-  const pixel = e.map.getEventPixel(e.originalEvent); // TODO: what is the diff between 'originalevent' and 'event'?
-
-  const hit = e.map.forEachFeatureAtPixel(pixel, feature => {
+  const handleFeature = feature => {
     switch (feature.getGeometry().getType()) {
       case 'Point': {   // TODO: Waypoint or Track point
         const overlay = e.map.getOverlayById('pt-popup');
@@ -143,9 +141,25 @@ const showHoverFeatures = function (e) {
       }
     }
     return true;
-  });
+  };
 
-  e.map.getTarget().style.cursor = hit? 'pointer': '';
+  const isPt = f => f.getGeometry().getType() === 'Point';
+  const isWpt = f => isPt(f) && (f.get('name') || f.get('desc') || f.get('sym'));
+  const isTrkpt = f => isPt(f) && !isWpt(f);
+
+  const filterOutTrkptIfWpt = (features) => {
+    return features.find(isWpt)? features.filter(f => !isTrkpt(f)): features;
+  }
+
+  const pixel = e.map.getEventPixel(e.originalEvent); // TODO: what is the diff between 'originalevent' and 'event'?
+
+  // NOTE: not use forEach..., it is hard to point to Wpt if there are Trkpt in the same place. (Why?)
+  //const hit = e.map.forEachFeatureAtPixel(pixel, handleFeature);
+  //e.map.getTarget().style.cursor = hit? 'pointer': '';
+
+  const features = filterOutTrkptIfWpt(e.map.getFeaturesAtPixel(pixel, {hitTolerance: 2}));
+  features.forEach(handleFeature);
+  e.map.getTarget().style.cursor = features.length? 'pointer': '';
 };
 
 //Note: OL and conf is anti-order.

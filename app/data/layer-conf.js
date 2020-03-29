@@ -331,6 +331,7 @@ export default
     {
         id: 'TM100K_1987',
         legend: false,
+        type: 'xyz',
         url: sinica_url('TM100K_1987', 'png'),
         desc: '1987-臺灣地形圖',
         checked: false,
