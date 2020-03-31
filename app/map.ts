@@ -18,12 +18,15 @@ import PtPopupOverlay from './pt-popup';
 import Cookie from './cookie';
 import LayerGrp from './layer-grp';
 
+const Overviewmap = new OverviewMap();
 export const createMap = (target) => {
   const map = new Map({
     target,
     controls: defaultControls().extend([
       new ScaleLine(),
-      new OverviewMap(),
+      new OverviewMap({
+        layers: [ new TileLayer({ source : new OSM() }) ]
+      }),
       new ZoomSlider(),
       //new SaveCookieControl(),
     ]),

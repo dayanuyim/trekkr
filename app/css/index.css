@@ -133,6 +133,12 @@ input[type=number] {
     width: 100%;
 }
 
+.ol-overviewmap
+.ol-overviewmap-map{
+    width: 25vw;
+    height: 25vh;
+}
+
 .ol-scale-line {
     left: calc(50% - 50px);
 }
