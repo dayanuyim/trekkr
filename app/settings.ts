@@ -1,10 +1,11 @@
-
 'use strict';
+import sortable from 'html5sortable/dist/html5sortable.es.js'
 import Map from 'ol/Map';
 import * as templates from './templates';
 import {setLayers} from './map';
 import LayerGrp from './layer-grp';
 import Cookie from './cookie';
+
 
 function limit(n, low, up){
     return Math.max(low, Math.min(n, up));
@@ -49,6 +50,28 @@ class Layer {
     }
 }
 
+// w3c tab
+function tablink(tab_q, content_q, def_idx?)
+{
+    const cls = 'active';
+    const rm_cls = el => el.classList.remove(cls);
+    const add_cls = el => el.classList.add(cls);
+    const mapping_content = tab => document.getElementById(tab.getAttribute('data-content'));
+
+    const tabs = document.body.querySelectorAll<HTMLButtonElement>(tab_q);
+    const contents = document.body.querySelectorAll(content_q);
+
+    const activate = (tab) => {
+        tabs.forEach(rm_cls)
+        contents.forEach(rm_cls)
+        add_cls(tab);
+        add_cls(mapping_content(tab));
+    }
+
+    tabs.forEach(tab => tab.onclick = e => activate(e.currentTarget));
+    if(def_idx !== undefined) tabs[def_idx].click();
+}
+
 class Settings{
     static of(el: HTMLElement){
         return new Settings(el);
@@ -58,8 +81,6 @@ class Settings{
     _base: HTMLElement;
     get _btn_toggle() { return this._base.querySelector<HTMLButtonElement>('button.btn-toggle'); }
     get _layers(){ return Array.from(this._base.querySelectorAll('#layer-grp li')); }
-    get _tablinks(){ return Array.from(this._base.querySelectorAll<HTMLButtonElement>('.tablink')); }
-    get _tabcontents(){ return Array.from(this._base.querySelectorAll<HTMLButtonElement>('.tabcontent')); }
 
     get layers(){ return this._layers.map(Layer.of); }
 
@@ -72,25 +93,31 @@ class Settings{
     }
 
     init(){
+        tablink('.tablink', '.tabcontent', 0);
+
+        ['.layer-legend', '.layer-base'].forEach(selector =>{
+            sortable(selector, {
+                forcePalceholderSize: true,
+                placeholderClass: 'ly-placeholder',
+                //placeholder: templates.layer(),
+                placeholder: '<li></li>',
+                /*hoverClass: 'ly-hover',*/
+            });
+            sortable(selector)[0].addEventListener('sortupdate', () => {
+                this.update(this.at_map, this.at_cookie);
+            });
+        });
+
         this._btn_toggle.onclick = () => this._base.classList.toggle('collapsed');
 
-        this._tablinks.forEach(link => link.onclick = e => this.activateTab(e.currentTarget));
-        this._tablinks[0].click();
 
         this.layers.forEach(layer => {
             layer.oncheck = (e) => {
-                const conf = this.getLayersConf();
-                //console.log('layers conf:', JSON.stringify(conf, null, 2));
-                Cookie.update({ layers: conf })
-
-                if(this.map) setLayers(this.map, conf);
+                this.update(this.at_map, this.at_cookie);
             };
 
             layer.onopacity = (e) =>{
-                const conf = this.getLayersConf();
-                //console.log('layers conf:', JSON.stringify(conf, null, 2));
-                Cookie.update({ layers: conf })
-
+                this.update(this.at_cookie);
                 layer.ol_layer.setOpacity(layer.opacity);
             }
         });
@@ -98,20 +125,21 @@ class Settings{
 
     }
 
-    activateTab(link){
-        this._tablinks.forEach(el => el.classList.remove('active'))
-        this._tabcontents.forEach(el => el.classList.remove('active'))
-        link.classList.add('active');
-        document.getElementById(link.getAttribute('data-content')).classList.add('active');
-    }
-
     getLayersConf() {
         return this.layers.map(ly => ly.obj());
     }
 
+    at_cookie = (conf) => Cookie.update({ layers: conf });
+    at_map = (conf) => { if(this.map) setLayers(this.map, conf) };
+
+    update(...at_targets){
+        const conf = this.getLayersConf();
+        at_targets.forEach(target => target(conf));
+    }
+
     setMap(map: Map){
         this.map = map;
-        setLayers(map, this.getLayersConf());  //for init
+        this.update(this.at_map);  //for init
     }
 }
 

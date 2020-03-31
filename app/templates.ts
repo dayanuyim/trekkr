@@ -74,16 +74,34 @@ Handlebars.registerHelper("ptPopup", (data, options)=>{
     return new Handlebars.SafeString(ptPopup(data));
 });
 
+Handlebars.registerHelper("mul", (val, mul, options) => {
+    return Math.floor(val * mul);
+});
+
+export const layer = Handlebars.compile(`
+    <li data-layer-id="{{id}}" data-layer-type="{{type}}" data-layer-url="{{url}}">
+        <input class="ly-checked" type="checkbox" {{#if checked}}checked{{/if}}><!--
+        --><span class="ly-desc">{{desc}}</span>
+        <input class="ly-opacity" type="number" max="100" min="0" step="5" value="{{mul opacity 100}}">
+        <i class="fa fa-percent"></i>
+    </li>
+`);
+
+Handlebars.registerHelper("layer", (layer_, options) => {
+    return new Handlebars.SafeString(layer(layer_));
+});
+/*
 Handlebars.registerHelper("layer", (layer, options) => {
     const {id, type, url, desc, checked, opacity} = layer;
     return new Handlebars.SafeString(`
-        <li data-layer-id="${id}" data-layer-type=${type} data-layer-url=${url}>
+        <li data-layer-id="${id}" data-layer-type="${type}" data-layer-url="${url}">
             <input class="ly-checked" type="checkbox" ${checked? 'checked': ''}><!--
          --><span class="ly-desc">${desc}</span>
-            <input class="ly-opacity" type="number" max="100" min="0" step="5" value=${Math.floor(opacity*100)}>
+            <input class="ly-opacity" type="number" max="100" min="0" step="5" value="${Math.floor(opacity*100)}">
             <i class="fa fa-percent"></i>
         </li>
 `)});
+*/
 
 export const settings = Handlebars.compile(`
     <div class="settings-ctrl">
