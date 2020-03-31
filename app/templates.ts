@@ -104,8 +104,8 @@ Handlebars.registerHelper("layer", (layer, options) => {
 */
 
 export const settings = Handlebars.compile(`
-    <div class="settings-ctrl">
-        <button class="btn-toggle ol-button"><i class="fa fa-cog"></i></button>
+    <div class="settings-ctrl ol-control">
+        <button class="btn-toggle"><i class="fa fa-cog"></i></button>
     </div>
     <div class="settings-main">
         <div class="tab">
