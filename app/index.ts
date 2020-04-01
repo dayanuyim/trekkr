@@ -5,6 +5,7 @@ import '../node_modules/@fortawesome/fontawesome-free/css/all.min.css';
 import './css/index.css';
 import './css/tab.css';
 
+import './coord';
 import * as templates from './templates';
 import {createMap, } from './map';
 import * as settings from './settings';

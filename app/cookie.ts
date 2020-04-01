@@ -29,7 +29,6 @@ class Cookie{
     private load() {
         if (document.cookie) {
             try {
-                console.log(document.cookie.substring(1330));
                 return JSON.parse(document.cookie);
             }
             catch (err) {

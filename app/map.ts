@@ -131,9 +131,9 @@ const showHoverFeatures = function (e) {
         overlay.popContent(feature);
         break;
       }
-      case 'LineString': {
+      case 'LineString': {  //grid line
         const name = feature.get('name');
-        console.log(name);
+        if(name) console.log(name);
         break;
       }
       case 'MultiLineString': {
