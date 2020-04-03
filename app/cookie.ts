@@ -13,7 +13,7 @@ class Cookie{
 
     //default properties
     //xy = fromLonLat([120.929272, 23.555519]);
-    version = 2;
+    version = 3;
     xy = [13461784.981041275, 2699338.9447048027];
     zoom = 15;
     coordsys = 'twd67';
@@ -32,7 +32,7 @@ class Cookie{
                 return JSON.parse(document.cookie);
             }
             catch (err) {
-                console.log(`Parse Cookie Error: ${err}`);
+                console.error(`Parse Cookie Error: ${err}`);
             }
         }
         return undefined;

@@ -1,25 +1,26 @@
 import {Tile as TileLayer, Vector as VectorLayer} from 'ol/layer';
 import {Vector as VectorSource, VectorTile, XYZ, OSM, TileJSON} from 'ol/source';
 import {GPX, GeoJSON, IGC, KML, TopoJSON} from 'ol/format';
-import Graticule from 'ol/layer/Graticule';
 import {Stroke, Text, Fill} from 'ol/style';
 import {gpxStyle} from './common';
-import { identityTransform } from 'ol/proj';
 import layer_conf from './data/layer-conf';
-import TileSource from 'ol/source/Tile';
+
+import ProjGraticule from './proj-graticule';
+import {TWD67, TWD97} from './coord';
 
 const def_label_style = {
-  font: '14px Calibri,sans-serif',
+  font: '15px Calibri,sans-serif',
   fill: new Fill({
     color: 'rgba(0,0,0,1)'
   }),
   stroke: new Stroke({
-    color: 'rgba(255,255,255,0.5)',
+    color: 'rgba(255,255,255,0.6)',
     width: 1
   }),
   backgroundFill: new Fill({
-    color: 'rgba(255,255,255,0.5)'
+    color: 'rgba(255,255,255,0.6)'
   }),
+  padding: [-1, 0, -2, 0],
 }
 
 function lonLabelStyle(opt?)
@@ -38,28 +39,11 @@ function latLabelStyle(opt?)
   }, def_label_style, opt));
 }
 
-function graticule(coordsys){
-  const opt = () => {
-    switch(coordsys){
-      case 'wgs84': return {
-          latLabelStyle: latLabelStyle({textBaseline: 'bottom'}),
-      };
-      case 'wgs84-num': return {
-          lonLabelFormatter: lon => lon.toFixed(3),
-          latLabelFormatter: lat => lat.toFixed(3),
-          latLabelStyle: latLabelStyle({textBaseline: 'top'}),
-        };
-      case 'twd97': return undefined;
-      case 'twd67': return undefined;
-      default: `create graticule layer error: unknown coordsys ${coordsys}`;
-    }
-  }
-
-  return new Graticule(Object.assign({
-    // the style to use for the lines, optional.
+function graticule(coordsys) {
+  const def_opt = {
     strokeStyle: new Stroke({
-      color: 'rgba(255,120,0,1)',
-      //color: 'rgba(64,64,64,1)',
+      //color: 'rgba(255,120,0,1)',
+      color: 'rgba(64,64,64,1)',
       width: 2,
       lineDash: [0.5, 4]
     }),
@@ -69,7 +53,39 @@ function graticule(coordsys){
     latLabelStyle: latLabelStyle(),
     showLabels: true,
     wrapX: true,
-  }, opt()));
+  };
+
+  const tm2_label_formatter = n => {
+    const s = Math.floor(n).toString();
+    return s.slice(0, -3) + ' ' + s.slice(-3);
+  }
+
+  const def_tm2_opt = {
+      intervals: [100000, 10000, 1000, 100, 10, 1],
+      lonLabelFormatter: tm2_label_formatter,
+      latLabelFormatter: tm2_label_formatter,
+      targetSize: 80,
+  };
+
+  switch (coordsys) {
+    case 'wgs84': return new ProjGraticule(Object.assign(def_opt, {
+      latLabelStyle: latLabelStyle({ textBaseline: 'top' }),
+    }));
+    case 'wgs84-num': return new ProjGraticule(Object.assign(def_opt, {
+      lonLabelFormatter: lon => lon.toFixed(3),
+      latLabelFormatter: lat => lat.toFixed(3),
+      latLabelStyle: latLabelStyle({ textBaseline: 'bottom' }),
+      lonLabelStyle: lonLabelStyle({ offsetY: -16 }),
+    }));
+    case 'twd67': return new ProjGraticule(Object.assign(def_opt, def_tm2_opt, {
+      projection: TWD67,
+    }));
+    case 'twd97': return new ProjGraticule(Object.assign(def_opt, def_tm2_opt, {
+      projection: TWD97,
+    }));
+    default: throw `create graticule layer error: unknown coordsys ${coordsys}`;
+  }
+
 }
 
 function osmLayer(){

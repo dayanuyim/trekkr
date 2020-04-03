@@ -8,6 +8,9 @@ import GeometryLayout from 'ol/geom/GeometryLayout.js';
 import {line as geomLine} from 'ol/geom/flat/geodesic';  //@@ hack lib to export 'line' function
 
 
+/**
+ * Provide the option 'projection' to change the grid projection
+ */
 class ProjGraticule extends Graticule {
 
     constructor(opt) {
@@ -28,10 +31,9 @@ class ProjGraticule extends Graticule {
     /**
      * Define the valid extent of gridProjection (ex TWD67), and also the projection (WEBMercator)
      * NOTE: OL use the WEBMercator's worldExtent as the valid extent,
-     *       because WEBMercator's worldExtent === WGS84's extent. 
-     *       But I think this is a senmantic misleading.
-     *       OL should just use WGS84's extent, i.g., gridProjection's extent directly, 
-     *       and nothing about 'worldExtent'.
+     *       maybe due to WEBMercator's worldExtent === WGS84's extent. 
+     *       ** But I think this is a senmantic misleading. **
+     *       OL should just use WGS84's extent, i.g., gridProjection's extent, directly.
      */
     updateProjectionInfo_(projection) {
         //@@ epsg4326Projection  => this.gridProjection
