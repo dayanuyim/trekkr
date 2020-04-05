@@ -16,8 +16,8 @@ import GeometryType from  'ol/geom/GeometryType';
 import {partition} from './lib/utils';
 import {getSymbol, toSymPath, gpxStyle} from './common'
 import PtPopupOverlay from './pt-popup';
-import Cookie from './cookie';
-import {get as getLayer, getId as getLayerId} from './layer-grp';
+import Opt from './opt';
+import {get as getLayer, getId as getLayerId} from './layer-repo';
 
 export const createMap = (target) => {
   const map = new Map({
@@ -38,8 +38,8 @@ export const createMap = (target) => {
       setSpyEvents(getLayer('SPY')),  //TODO: integrate to settings board
     ],
     view: new View({
-      center: Cookie.xy,
-      zoom: Cookie.zoom,
+      center: Opt.xy,
+      zoom: Opt.zoom,
     }),
     overlays: [
         new PtPopupOverlay(document.getElementById('pt-popup')),
@@ -117,12 +117,12 @@ function initEvents(map)
   const el = map.getTarget();
 
   document.addEventListener('mousemove', function (e) {
-    Cookie.mousepos = map.getEventPixel(e);
+    Opt.mousepos = map.getEventPixel(e);
     map.render();
   });
 
   document.addEventListener('mouseout', function () {
-    Cookie.mousepos = null;
+    Opt.mousepos = null;
     map.render();
   });
   
@@ -130,26 +130,26 @@ function initEvents(map)
   document.addEventListener('keydown', function(e) {
     //console.log(e.key);
 
-    if (Cookie.spy.enabled && e.key === 'ArrowUp')
+    if (Opt.spy.enabled && e.key === 'ArrowUp')
       handleSpyRadiusChange(map, e, 5);
-    else if (Cookie.spy.enabled && e.key === 'ArrowDown')
+    else if (Opt.spy.enabled && e.key === 'ArrowDown')
       handleSpyRadiusChange(map, e, -5);
   });
 }
 
 function handleSpyRadiusChange(map, e, inc){
-    const radius = Math.max(25, Math.min(Cookie.spy.radius + inc, 180));
-    if(radius != Cookie.spy.radus){
+    const radius = Math.max(25, Math.min(Opt.spy.radius + inc, 180));
+    if(radius != Opt.spy.radus){
       map.render();
       e.preventDefault();
-      Cookie.spy.radius = radius;
-      Cookie.update();
+      Opt.spy.radius = radius;
+      Opt.update();
     }
 }
 
 function saveViewConf(view)
 {
-  Cookie.update({
+  Opt.update({
     xy: view.getCenter(),
     zoom: view.getZoom(),
   });
@@ -254,8 +254,8 @@ function setSpyEvents(layer)
     ctx.save();
     ctx.beginPath();
     
-    const spy = Cookie.spy;
-    const mousepos = Cookie.mousepos;
+    const spy = Opt.spy;
+    const mousepos = Opt.mousepos;
     if (spy.enabled && mousepos) {
       // only show a circle around the mouse
       var pixel = getRenderPixel(event, mousepos);

@@ -4,7 +4,7 @@ import {tablink} from './lib/dom-utils';
 import Map from 'ol/Map';
 import * as templates from './templates';
 import {setLayers, setLayerOpacity} from './map';
-import Cookie from './cookie';
+import Opt from './opt';
 
 function limit(n, low, up){
     return Math.max(low, Math.min(n, up));
@@ -63,7 +63,7 @@ class Settings{
 
     constructor(el: HTMLElement){
         this._base = el;
-        this._base.innerHTML = templates.settings({layers: Cookie.layers});
+        this._base.innerHTML = templates.settings({layers: Opt.layers});
         this.init();
     }
 
@@ -83,18 +83,18 @@ class Settings{
                 /*hoverClass: 'ly-hover',*/
             });
             sortable(selector)[0].addEventListener('sortupdate', () => {
-                this.update(this.at_map, this.at_cookie);
+                this.update(this.at_map, this.at_opt);
             });
         });
 
         //layer events
         this.layers.forEach(layer => {
             layer.oncheck = (e) => {
-                this.update(this.at_map, this.at_cookie);
+                this.update(this.at_map, this.at_opt);
             };
 
             layer.onopacity = (e) =>{
-                this.update(this.at_cookie);
+                this.update(this.at_opt);
                 setLayerOpacity(layer.id, layer.opacity);
             }
         });
@@ -104,7 +104,7 @@ class Settings{
         return this.layers.map(ly => ly.obj());
     }
 
-    at_cookie = (conf) => Cookie.update({ layers: conf });
+    at_opt = (conf) => Opt.update({ layers: conf });
     at_map = (conf) => { if(this.map) setLayers(this.map, conf) };
 
     update(...at_targets){
@@ -137,15 +137,15 @@ class SideSettings{
 
     private init(){
         //init spy
-        Cookie.spy.enabled? this._btn_spy.classList.add('active'):
+        Opt.spy.enabled? this._btn_spy.classList.add('active'):
                             this._btn_spy.classList.remove('active');
         this._btn_spy.title = "Spy Mode (Ctrl+S)\n啟用後上下鍵調整大小";
         this._btn_spy.addEventListener('click', e =>{
             this._btn_spy.classList.toggle('active');
             const spyable = this._btn_spy.classList.contains('active');
 
-            Cookie.spy.enabled = spyable;
-            Cookie.update();
+            Opt.spy.enabled = spyable;
+            Opt.update();
 
             if(this.map) this.map.render();
             return true;

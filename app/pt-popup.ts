@@ -8,7 +8,7 @@ import * as moment from 'moment-timezone';
 import * as templates from './templates';
 import {toSymPath, getSymbol, getElevationByCoords, getLocalTimeByCoords} from './common'
 import {tagIf} from './lib/dom-utils';
-import Cookie from './cookie';
+import Opt from './opt';
 
 const toXY = {
     twd67: (coord) => toStringXY(toTWD67(coord)),
@@ -131,7 +131,7 @@ export default class PtPopupOverlay extends Overlay{
 
             this.pt_coord_value = toXY[coordsys](this.pt_coord)
 
-            Cookie.update({coordsys});
+            Opt.update({coordsys});
         };
     }
 
@@ -148,7 +148,7 @@ export default class PtPopupOverlay extends Overlay{
 
         this.setContent({
             name,
-            coordsys: Cookie.coordsys,
+            coordsys: Opt.coordsys,
             coordinate: coordinates.slice(0, 2),
             time: getLocalTimeByCoords(coordinates),
             ele: await getElevationByCoords(coordinates),

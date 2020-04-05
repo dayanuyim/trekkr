@@ -1,7 +1,7 @@
 /*
-               |- layer-grp.ts
+               |- layer-repo.ts
 layer-conf.js -|
-               |- cookie.ts  <-> settings.ts
+               |- opt.ts  <-> settings.ts
 */
 
 /* 

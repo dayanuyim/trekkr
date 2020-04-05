@@ -1,14 +1,12 @@
 'use strict';
-//import {fromLonLat} from 'ol/proj';
-//import {Control} from 'ol/control';
 import layer_conf from './data/layer-conf';
 
-class Cookie{
+class Opt{
     static instance = undefined;
     static get() {
-        if (!Cookie.instance)
-            Cookie.instance = new Cookie();
-        return Cookie.instance;
+        if (!Opt.instance)
+            Opt.instance = new Opt();
+        return Opt.instance;
     }
 
     //cookie options
@@ -104,4 +102,4 @@ class SaveCookieControl extends Control{
 }
 */
 
-export default Cookie.get();
+export default Opt.get();
