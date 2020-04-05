@@ -21,7 +21,7 @@ class ProjGraticule extends Graticule {
 
         super(Object.assign({
             showLabels: true,
-            maxLines: 10,
+            maxLines: 20,
             extent: transformExtent(proj.getExtent(), proj, 'EPSG:3857'),  //to Web Mercator
         }, opt));
 
