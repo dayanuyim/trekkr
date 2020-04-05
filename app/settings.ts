@@ -1,11 +1,10 @@
 'use strict';
 import sortable from 'html5sortable/dist/html5sortable.es.js'
+import {tablink} from './lib/dom-utils';
 import Map from 'ol/Map';
 import * as templates from './templates';
-import {setLayers} from './map';
-import LayerGrp from './layer-grp';
+import {setLayers, setLayerOpacity} from './map';
 import Cookie from './cookie';
-
 
 function limit(n, low, up){
     return Math.max(low, Math.min(n, up));
@@ -28,8 +27,6 @@ class Layer {
     get desc(){ return this._desc.textContent.trim();}
     get opacity(){ return limit(Number(this._opacity.value)/100, 0, 1);}
 
-    get ol_layer(){ return LayerGrp[this.id]; }
-
     set oncheck(value){ this._checkbox.onchange = value};
     set onopacity(value){ this._opacity.onchange = value};
 
@@ -48,28 +45,6 @@ class Layer {
             opacity: this.opacity,
         };
     }
-}
-
-// w3c tab
-function tablink(tab_q, content_q, def_idx?)
-{
-    const cls = 'active';
-    const rm_cls = el => el.classList.remove(cls);
-    const add_cls = el => el.classList.add(cls);
-    const mapping_content = tab => document.getElementById(tab.getAttribute('data-content'));
-
-    const tabs = document.body.querySelectorAll<HTMLButtonElement>(tab_q);
-    const contents = document.body.querySelectorAll(content_q);
-
-    const activate = (tab) => {
-        tabs.forEach(rm_cls)
-        contents.forEach(rm_cls)
-        add_cls(tab);
-        add_cls(mapping_content(tab));
-    }
-
-    tabs.forEach(tab => tab.onclick = e => activate(e.currentTarget));
-    if(def_idx !== undefined) tabs[def_idx].click();
 }
 
 class Settings{
@@ -95,6 +70,10 @@ class Settings{
     init(){
         tablink('.tablink', '.tabcontent', 0);
 
+        this._btn_toggle.onclick = () => this._base.classList.toggle('collapsed');
+        this._btn_toggle.title = "Settings (Ctrl+S)";
+
+        //set layers sortable
         ['.layer-legend', '.layer-base'].forEach(selector =>{
             sortable(selector, {
                 forcePalceholderSize: true,
@@ -108,9 +87,7 @@ class Settings{
             });
         });
 
-        this._btn_toggle.onclick = () => this._base.classList.toggle('collapsed');
-
-
+        //layer events
         this.layers.forEach(layer => {
             layer.oncheck = (e) => {
                 this.update(this.at_map, this.at_cookie);
@@ -118,11 +95,9 @@ class Settings{
 
             layer.onopacity = (e) =>{
                 this.update(this.at_cookie);
-                layer.ol_layer.setOpacity(layer.opacity);
+                setLayerOpacity(layer.id, layer.opacity);
             }
         });
-
-
     }
 
     getLayersConf() {
@@ -143,7 +118,56 @@ class Settings{
     }
 }
 
+class SideSettings{
+    static of(el: HTMLElement){
+        return new SideSettings(el);
+    }
+
+    _base: HTMLElement;
+    _btn_spy: HTMLButtonElement;
+    //get _btn_spy() { return this._base.querySelector<HTMLButtonElement>('button.btn-spy'); }
+
+    map: Map;
+
+    constructor(el: HTMLElement){
+        this._base = el;
+        this._btn_spy = this._base.querySelector<HTMLButtonElement>('button.btn-spy');
+        this.init();
+    }
+
+    private init(){
+        //init spy
+        Cookie.spy.enabled? this._btn_spy.classList.add('active'):
+                            this._btn_spy.classList.remove('active');
+        this._btn_spy.title = "Spy Mode (Ctrl+S)\n啟用後上下鍵調整大小";
+        this._btn_spy.addEventListener('click', e =>{
+            this._btn_spy.classList.toggle('active');
+            const spyable = this._btn_spy.classList.contains('active');
+
+            Cookie.spy.enabled = spyable;
+            Cookie.update();
+
+            if(this.map) this.map.render();
+            return true;
+        });
+    }
+
+    setMap(map: Map){
+        this.map = map;
+    }
+}
+
 export function init(map) {
-    const s = Settings.of(document.body.querySelector('.settings'));
-    s.setMap(map);
+    const ctrl_panel = Settings.of(document.body.querySelector('.settings'));
+    ctrl_panel.setMap(map);
+
+    const ctrl_side = SideSettings.of(document.body.querySelector('.settings-side'));
+    ctrl_side.setMap(map);
+
+    document.addEventListener('keydown', function (e) {
+        if (e.ctrlKey && e.key === 's') 
+            ctrl_panel._btn_toggle.click();
+        else if (e.ctrlKey && e.key === 'x') 
+            ctrl_side._btn_spy.click();
+    });
 }

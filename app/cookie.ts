@@ -11,13 +11,19 @@ class Cookie{
         return Cookie.instance;
     }
 
-    //default properties
-    //xy = fromLonLat([120.929272, 23.555519]);
-    version = 3;
-    xy = [13461784.981041275, 2699338.9447048027];
+    //cookie options
+    version = 4;
+    xy = [13461784.981041275, 2699338.9447048027];    //xy = fromLonLat([120.929272, 23.555519]);
     zoom = 15;
     coordsys = 'twd67';
     layers = layer_conf;
+    spy = {
+        enabled: false,
+        radius: 75,
+    };
+
+    //runtime options
+    mousepos: null;
 
     private constructor(){
         const orig = this.load();
@@ -49,19 +55,22 @@ class Cookie{
     }
 
     public strip(){
-        return Object.assign({}, this, {
+        const obj = Object.assign({}, this, {
             layers: this.layers.map(({id, checked, opacity}) => ({id, checked, opacity}))
         })
+        delete obj.mousepos;
+        return obj;
     }
 
     public recover(orig){
-        const def_layers = {};
-        this.layers.forEach(ly => def_layers[ly.id] = ly);
+        const defs = this.layers.slice();
+        const getDef = id => {
+            const idx = defs.findIndex((layer) => layer.id === id);
+            return idx >= 0? defs.splice(idx, 1)[0]: {};
+        }
 
-        orig.layers.forEach(layer => {
-            const {legend, type, url, desc} = def_layers[layer.id];
-            Object.assign(layer, {legend, type, url, desc});
-        });
+        orig.layers = orig.layers.map(layer => Object.assign(getDef(layer.id), layer))  //recover by def
+                                 .concat(defs);                                         //append the rest
         return orig;
     }
 }

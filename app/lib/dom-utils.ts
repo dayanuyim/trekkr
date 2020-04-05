@@ -302,3 +302,25 @@ export function getOffset(el: Element) {
 		width: rect.width,
 	}
 }
+
+// w3c tab
+export function tablink(tab_q, content_q, def_idx?)
+{
+    const cls = 'active';
+    const rm_cls = el => el.classList.remove(cls);
+    const add_cls = el => el.classList.add(cls);
+    const mapping_content = tab => document.getElementById(tab.getAttribute('data-content'));
+
+    const tabs = document.body.querySelectorAll<HTMLButtonElement>(tab_q);
+    const contents = document.body.querySelectorAll(content_q);
+
+    const activate = (tab) => {
+        tabs.forEach(rm_cls)
+        contents.forEach(rm_cls)
+        add_cls(tab);
+        add_cls(mapping_content(tab));
+    }
+
+    tabs.forEach(tab => tab.onclick = e => activate(e.currentTarget));
+    if(def_idx !== undefined) tabs[def_idx].click();
+}

@@ -1,13 +1,14 @@
 import {defaults as defaultControls, ScaleLine, OverviewMap, ZoomSlider, Control} from 'ol/control';
 import {defaults as defaultInteractions, DragAndDrop, Modify, Select} from 'ol/interaction';
 import {toSize} from 'ol/size';
-import {Map, View, Overlay} from 'ol';
+import {Map, View, Overlay, Collection} from 'ol';
 import {Tile as TileLayer, Vector as VectorLayer} from 'ol/layer';
 import VectorSource from 'ol/source/Vector';
 import TileJSON from 'ol/source/TileJSON';
 import XYZ from 'ol/source/XYZ';
 import OSM from 'ol/source/OSM';
 import {GPX, GeoJSON, IGC, KML, TopoJSON} from 'ol/format';
+import {getRenderPixel} from 'ol/render';
 
 import { Icon as IconStyle, Circle as CircleStyle, Fill, Stroke, Style } from 'ol/style';
 import GeometryType from  'ol/geom/GeometryType';
@@ -16,9 +17,8 @@ import {partition} from './lib/utils';
 import {getSymbol, toSymPath, gpxStyle} from './common'
 import PtPopupOverlay from './pt-popup';
 import Cookie from './cookie';
-import LayerGrp from './layer-grp';
+import {get as getLayer, getId as getLayerId} from './layer-grp';
 
-const Overviewmap = new OverviewMap();
 export const createMap = (target) => {
   const map = new Map({
     target,
@@ -34,10 +34,9 @@ export const createMap = (target) => {
       genDragGpxInteraction(),
       //new Select(),
     ]),
-    //layers: [
-      //layers.RUDY,
-      //layers.NLSC_LG,
-    //],
+    layers: [
+      setSpyEvents(getLayer('SPY')),  //TODO: integrate to settings board
+    ],
     view: new View({
       center: Cookie.xy,
       zoom: Cookie.zoom,
@@ -111,11 +110,44 @@ function initEvents(map)
 
   //map.getView().on('change', function(e){, 
   map.on('moveend', function(e){   //invoked only when view is locked down
-    updateCookie(e.map.getView());
+    saveViewConf(e.map.getView());
+  });
+
+  // record the pixel position with every move
+  const el = map.getTarget();
+
+  document.addEventListener('mousemove', function (e) {
+    Cookie.mousepos = map.getEventPixel(e);
+    map.render();
+  });
+
+  document.addEventListener('mouseout', function () {
+    Cookie.mousepos = null;
+    map.render();
+  });
+  
+  //document events
+  document.addEventListener('keydown', function(e) {
+    //console.log(e.key);
+
+    if (Cookie.spy.enabled && e.key === 'ArrowUp')
+      handleSpyRadiusChange(map, e, 5);
+    else if (Cookie.spy.enabled && e.key === 'ArrowDown')
+      handleSpyRadiusChange(map, e, -5);
   });
 }
 
-function updateCookie(view)
+function handleSpyRadiusChange(map, e, inc){
+    const radius = Math.max(25, Math.min(Cookie.spy.radius + inc, 180));
+    if(radius != Cookie.spy.radus){
+      map.render();
+      e.preventDefault();
+      Cookie.spy.radius = radius;
+      Cookie.update();
+    }
+}
+
+function saveViewConf(view)
 {
   Cookie.update({
     xy: view.getCenter(),
@@ -165,29 +197,82 @@ const showHoverFeatures = function (e) {
   e.map.getTarget().style.cursor = features.length? 'pointer': '';
 };
 
-//Note: OL and conf is anti-order.
-//OL:
-//  layers[0] is the most bottom layer; 
-//  layers[n-1] is the most top layer
+//Note:
+// 1. OL is anti-order against @conf.
+//   OL:
+//     layers[0] is the most bottom layer; 
+//     layers[n-1] is the most top layer
+// 2. remove only the layers whith are set disabled in @conf
+// 3. invoke getLayer only for those enalbed in @conf
+// 4. as more as graceful to reorder the map's layers.
 export function setLayers(map, conf)
 {
   const in_right_pos = (arr, idx, elem) => arr.getLength() > idx && arr.item(idx) === elem;
-  const layerOf = (cnf) => LayerGrp[cnf.id];
 
-  conf = conf.slice().reverse();
-  const [en, dis] = partition(conf, cnf => cnf.checked);
+  const id_conf = {};
+  conf.forEach(cnf => id_conf[cnf.id] = cnf)
 
-  const layers = map.getLayers();
+  const map_layers = map.getLayers();
 
-  //rmeove all layers disabled in setting, buf reverse the most top layers, like gpx
-  dis.forEach(cnf => layers.remove(layerOf(cnf)));
-
-  en.forEach((cnf, idx) => {
-    const layer = layerOf(cnf);
-    if(!in_right_pos(layers, idx, layer)){
-      layers.remove(layer); //in case the layer is added but not in right place
-      layers.insertAt(idx, layer);
-      layer.setOpacity(cnf.opacity);
-    }
+  // remove map layers, which disable in conf
+  const rm_idx = [];
+  map_layers.forEach((layer, idx) => {
+    const id = getLayerId(layer);
+    const cnf = id? id_conf[id]: undefined;
+    if(cnf && !cnf.checked)
+      rm_idx.unshift(idx);  //insert to first
   });
+  rm_idx.forEach(idx => map_layers.removeAt(idx));
+
+  // add enabled layers in the same order of cnf
+  conf.filter(cnf => cnf.checked)
+      .reverse()
+      .forEach((cnf, idx) => {
+        const layer = getLayer(cnf.id);
+        if (!in_right_pos(map_layers, idx, layer)) {
+          map_layers.remove(layer); //in case the layer is added but in the wrong place
+          map_layers.insertAt(idx, layer);
+          layer.setOpacity(cnf.opacity);
+        }
+      });
+}
+
+export function setLayerOpacity(id, opacity)
+{
+  const layer = getLayer(id);
+  if (layer)
+    layer.setOpacity(opacity);
+  else
+    console.error(`Set layer opacity error: layer ${id} not found`);
+}
+
+function setSpyEvents(layer)
+{
+  // before rendering the layer, do some clipping
+  layer.on('prerender', function (event) {
+    const ctx = event.context;
+    ctx.save();
+    ctx.beginPath();
+    
+    const spy = Cookie.spy;
+    const mousepos = Cookie.mousepos;
+    if (spy.enabled && mousepos) {
+      // only show a circle around the mouse
+      var pixel = getRenderPixel(event, mousepos);
+      var offset = getRenderPixel(event, [mousepos[0] + spy.radius, mousepos[1]]);
+      var canvasRadius = Math.sqrt(Math.pow(offset[0] - pixel[0], 2) + Math.pow(offset[1] - pixel[1], 2));
+      ctx.arc(pixel[0], pixel[1], canvasRadius, 0, 2 * Math.PI);
+      ctx.lineWidth = 5 * canvasRadius / spy.radius;
+      ctx.strokeStyle = 'rgba(0,0,0,0.5)';
+      ctx.stroke();
+    }
+    ctx.clip();
+  });
+
+  // after rendering the layer, restore the canvas context
+  layer.on('postrender', function (event) {
+    const ctx = event.context;
+    ctx.restore();
+  });
+  return layer;
 }

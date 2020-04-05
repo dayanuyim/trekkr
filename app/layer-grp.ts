@@ -1,10 +1,10 @@
-import {Tile as TileLayer, Vector as VectorLayer} from 'ol/layer';
+import {Tile as TileLayer, Vector as VectorLayer, Layer} from 'ol/layer';
 import {Vector as VectorSource, VectorTile, XYZ, OSM, TileJSON} from 'ol/source';
 import {GPX, GeoJSON, IGC, KML, TopoJSON} from 'ol/format';
 import {Stroke, Text, Fill} from 'ol/style';
-import {gpxStyle} from './common';
-import layer_conf from './data/layer-conf';
 
+import {gpxStyle} from './common';
+import Confs from './data/layer-conf';
 import ProjGraticule from './proj-graticule';
 import {TWD67, TWD97} from './coord';
 
@@ -136,7 +136,38 @@ function conf2layer({legend, type, url})
   }
 }
 
-const layers = {};
-layer_conf.forEach(conf => layers[conf.id] = conf2layer(conf));
+//////////////////////////////////////////////////////////////////////
+const _layers = new Map();
+const _ids = new Map();
 
-export default layers;
+function createInRepo(conf) {
+  const layer = conf2layer(conf);
+  _layers.set(conf.id, layer);
+  _ids.set(layer, conf.id);
+  return layer;
+}
+
+//lazy initialization for _layers/_ids
+export function get(id){
+  let layer = _layers.get(id);
+
+  //try to get layer from conf
+  if(!layer){
+    const conf = Confs.find(conf => conf.id === id);
+    if(!conf){
+      console.error(`get layer error: layer ${id} unconfiguration.`)
+      return undefined;
+    }
+    layer = createInRepo(conf);
+  }
+
+  return layer;
+}
+
+export function getId(layer){
+  return _ids.get(layer);
+}
+
+//TODO: integrate to settings board
+const spy_conf = Object.assign({}, Confs.find(conf => conf.id == 'NLSC_PHOTO2'), {id: 'SPY'});
+createInRepo(spy_conf);

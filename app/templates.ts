@@ -146,6 +146,10 @@ export const main = Handlebars.compile(`
 
     <div class="settings collapsed"></div>
 
+    <div class="settings-side ol-control">
+        <button class="btn-spy" title="Spy Mode"><i class="fa fa-search"></i></button>
+    </div>
+
     <div id="map" class="ol-map-container"></div>
 
 `);

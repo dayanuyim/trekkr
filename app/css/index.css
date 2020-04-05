@@ -41,7 +41,7 @@ input[type=number] {
   -moz-appearance:textfield;
 }
 
-/*============ Map List ==================*/
+/*============ Settings Board ==================*/
 
 .settings {
     position: absolute;
@@ -128,12 +128,17 @@ input[type=number] {
     transform: scale(0.8);
 }
 
-
-/*============= Map ======================*/
-
-#map{
-    /*margin-left: 100*/
+/*============ Side Settings ==================*/
+.settings-side {
+    z-index: 9;   /* why need this to prvent being covered by maps? */
+    left: .5em;
+    top: 18em;
 }
+
+.settings-side button:not(.active){
+    background: rgba(64, 64, 64, .5);
+}
+/*============= Map ======================*/
 
 .ol-map-container {
     position: absolute;
