@@ -21,7 +21,8 @@ class Opt{
     };
 
     //runtime options
-    mousepos: null;
+    googleMapKey = 'AIzaSyDoRAou_pmXgeqexPAUlX3Xkg0eKJ_FMhg';
+    mousepos = null;
 
     private constructor(){
         const orig = this.load();
@@ -57,6 +58,7 @@ class Opt{
             layers: this.layers.map(({id, checked, opacity}) => ({id, checked, opacity}))
         })
         delete obj.mousepos;
+        delete obj.googleMapKey;
         return obj;
     }
 
@@ -64,11 +66,16 @@ class Opt{
         const defs = this.layers.slice();
         const getDef = id => {
             const idx = defs.findIndex((layer) => layer.id === id);
-            return idx >= 0? defs.splice(idx, 1)[0]: {};
+            return idx >= 0? defs.splice(idx, 1)[0]: undefined;
+        }
+        const fill = layer => {
+            const def = getDef(layer.id);
+            return def? Object.assign(def, layer): undefined;   //discard the layer if its default not found
         }
 
-        orig.layers = orig.layers.map(layer => Object.assign(getDef(layer.id), layer))  //recover by def
-                                 .concat(defs);                                         //append the rest
+        orig.layers = orig.layers.map(fill)         //recover by def
+                                 .filter(ly => ly)  //discard unfilled 
+                                 .concat(defs);     //append the rest
         return orig;
     }
 }

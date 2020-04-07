@@ -4,9 +4,9 @@ import * as moment from 'moment-timezone';
 import tzlookup from 'tz-lookup';
 import {fromLonLat, toLonLat} from 'ol/proj';
 import elevationApi from 'google-elevation-api';
-import conf from './data/conf';
 import symbols from './data/symbols.json';
 import { Icon as IconStyle, Circle as CircleStyle, Fill, Stroke, Style } from 'ol/style';
+import opt from './opt';
 
 const Opt = {
   tz: undefined,
@@ -17,7 +17,7 @@ export function googleElevation(lat, lon)
 {
   return new Promise((resolve, reject)=>{
     elevationApi({
-      key: conf.googleMapKey,
+      key: opt.googleMapKey,
       locations: [
         [lat, lon],
       ]
