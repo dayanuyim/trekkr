@@ -114,8 +114,6 @@ function initEvents(map)
   });
 
   // record the pixel position with every move
-  const el = map.getTarget();
-
   document.addEventListener('mousemove', function (e) {
     Opt.mousepos = map.getEventPixel(e);
     map.render();
@@ -190,11 +188,11 @@ const showHoverFeatures = function (e) {
 
   // NOTE: not use forEach..., it is hard to point to Wpt if there are Trkpt in the same place. (Why?)
   //const hit = e.map.forEachFeatureAtPixel(pixel, handleFeature);
-  //e.map.getTarget().style.cursor = hit? 'pointer': '';
+  //e.map.getTargetElement().style.cursor = hit? 'pointer': '';
 
   const features = filterOutTrkptIfWpt(e.map.getFeaturesAtPixel(pixel, {hitTolerance: 2}));
   features.forEach(handleFeature);
-  e.map.getTarget().style.cursor = features.length? 'pointer': '';
+  e.map.getTargetElement().style.cursor = features.length? 'pointer': '';
 };
 
 //Note:

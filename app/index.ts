@@ -11,9 +11,7 @@ import {createMap, } from './map';
 import * as settings from './settings';
 
 (async () => {
-  document.body.innerHTML = templates.main();
-  const map = createMap(document.getElementById('map'));  //init by elemnt (not id), retreive the elemnt later by 'getTarget()'
-  settings.init(map);
+  main(document.body);
 
 
   /*
@@ -39,3 +37,10 @@ import * as settings from './settings';
   });
   */
 })();
+
+function main(root_el: HTMLElement)
+{
+  root_el.innerHTML = templates.main();
+  const map = createMap('map');
+  settings.init(root_el, map);
+}

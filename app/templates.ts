@@ -151,5 +151,4 @@ export const main = Handlebars.compile(`
     </div>
 
     <div id="map" class="ol-map-container"></div>
-
 `);

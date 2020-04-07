@@ -157,17 +157,20 @@ class SideSettings{
     }
 }
 
-export function init(map) {
-    const ctrl_panel = Settings.of(document.body.querySelector('.settings'));
+export function init(root_el: HTMLElement, map) {
+    const ctrl_panel = Settings.of(root_el.querySelector('.settings'));
     ctrl_panel.setMap(map);
 
-    const ctrl_side = SideSettings.of(document.body.querySelector('.settings-side'));
+    const ctrl_side = SideSettings.of(root_el.querySelector('.settings-side'));
     ctrl_side.setMap(map);
 
-    document.addEventListener('keydown', function (e) {
+    root_el.addEventListener('keydown', function (e) {
         if (e.ctrlKey && e.key === 's') 
             ctrl_panel._btn_toggle.click();
         else if (e.ctrlKey && e.key === 'x') 
             ctrl_side._btn_spy.click();
+        else if (e.ctrlKey && e.key === 'f') {
+            root_el.requestFullscreen();
+        }
     });
 }
