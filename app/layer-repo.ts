@@ -169,5 +169,5 @@ export function getId(layer){
 }
 
 //TODO: integrate to settings board
-const spy_conf = Object.assign({}, Confs.find(conf => conf.id == 'NLSC_PHOTO2'), {id: 'SPY'});
+const spy_conf = Object.assign({}, Confs.find(conf => conf.id == 'NLSC_PHOTO_MIX'), {id: 'SPY'});
 createInRepo(spy_conf);
