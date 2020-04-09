@@ -78,17 +78,22 @@ Handlebars.registerHelper("mul", (val, mul, options) => {
     return Math.floor(val * mul);
 });
 
-export const layer = Handlebars.compile(`
+export const mkLayer = Handlebars.compile(`
+    {{#with layer}}
     <li data-layer-id="{{id}}" data-layer-type="{{type}}" data-layer-url="{{url}}">
         <input class="ly-checked" type="checkbox" {{#if checked}}checked{{/if}}><!--
-        --><span class="ly-desc">{{desc}}</span>
+     --><span class="ly-body"><!--
+         --><span class="ly-desc">{{desc}}</span>
+            <span class="ly-spy"><i class="fa fa-crosshairs"></i></span>
+        </span>
         <input class="ly-opacity" type="number" max="100" min="0" step="5" value="{{mul opacity 100}}">
         <i class="fa fa-percent"></i>
     </li>
+    {{/with}}
 `);
 
-Handlebars.registerHelper("layer", (layer_, options) => {
-    return new Handlebars.SafeString(layer(layer_));
+Handlebars.registerHelper("mkLayer", (layer, options) => {
+    return new Handlebars.SafeString(mkLayer({layer}));
 });
 /*
 Handlebars.registerHelper("layer", (layer, options) => {
@@ -117,14 +122,14 @@ export const settings = Handlebars.compile(`
             <ul class="layer-legend">
                 {{#each layers}}
                     {{#if legend}}
-                        {{layer this}}
+                        {{mkLayer this}}
                     {{/if}}
                 {{/each}}
             </ul>
             <ul class="layer-base">
                 {{#each layers}}
                     {{#unless legend}}
-                        {{layer this}}
+                        {{mkLayer this}}
                     {{/unless}}
                 {{/each}}
             </ul>
@@ -147,7 +152,7 @@ export const main = Handlebars.compile(`
     <div class="settings collapsed"></div>
 
     <div class="settings-side ol-control">
-        <button class="btn-spy" title="Spy Mode"><i class="fa fa-search"></i></button>
+        <button class="btn-spy" title="Spy Mode"><i class="fa fa-crosshairs"></i></button>
     </div>
 
     <div id="map" class="ol-map-container"></div>

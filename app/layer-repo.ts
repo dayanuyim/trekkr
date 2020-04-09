@@ -140,8 +140,12 @@ function conf2layer({legend, type, url})
 const _layers = new Map();
 const _ids = new Map();
 
-function createInRepo(conf) {
+export function createByConf(conf) {
   const layer = conf2layer(conf);
+
+  const orig = _layers.get(conf.id)
+  if(orig) _ids.delete(orig);
+
   _layers.set(conf.id, layer);
   _ids.set(layer, conf.id);
   return layer;
@@ -158,7 +162,7 @@ export function get(id){
       console.error(`get layer error: layer ${id} unconfiguration.`)
       return undefined;
     }
-    layer = createInRepo(conf);
+    layer = createByConf(conf);
   }
 
   return layer;
@@ -168,6 +172,7 @@ export function getId(layer){
   return _ids.get(layer);
 }
 
-//TODO: integrate to settings board
-const spy_conf = Object.assign({}, Confs.find(conf => conf.id == 'NLSC_PHOTO_MIX'), {id: 'SPY'});
-createInRepo(spy_conf);
+export function getConf(id){
+  return Confs.find(conf => conf.id == id);
+}
+

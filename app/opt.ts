@@ -10,7 +10,7 @@ class Opt{
     }
 
     //cookie options
-    version = 4;
+    version = 5;
     xy = [13461784.981041275, 2699338.9447048027];    //xy = fromLonLat([120.929272, 23.555519]);
     zoom = 15;
     coordsys = 'twd67';
@@ -18,6 +18,7 @@ class Opt{
     spy = {
         enabled: false,
         radius: 75,
+        layer: "NLSC_PHOTO_MIX",
     };
 
     //runtime options
@@ -28,7 +29,10 @@ class Opt{
         const orig = this.load();
         if(orig && orig.version && orig.version === this.version)
             Object.assign(this, this.recover(orig));
-        //console.log('cookie', JSON.stringify(this, null, 2));
+
+        //reset properties
+        this.spy.enabled = false;
+        //console.log('opt', JSON.stringify(this, null, 2));
     }
 
     private load() {

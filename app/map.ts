@@ -17,7 +17,7 @@ import {partition} from './lib/utils';
 import {getSymbol, toSymPath, gpxStyle} from './common'
 import PtPopupOverlay from './pt-popup';
 import Opt from './opt';
-import {get as getLayer, getId as getLayerId} from './layer-repo';
+import * as LayerRepo from './layer-repo';
 
 export const createMap = (target) => {
   const map = new Map({
@@ -34,9 +34,11 @@ export const createMap = (target) => {
       genDragGpxInteraction(),
       //new Select(),
     ]),
+    /*
     layers: [
-      setSpyEvents(getLayer('SPY')),  //TODO: integrate to settings board
+      createSpyLayer(Opt.spy.layer),
     ],
+    */
     view: new View({
       center: Opt.xy,
       zoom: Opt.zoom,
@@ -215,7 +217,7 @@ export function setLayers(map, conf)
   // remove map layers, which disable in conf
   const rm_idx = [];
   map_layers.forEach((layer, idx) => {
-    const id = getLayerId(layer);
+    const id = LayerRepo.getId(layer);
     const cnf = id? id_conf[id]: undefined;
     if(cnf && !cnf.checked)
       rm_idx.unshift(idx);  //insert to first
@@ -226,7 +228,7 @@ export function setLayers(map, conf)
   conf.filter(cnf => cnf.checked)
       .reverse()
       .forEach((cnf, idx) => {
-        const layer = getLayer(cnf.id);
+        const layer = LayerRepo.get(cnf.id);
         if (!in_right_pos(map_layers, idx, layer)) {
           map_layers.remove(layer); //in case the layer is added but in the wrong place
           map_layers.insertAt(idx, layer);
@@ -237,7 +239,7 @@ export function setLayers(map, conf)
 
 export function setLayerOpacity(id, opacity)
 {
-  const layer = getLayer(id);
+  const layer = LayerRepo.get(id);
   if (layer)
     layer.setOpacity(opacity);
   else
@@ -257,10 +259,15 @@ function setSpyEvents(layer)
     if (spy.enabled && mousepos) {
       // only show a circle around the mouse
       var pixel = getRenderPixel(event, mousepos);
-      var offset = getRenderPixel(event, [mousepos[0] + spy.radius, mousepos[1]]);
-      var canvasRadius = Math.sqrt(Math.pow(offset[0] - pixel[0], 2) + Math.pow(offset[1] - pixel[1], 2));
-      ctx.arc(pixel[0], pixel[1], canvasRadius, 0, 2 * Math.PI);
-      ctx.lineWidth = 5 * canvasRadius / spy.radius;
+
+      //@why the sample code so complexed ??
+      //var offset = getRenderPixel(event, [mousepos[0] + spy.radius, mousepos[1]]);
+      //var canvasRadius = Math.sqrt(Math.pow(offset[0] - pixel[0], 2) + Math.pow(offset[1] - pixel[1], 2));
+      //ctx.arc(pixel[0], pixel[1], canvasRadius, 0, 2 * Math.PI);
+      //ctx.lineWidth = 5 * canvasRadius / spy.radius;
+      ctx.arc(pixel[0], pixel[1], spy.radius, 0, 2 * Math.PI);
+      ctx.lineWidth = 1;
+
       ctx.strokeStyle = 'rgba(0,0,0,0.5)';
       ctx.stroke();
     }
@@ -274,3 +281,45 @@ function setSpyEvents(layer)
   });
   return layer;
 }
+
+function createSpyLayer(id)
+{
+  const spy_conf = Object.assign({}, LayerRepo.getConf(id), { id: 'SPY' });
+  const layer = LayerRepo.createByConf(spy_conf);
+  return setSpyEvents(layer);
+}
+
+//TODO: are there beter ways than creating spy layer everytime?
+//      Or creating spy layer everytime really hurt the performance?
+export function setSpyLayer(map, id)
+{
+  function findIdx(ol_collection, cb) {
+    for(let i = 0; i < ol_collection.getLength(); ++i){
+      const layer = ol_collection.item(i);
+      if(cb(layer))
+        return i;
+    }
+    return -1;
+  }
+
+  const layers = map.getLayers();
+
+  // get appropriate index to insert
+  let has_old_spy = false;
+  let idx = findIdx(layers, layer => {
+    const id = LayerRepo.getId(layer);
+    if(!id) return true;    //beyond normal layers, ig, gpx layer
+    if(id === 'SPY'){
+      has_old_spy = true;
+      return true;
+    }
+    return false;
+  });
+  if(idx < 0) idx = layers.getLength();
+
+  if(has_old_spy)
+    layers.removeAt(idx);
+  layers.insertAt(idx, createSpyLayer(id));
+}
+
+ 
