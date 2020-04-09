@@ -24,6 +24,10 @@ class Opt{
     //runtime options
     googleMapKey = 'AIzaSyDoRAou_pmXgeqexPAUlX3Xkg0eKJ_FMhg';
     mousepos = null;
+    tooltip = {
+        btn_settings: "Settings (Ctrl+S)",
+        btn_spy:  "Spy Mode (Ctrl+X)\n啟用後上下鍵調整大小",
+    }
 
     private constructor(){
         const orig = this.load();
@@ -63,6 +67,7 @@ class Opt{
         })
         delete obj.mousepos;
         delete obj.googleMapKey;
+        delete obj.tooltip;
         return obj;
     }
 

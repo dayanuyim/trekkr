@@ -79,7 +79,7 @@ class Settings{
         tablink('.tablink', '.tabcontent', 0);
 
         this._btn_toggle.onclick = () => this._base.classList.toggle('collapsed');
-        this._btn_toggle.title = "Settings (Ctrl+S)";
+        this._btn_toggle.title = Opt.tooltip.btn_settings;
 
         //set layers sortable
         ['.layer-legend', '.layer-base'].forEach(selector =>{
@@ -162,7 +162,7 @@ class SideSettings{
         //init spy
         Opt.spy.enabled? this._btn_spy.classList.add('active'):
                             this._btn_spy.classList.remove('active');
-        this._btn_spy.title = "Spy Mode (Ctrl+X)\n啟用後上下鍵調整大小";
+        this._btn_spy.title = Opt.tooltip.btn_spy;
         this._btn_spy.addEventListener('click', e =>{
             this._btn_spy.classList.toggle('active');
 
