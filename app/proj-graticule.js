@@ -14,7 +14,7 @@ import {line as geomLine} from 'ol/geom/flat/geodesic';  //@@ hack lib to export
 class ProjGraticule extends Graticule {
 
     constructor(opt) {
-        const proj = (opt && opt.projection) ? (typeof p === "string") ?
+        const proj = (opt && opt.projection) ? (typeof opt.projection === "string") ?
             getProjection(opt.projection) :
             opt.projection :
             getProjection('EPSG:4326');   //default WGS84;

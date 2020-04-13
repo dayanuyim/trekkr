@@ -6,7 +6,6 @@ import {Stroke, Text, Fill} from 'ol/style';
 import {gpxStyle} from './common';
 import Confs from './data/layer-conf';
 import ProjGraticule from './proj-graticule';
-import {TWD67, TWD97} from './coord';
 
 const def_label_style = {
   font: '15px Calibri,sans-serif',
@@ -78,10 +77,10 @@ function graticule(coordsys) {
       lonLabelStyle: lonLabelStyle({ offsetY: -16 }),
     }));
     case 'twd67': return new ProjGraticule(Object.assign(def_opt, def_tm2_opt, {
-      projection: TWD67,
+      projection: 'EPSG:3828',  //TWD67
     }));
     case 'twd97': return new ProjGraticule(Object.assign(def_opt, def_tm2_opt, {
-      projection: TWD97,
+      projection: 'EPSG:3826',  //TWD97
     }));
     default: throw `create graticule layer error: unknown coordsys ${coordsys}`;
   }

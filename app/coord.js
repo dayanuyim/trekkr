@@ -1,4 +1,4 @@
-import {get as getProjection, getTransform, Projection, transform} from 'ol/proj';
+import {get as getProjection, addProjection, getTransform, Projection, transform} from 'ol/proj';
 import {register} from 'ol/proj/proj4';
 import proj4 from 'proj4';
 
@@ -33,6 +33,7 @@ export const TWD67 = new Projection({
   worldExtent: [119.99, 21.87, 122.06, 25.34 ],
   units: 'm',
 });
+addProjection(TWD67);
 
 export const TWD97 = new Projection({
   code: 'EPSG:3826',
@@ -41,6 +42,12 @@ export const TWD97 = new Projection({
   worldExtent: [114.32, 17.36, 123.61, 26.96],
   units: 'm',
 });
+addProjection(TWD97);
+
+
+//TODO:
+// consider addCoordinateTransforms()
+// ref: https://openlayers.org/en/latest/examples/wms-custom-proj.html
 
 export const WGS84 = getProjection('EPSG:4326');
 export const WEB_MERCATOR = getProjection('EPSG:3857');
