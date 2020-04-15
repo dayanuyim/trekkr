@@ -111,6 +111,8 @@ class Settings{
             }
 
             layer.onspy = () => {
+                if(layer.id === Opt.spy.layer)
+                    return;
                 this.updateSpy(layer.id);
                 this.updateOptSpy(layer.id);
             }

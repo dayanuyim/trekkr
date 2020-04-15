@@ -42,6 +42,8 @@ export const createMap = (target) => {
     view: new View({
       center: Opt.xy,
       zoom: Opt.zoom,
+      minZoom: 1,
+      maxZoom: 23,
     }),
     overlays: [
         new PtPopupOverlay(document.getElementById('pt-popup')),
@@ -319,6 +321,7 @@ export function setSpyLayer(map, id)
 
   if(has_old_spy)
     layers.removeAt(idx);
+
   layers.insertAt(idx, createSpyLayer(id));
 }
 

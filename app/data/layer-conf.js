@@ -163,7 +163,6 @@ export default
         opacity: 1.0,
     },
     */
-    /* TODO: enable this
     {
         id: 'HM_GPXTRACK',
         legend: true,
@@ -173,7 +172,6 @@ export default
         checked: false,
         opacity: 1.0,
     },
-    //*/
     {
         id: 'Admin_1930a',
         legend: true,
