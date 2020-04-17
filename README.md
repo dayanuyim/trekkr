@@ -5,6 +5,9 @@ Goal
  - also have a light-weight static version
  - also have a easy way to embed maps by gpx
 
+Demo
+====
+ - a built distribution is in https://dayanuyim.github.io/maps/
 
 Install
 =======
