@@ -41,6 +41,7 @@ export default class PtPopupOverlay extends Overlay{
 
     _closer: HTMLElement;
     _content: HTMLElement;
+    _pt_sym: HTMLImageElement;
     _pt_name: HTMLElement;
     _pt_coord: HTMLElement;
     _pt_coord_title: HTMLSelectElement;
@@ -68,6 +69,8 @@ export default class PtPopupOverlay extends Overlay{
     get _sym_license()    { return this._sym_copyright.querySelector<HTMLAnchorElement>('.sym-license'); }
     */
 
+    get pt_sym() { return this._pt_sym.src; }
+    set pt_sym(src) { this._pt_sym.src = src;}
     get pt_name() { return this._pt_name.textContent; }
     set pt_name(value) { this._pt_name.textContent = value; }
     get pt_coord() { return this._pt_coord.getAttribute('data-pt-coord').split(',').map(Number); }
@@ -102,6 +105,7 @@ export default class PtPopupOverlay extends Overlay{
         const el = this.getElement();
         this._closer =         el.querySelector<HTMLElement>('.ol-popup-closer');
         this._content =        el.querySelector<HTMLElement>('.ol-popup-content');
+        this._pt_sym =         el.querySelector<HTMLImageElement>('.pt-sym');
         this._pt_name =        el.querySelector<HTMLElement>('.pt-name');
         this._pt_coord =       el.querySelector<HTMLElement>('.pt-coord');
         this._pt_coord_title = this._pt_coord.querySelector<HTMLSelectElement>('.pt-coord-title');
@@ -166,8 +170,10 @@ export default class PtPopupOverlay extends Overlay{
         this.pt_ele = ele? `${fmtEle(ele.value)} m${ele.est? '(est.)': ''}`: '-';
         this.pt_time = time? fmtTime(time): '-';
 
+        tagIf(!symbol, this._pt_sym, 'hidden');
         tagIf(!symbol, this._sym_copyright, 'hidden');
         if(symbol){
+            this.pt_sym = toSymPath(symbol, 128);
             this.setUrlContent(this._sym_maker,    symbol.maker);
             this.setUrlContent(this._sym_provider, symbol.provider);
             this.setUrlContent(this._sym_license,  symbol.license);

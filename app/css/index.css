@@ -264,6 +264,10 @@ select::-ms-expand {
     display: none;
 }
 
+.pt-sym {
+    vertical-align: bottom;
+}
+
 .pt-name {
     font-weight: bold;
 }

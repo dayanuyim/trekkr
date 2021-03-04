@@ -23,7 +23,8 @@ Handlebars.registerHelper("selop", (value, selected, text, attrs, options)=>{
 });
 
 export const ptPopup = Handlebars.compile(`
-    <div class="pt-name">{{name}}</div>
+    <img class="pt-sym" width="24" heigh="24" src="{{sym}}">
+    <span class="pt-name">{{name}}</span>
     <div class="pt-coord" data-pt-coord="{{coordinate}}">
         <select class="pt-coord-title" dir="rtl">
             {{selop ""      coordsys "?"  "disabled hidden"}}

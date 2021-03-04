@@ -173,7 +173,7 @@ const showHoverFeatures = function (e) {
       case 'MultiLineString': {
         //console.log(feature.getGeometry().getCoordinates());
         const name = feature.get('name');
-        console.log(`track name: ${name}`);
+        //console.log(`track name: ${name}`);
         break;
       }
     }
