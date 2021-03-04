@@ -5,7 +5,7 @@ import tzlookup from 'tz-lookup';
 import {fromLonLat, toLonLat} from 'ol/proj';
 import elevationApi from 'google-elevation-api';
 import symbols from './data/symbols.json';
-import { Icon as IconStyle, Circle as CircleStyle, Fill, Stroke, Style } from 'ol/style';
+import { Icon as IconStyle, Circle as CircleStyle, Fill, Stroke, Style, Text } from 'ol/style';
 import opt from './opt';
 
 const Opt = {
@@ -106,6 +106,16 @@ export const gpxStyle = (feature) => {
             //anchor: sym.anchor,
             scale: 0.25,
           }),
+          text: new Text({
+            text: feature.get('name'),
+            textAlign: 'left',
+            offsetX: 8,
+            offsetY: -8,
+            font: 'normal 14px "cwTeXYen", "Open Sans", "Arial Unicode MS", "sans-serif"',
+            placement: 'point',
+            fill: new Fill({color: '#fff'}),
+            stroke: new Stroke({color: '#000', width: 2}),
+          })
         });
       }
       else {
