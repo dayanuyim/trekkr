@@ -140,7 +140,7 @@ function initEvents(map)
 }
 
 function handleSpyRadiusChange(map, e, inc){
-    const radius = Math.max(25, Math.min(Opt.spy.radius + inc, 180));
+    const radius = Math.max(25, Math.min(Opt.spy.radius + inc, 250));
     if(radius != Opt.spy.radus){
       map.render();
       e.preventDefault();
