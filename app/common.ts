@@ -8,7 +8,7 @@ import symbols from './data/symbols.json';
 import { Icon as IconStyle, Circle as CircleStyle, Fill, Stroke, Style, Text } from 'ol/style';
 import opt from './opt';
 
-const Opt = {
+const Param = {
   tz: undefined,
 }
 
@@ -65,12 +65,12 @@ export function getLocalTimeByCoords(coordinates)
     return undefined;
 
   //TODO the optimization is really needed?
-  if(!Opt.tz){
+  if(!Param.tz){
     const [lon, lat] = toLonLat(coordinates);
-    Opt.tz = tzlookup(lat, lon);
+    Param.tz = tzlookup(lat, lon);
   }
 
-  return moment.unix(epoch).tz(Opt.tz);
+  return moment.unix(epoch).tz(Param.tz);
 }
 
 const symDir = './images/sym';
@@ -92,10 +92,27 @@ export function getSymbol(symName){
   return sym;
 }
 
+function _toStyleText(text){
+  if(opt.zoom < 13.5)
+    return null;
+
+  return new Text({
+    text,
+    textAlign: 'left',
+    offsetX: 8,
+    offsetY: -8,
+    font: 'normal 14px "cwTeXYen", "Open Sans", "Arial Unicode MS", "sans-serif"',
+    placement: 'point',
+    fill: new Fill({color: '#fff'}),
+    stroke: new Stroke({color: '#000', width: 2}),
+  });
+}
+
 export const gpxStyle = (feature) => {
   switch (feature.getGeometry().getType()) {
     case 'Point': {
       const sym = getSymbol(feature.get('sym'));
+      const name = feature.get('name');
       if(sym){
         return new Style({
           image: new IconStyle({
@@ -106,16 +123,7 @@ export const gpxStyle = (feature) => {
             //anchor: sym.anchor,
             scale: 0.25,
           }),
-          text: new Text({
-            text: feature.get('name'),
-            textAlign: 'left',
-            offsetX: 8,
-            offsetY: -8,
-            font: 'normal 14px "cwTeXYen", "Open Sans", "Arial Unicode MS", "sans-serif"',
-            placement: 'point',
-            fill: new Fill({color: '#fff'}),
-            stroke: new Stroke({color: '#000', width: 2}),
-          })
+          text: _toStyleText(name),
         });
       }
       else {
@@ -129,7 +137,8 @@ export const gpxStyle = (feature) => {
               color: '#ff0',
               width: 1
             })
-          })
+          }),
+          text: _toStyleText(name),
         });
       }
     }

@@ -112,8 +112,8 @@ function initEvents(map)
   map.on('singleclick', function(e) {
   });
 
-  //map.getView().on('change', function(e){, 
-  map.on('moveend', function(e){   //invoked only when view is locked down
+  //map.on('moveend', function(e){   //invoked only when view is locked down
+  map.on('postrender', function(e){
     saveViewConf(e.map.getView());
   });
 
