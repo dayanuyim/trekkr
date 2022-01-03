@@ -1,5 +1,6 @@
 'use strict';
 import layer_conf from './data/layer-conf';
+import Cookies from 'js-cookie';
 
 class Opt{
     static instance = undefined;
@@ -10,7 +11,7 @@ class Opt{
     }
 
     //cookie options
-    version = 5;
+    version = 6;
     xy = [13461784.981041275, 2699338.9447048027];    //xy = fromLonLat([120.929272, 23.555519]);
     zoom = 15;
     coordsys = 'twd67';
@@ -30,9 +31,9 @@ class Opt{
     }
 
     private constructor(){
-        const orig = this.load();
-        if(orig && orig.version && orig.version === this.version)
-            Object.assign(this, this.recover(orig));
+        const saved = this.load();
+        if(saved && saved.version && saved.version === this.version)
+            Object.assign(this, this.recover(saved));
 
         //reset properties
         this.spy.enabled = false;
@@ -40,9 +41,10 @@ class Opt{
     }
 
     private load() {
-        if (document.cookie) {
+        const saved = Cookies.get('maps');
+        if (saved) {
             try {
-                return JSON.parse(document.cookie);
+                return JSON.parse(saved);
             }
             catch (err) {
                 console.error(`Parse Cookie Error: ${err}`);
@@ -58,7 +60,7 @@ class Opt{
         const value = JSON.stringify(this.strip());
         if(value.length >= 4096)
             console.warn(`The cookie size is larger 4096: ${value.length}`)
-        document.cookie = value;
+        Cookies.set("maps", value);
     }
 
     public strip(){
