@@ -32,10 +32,12 @@ module.exports = {
             filename: "[name].css",
             chunkFilename: "[id].css"
         }),
-        new CopyWebpackPlugin([
-            { from: 'app/data', to: 'data' },
-            { from: 'app/images', to: 'images' },
-        ]),
+        new CopyWebpackPlugin({
+            patterns: [
+                { from: 'app/data', to: 'data' },
+                { from: 'app/images', to: 'images' },
+            ]
+        }),
     ],
     module: {
         rules: [{
@@ -43,10 +45,13 @@ module.exports = {
             loader: 'ts-loader',
         }, {
             test: /\.(sa|sc|c)ss$/,
-            use: [MiniCssExtractPlugin.loader, 'css-loader',/* 'postcss-loader', 'sass-loader', */],
+            use: [ MiniCssExtractPlugin.loader, 'css-loader',/* 'postcss-loader', 'sass-loader', */],
         }, {
             test: /\.(png|woff|woff2|eot|ttf|svg)$/,
-            loader: 'url-loader?limit=100000',
+            loader: 'url-loader',
+            options: {
+                limit: 100000,
+            },
         }],
     },
 };
