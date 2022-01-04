@@ -5,7 +5,7 @@ import {Stroke, Text, Fill} from 'ol/style';
 
 import {gpxStyle} from './common';
 import Confs from './data/layer-conf';
-import ProjGraticule from './proj-graticule';
+import Graticule from 'ol/layer/Graticule';
 
 const def_label_style = {
   font: '15px Calibri,sans-serif',
@@ -13,12 +13,14 @@ const def_label_style = {
     color: 'rgba(0,0,0,1)'
   }),
   stroke: new Stroke({
-    color: 'rgba(255,255,255,0.6)',
-    width: 1
+    color: 'rgba(255,255,255,0.7)',
+    width: 5,
   }),
+  /* //seem not work?
   backgroundFill: new Fill({
-    color: 'rgba(255,255,255,0.6)'
+    color: 'rgba(255,255,255,0.7)',
   }),
+  */
   padding: [-1, 0, -2, 0],
 }
 
@@ -32,8 +34,8 @@ function lonLabelStyle(opt?)
 function latLabelStyle(opt?)
 {
   return new Text(Object.assign({
-    textAlign: 'end',
-    offsetX: 10,
+    textAlign: 'left',
+    offsetX: 5,
     offsetY: 0,
   }, def_label_style, opt));
 }
@@ -51,6 +53,7 @@ function graticule(coordsys) {
     lonLabelStyle: lonLabelStyle(),
     latLabelStyle: latLabelStyle(),
     showLabels: true,
+    maxLines: 20,
     wrapX: true,
   };
 
@@ -67,19 +70,19 @@ function graticule(coordsys) {
   };
 
   switch (coordsys) {
-    case 'wgs84': return new ProjGraticule(Object.assign(def_opt, {
+    case 'wgs84': return new Graticule(Object.assign(def_opt, {
       latLabelStyle: latLabelStyle({ textBaseline: 'top' }),
     }));
-    case 'wgs84-num': return new ProjGraticule(Object.assign(def_opt, {
+    case 'wgs84-num': return new Graticule(Object.assign(def_opt, {
       lonLabelFormatter: lon => lon.toFixed(3),
       latLabelFormatter: lat => lat.toFixed(3),
       latLabelStyle: latLabelStyle({ textBaseline: 'bottom' }),
       lonLabelStyle: lonLabelStyle({ offsetY: -16 }),
     }));
-    case 'twd67': return new ProjGraticule(Object.assign(def_opt, def_tm2_opt, {
+    case 'twd67': return new Graticule(Object.assign(def_opt, def_tm2_opt, {
       projection: 'EPSG:3828',  //TWD67
     }));
-    case 'twd97': return new ProjGraticule(Object.assign(def_opt, def_tm2_opt, {
+    case 'twd97': return new Graticule(Object.assign(def_opt, def_tm2_opt, {
       projection: 'EPSG:3826',  //TWD97
     }));
     default: throw `create graticule layer error: unknown coordsys ${coordsys}`;
