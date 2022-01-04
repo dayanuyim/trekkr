@@ -20,6 +20,10 @@ import Opt from './opt';
 import * as LayerRepo from './layer-repo';
 
 export const createMap = (target) => {
+  const drag_interaciton = new DragAndDrop({
+    formatConstructors: [ GPX, GeoJSON, IGC, KML, TopoJSON, ]
+  });
+
   const map = new Map({
     target,
     controls: defaultControls().extend([
@@ -31,7 +35,7 @@ export const createMap = (target) => {
       //new SaveCookieControl(),
     ]),
     interactions: defaultInteractions().extend([
-      genDragGpxInteraction(),
+      drag_interaciton,
       //new Select(),
     ]),
     /*
@@ -50,26 +54,13 @@ export const createMap = (target) => {
     ],
   });
 
+  drag_interaciton.on('addfeatures', function(e) {
+    addGPXLayer(map, e.features);
+  });
+
   initEvents(map);
   return map;
 };
-
-function genDragGpxInteraction(){
-  const drag = new DragAndDrop({
-    formatConstructors: [
-      GPX,
-      GeoJSON,
-      IGC,
-      KML,
-      TopoJSON,
-    ]
-  });
-
-  drag.on('addfeatures', function(e) {
-    addGPXLayer(e.target.map_, e.features);
-  });
-  return drag;
-}
 
 function addGPXLayer(map, features)
 {

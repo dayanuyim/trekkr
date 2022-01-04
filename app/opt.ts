@@ -60,7 +60,7 @@ class Opt{
         const value = JSON.stringify(this.strip());
         if(value.length >= 4096)
             console.warn(`The cookie size is larger 4096: ${value.length}`)
-        Cookies.set("maps", value);
+        Cookies.set("maps", value, {sameSite: 'strict'});
     }
 
     public strip(){
