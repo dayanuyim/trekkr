@@ -2,10 +2,10 @@ import {Tile as TileLayer, Vector as VectorLayer, Layer} from 'ol/layer';
 import {Vector as VectorSource, VectorTile, XYZ, OSM, TileJSON} from 'ol/source';
 import {GPX, GeoJSON, IGC, KML, TopoJSON} from 'ol/format';
 import {Stroke, Text, Fill} from 'ol/style';
+import Graticule from 'ol/layer/Graticule';
 
 import {gpxStyle} from './common';
 import Confs from './data/layer-conf';
-import Graticule from 'ol/layer/Graticule';
 
 const def_label_style = {
   font: '15px Calibri,sans-serif',
