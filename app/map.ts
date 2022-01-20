@@ -9,11 +9,11 @@ import XYZ from 'ol/source/XYZ';
 import OSM from 'ol/source/OSM';
 import {GPX, GeoJSON, IGC, KML, TopoJSON} from 'ol/format';
 import {getRenderPixel} from 'ol/render';
+import {platformModifierKeyOnly} from 'ol/events/condition';
 
 import { Icon as IconStyle, Circle as CircleStyle, Fill, Stroke, Style } from 'ol/style';
 import GeometryType from  'ol/geom/GeometryType';
 
-import {partition} from './lib/utils';
 import {getSymbol, toSymPath, gpxStyle} from './common'
 import PtPopupOverlay from './pt-popup';
 import Opt from './opt';
@@ -72,7 +72,12 @@ function addGPXLayer(map, features)
       style: gpxStyle,
     }));
     map.getView().fit(source.getExtent(), {maxZoom: 16});
-    map.addInteraction(new Modify({source})); //feature trkpt as 'Point', instead of 'MultiLineString'
+
+    //let trkpt feature as 'Point', instead of 'MultiLineString'
+    map.addInteraction(new Modify({
+      source,
+      condition: platformModifierKeyOnly,
+    }));
 }
 
 /*
