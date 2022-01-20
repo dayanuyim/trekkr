@@ -92,12 +92,11 @@ function initEvents(map)
   map.on('pointermove', function(e) {
     if (e.dragging) 
       return;
-    showHoverFeatures(e);
+    hoverFeatures(e);
   });
 
   map.on('click', function(e) {
-    const overlay = map.getOverlayById('pt-popup');
-    overlay.setPosition(undefined);
+    showFeatures(e);
   });
 
   map.on('singleclick', function(e) {
@@ -148,29 +147,7 @@ function saveViewConf(view)
   });
 }
 
-const showHoverFeatures = function (e) {
-  const handleFeature = feature => {
-    switch (feature.getGeometry().getType()) {
-      case 'Point': {   // TODO: Waypoint or Track point
-        const overlay = e.map.getOverlayById('pt-popup');
-        overlay.popContent(feature);
-        break;
-      }
-      case 'LineString': {  //grid line
-        const name = feature.get('name');
-        if(name) console.log(name);
-        break;
-      }
-      case 'MultiLineString': {
-        //console.log(feature.getGeometry().getCoordinates());
-        const name = feature.get('name');
-        //console.log(`track name: ${name}`);
-        break;
-      }
-    }
-    return true;
-  };
-
+const _getFeatures = function (e) {
   const isPt = f => f.getGeometry().getType() === 'Point';
   const isWpt = f => isPt(f) && (f.get('name') || f.get('desc') || f.get('sym'));
   const isTrkpt = f => isPt(f) && !isWpt(f);
@@ -185,9 +162,46 @@ const showHoverFeatures = function (e) {
   //const hit = e.map.forEachFeatureAtPixel(pixel, handleFeature);
   //e.map.getTargetElement().style.cursor = hit? 'pointer': '';
 
-  const features = filterOutTrkptIfWpt(e.map.getFeaturesAtPixel(pixel, {hitTolerance: 2}));
-  features.forEach(handleFeature);
+  return filterOutTrkptIfWpt(e.map.getFeaturesAtPixel(pixel, {hitTolerance: 2}));
+};
+
+const hoverFeatures = function (e) {
+  const features = _getFeatures(e);
   e.map.getTargetElement().style.cursor = features.length? 'pointer': '';
+};
+
+const showFeatures = function (e) {
+  let hasPopup = false;
+
+  const features = _getFeatures(e);
+  features.forEach(feature => {
+    switch (feature.getGeometry().getType()) {
+      case 'Point': {   // TODO: Waypoint or Track point
+        hasPopup = true;
+        const overlay = e.map.getOverlayById('pt-popup');
+        overlay.popContent(feature);
+        break;
+      }
+      case 'LineString': {  //grid line
+        const name = feature.get('name');
+        if(name) console.log(name);
+        break;
+      }
+      case 'MultiLineString': {  //track
+        //console.log(feature.getGeometry().getCoordinates());
+        const name = feature.get('name');
+        //console.log(`track name: ${name}`);
+        break;
+      }
+    }
+    return true;
+  });
+
+  //hide old popup, if any
+  if(!hasPopup){
+    const overlay = e.map.getOverlayById('pt-popup');
+    overlay.setPosition(undefined);
+  }
 };
 
 //Note:

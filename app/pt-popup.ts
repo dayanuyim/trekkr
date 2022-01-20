@@ -117,7 +117,6 @@ export default class PtPopupOverlay extends Overlay{
         this._sym_maker =      this._sym_copyright.querySelector<HTMLAnchorElement>('.sym-maker');
         this._sym_provider =   this._sym_copyright.querySelector<HTMLAnchorElement>('.sym-provider');
         this._sym_license =    this._sym_copyright.querySelector<HTMLAnchorElement>('.sym-license');
-
     }
 
     private initEvents(){
