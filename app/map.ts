@@ -154,12 +154,9 @@ function saveViewConf(view)
 
 const _getFeatures = function (e) {
   const isPt = f => f.getGeometry().getType() === 'Point';
-  const isWpt = f => isPt(f) && (f.get('name') || f.get('desc') || f.get('sym'));
-  const isTrkpt = f => isPt(f) && !isWpt(f);
-
-  const filterOutTrkptIfWpt = (features) => {
-    return features.find(isWpt)? features.filter(f => !isTrkpt(f)): features;
-  }
+  const hasWptProp = f => f.get('name') || f.get('desc') || f.get('sym');
+  const isWpt = f => isPt(f) && hasWptProp(f);
+  const isTrkpt = f => isPt(f) && !hasWptProp(f);
 
   const pixel = e.map.getEventPixel(e.originalEvent); // TODO: what is the diff between 'originalevent' and 'event'?
 
@@ -167,7 +164,8 @@ const _getFeatures = function (e) {
   //const hit = e.map.forEachFeatureAtPixel(pixel, handleFeature);
   //e.map.getTargetElement().style.cursor = hit? 'pointer': '';
 
-  return filterOutTrkptIfWpt(e.map.getFeaturesAtPixel(pixel, {hitTolerance: 2}));
+  const features = e.map.getFeaturesAtPixel(pixel, {hitTolerance: 2});
+  return features.find(isWpt)? features.filter(f => !isTrkpt(f)): features;  //filter out trkpts if wpt exists
 };
 
 const hoverFeatures = function (e) {
