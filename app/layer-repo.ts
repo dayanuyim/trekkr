@@ -96,10 +96,11 @@ function osmLayer(){
   });
 }
 
-function xyzLayer(url, options?){
+function xyzLayer(url, urls, options?){
   return new TileLayer(Object.assign({
     source: new XYZ({
       url,
+      urls,
     }),
   }, options));
 }
@@ -125,12 +126,12 @@ function gpxLayer(url, options?){
   }, options));
 }
 
-function conf2layer({legend, type, url})
+function conf2layer({legend, type, url, urls})
 {
   const opt = legend? {transition: 0}: undefined;
   switch(type){
     case 'osm': return osmLayer();
-    case 'xyz': return xyzLayer(url, opt);
+    case 'xyz': return xyzLayer(url, urls, opt);
     case 'json': return jsonLayer(url);
     case 'gpx': return gpxLayer(url);
     case 'grid': return graticule(url);
