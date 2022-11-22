@@ -153,7 +153,7 @@ export const gpxStyle = (feature) => {
     case 'MultiLineString': {
       return new Style({
         stroke: new Stroke({
-          color: '#8B008B',
+          color: feature.get('color') || 'DarkMagenta',
           width: 3
         })
       });

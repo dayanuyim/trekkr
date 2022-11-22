@@ -19,9 +19,42 @@ import PtPopupOverlay from './pt-popup';
 import Opt from './opt';
 import * as LayerRepo from './layer-repo';
 
+// GPX format which reads extensions node
+class ExtGPX extends GPX {
+  constructor(options?){
+    super(Object.assign({
+      readExtensions: (feat, node) => {
+        //set color for track if any
+        if(node && feat.getGeometry().getType() ==  'MultiLineString') {
+          const color = this._getTrackColor(node) ;
+          if(color) feat.set('color', color);
+        }
+      },
+    }, options));
+  }
+
+  _getTrackColor(extensions) {
+    let color = null;
+
+    if (extensions) {
+      extensions.childNodes.forEach((ext) => {
+        if (ext.nodeName == "gpxx:TrackExtension") {
+          ext.childNodes.forEach((attr) => {
+            if (attr.nodeName == "gpxx:DisplayColor") {
+              color = attr.textContent;
+            }
+          });
+        }
+      });
+    }
+    return color;
+  }
+
+}
+
 export const createMap = (target) => {
   const drag_interaciton = new DragAndDrop({
-    formatConstructors: [ GPX, GeoJSON, IGC, KML, TopoJSON, ]
+    formatConstructors: [ ExtGPX, GeoJSON, IGC, KML, TopoJSON, ]
   });
 
   const map = new Map({
@@ -67,6 +100,7 @@ function addGPXLayer(map, features)
     const source = new VectorSource({
       features,
     });
+
     map.addLayer(new VectorLayer({
       source,
       style: gpxStyle,
