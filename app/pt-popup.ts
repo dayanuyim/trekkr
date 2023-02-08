@@ -1,12 +1,12 @@
 'use strict';
 import Overlay from 'ol/Overlay';
-import {toStringXY, format} from 'ol/coordinate';
+import {toStringXY} from 'ol/coordinate';
 import {toLonLat} from 'ol/proj';
 import {toTWD97, toTWD67} from './coord';
+import { gmapUrl } from './common';
 
 import * as moment from 'moment-timezone';
 import {toSymPath, getSymbol, getElevationByCoords, getLocalTimeByCoords} from './common'
-import {tagIf} from './lib/dom-utils';
 import Opt from './opt';
 
 const toXY = {
@@ -14,10 +14,6 @@ const toXY = {
     twd97: (coord) => toStringXY(toTWD97(coord)),
     wgs84: (coord) => toStringXY(toLonLat(coord), 7),
 };
-
-function fmtGmap(coordinate){
-    return format(toLonLat(coordinate), 'https://www.google.com.tw/maps/@{y},{x},15z?hl=zh-TW', 7);
-}
 
 function fmtEle(ele){
     return ele.toFixed(1);
@@ -163,14 +159,14 @@ export default class PtPopupOverlay extends Overlay{
         this.pt_coord = coordinate;
         this.pt_coord_title = coordsys;
         this.pt_coord_value = toXY[coordsys](coordinate)
-        this.pt_gmap = fmtGmap(coordinate);
+        this.pt_gmap = gmapUrl(coordinate);
 
         this.pt_name = name;
         this.pt_ele = ele? `${fmtEle(ele.value)} m${ele.est? '(est.)': ''}`: '-';
         this.pt_time = time? fmtTime(time): '-';
 
-        tagIf(!symbol, this._pt_sym, 'hidden');
-        tagIf(!symbol, this._sym_copyright, 'hidden');
+        this._pt_sym.classList.toggle('hidden', !symbol);
+        this._sym_copyright.classList.toggle('hidden', !symbol);
         if(symbol){
             this.pt_sym = toSymPath(symbol, 128);
             this.setUrlContent(this._sym_maker,    symbol.maker);

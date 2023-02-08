@@ -3,6 +3,7 @@
 import * as moment from 'moment-timezone';
 import tzlookup from 'tz-lookup';
 import {fromLonLat, toLonLat} from 'ol/proj';
+import {format as fmtCoordinate} from 'ol/coordinate';
 import elevationApi from 'google-elevation-api';
 import symbols from './data/symbols.json';
 import { Icon as IconStyle, Circle as CircleStyle, Fill, Stroke, Style, Text } from 'ol/style';
@@ -64,7 +65,7 @@ export function getLocalTimeByCoords(coordinates)
   if(!epoch)
     return undefined;
 
-  //TODO the optimization is really needed?
+  //TODO: the optimization is really needed?
   if(!Param.tz){
     const [lon, lat] = toLonLat(coordinates);
     Param.tz = tzlookup(lat, lon);
@@ -161,3 +162,6 @@ export const gpxStyle = (feature) => {
   }
 };
 
+export function gmapUrl(coord){
+    return fmtCoordinate(toLonLat(coord), 'https://www.google.com.tw/maps/@{y},{x},15z?hl=zh-TW', 7);
+}

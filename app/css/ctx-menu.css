@@ -1,0 +1,40 @@
+#ctx-menu {
+    position: fixed;
+    z-index: 10000;
+    min-width: 150px;
+    background: #404040;
+    border-radius: 5px;
+    /*display: none;*/
+    transform: scale(0);
+    transform-origin: top left;
+}
+
+#ctx-menu.visible {
+    /*display: block;*/
+    transform: scale(1);
+    transition: transform 100ms ease-in-out;
+}
+
+#ctx-menu .ctx-item {
+    padding: 8px 10px;
+    font-size: 15px;
+    color: #eee;
+    cursor: pointer;
+    border-radius: inherit;
+}
+
+#ctx-menu .ctx-item a {
+    color: #eee;
+    text-decoration: none;
+    white-space: nowrap;
+    appearance: button;
+}
+
+#ctx-menu .ctx-item:hover {
+    background: #606060;
+}
+
+#ctx-menu .ctx-item i {
+    width: 16px;
+    margin-right: 8px;
+}

@@ -367,4 +367,36 @@ export function setSpyLayer(map, id)
   layers.insertAt(idx, createSpyLayer(id));
 }
 
- 
+/********************* context menu ******************/
+import { gmapUrl} from './common';
+import { CtxMenu } from './ctx-menu';
+
+export function setCtxMenu(map, menu: HTMLElement) {
+  //const base = map.getTargetElement();
+  const base = map.getViewport();
+
+  // set menu listeners ========
+  const ctx_gmap = menu.querySelector<HTMLAnchorElement>("a.ctx-gmap");
+  ctx_gmap.addEventListener('click', () =>{
+    ctx_gmap.href = gmapUrl(menu.dataset.coord.split(","));
+  });
+
+  menu.querySelector(".ctx-add-wpt").addEventListener('click', () =>{
+    alert("no implemented yet!");
+  });
+
+  menu.querySelector(".ctx-save-gpx").addEventListener('click', () =>{
+    alert("no implemented yet!");
+  });
+
+  // set base listeners ==========
+  const ctx = new CtxMenu(base, menu);
+  base.addEventListener('contextmenu', e => {
+    menu.dataset.coord = map.getEventCoordinate(e);
+    ctx.show(e);
+  });
+
+  base.addEventListener("click", e => {
+    ctx.hide(e);
+  });
+}

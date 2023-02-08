@@ -4,11 +4,12 @@ import '../node_modules/ol/ol.css';
 import '../node_modules/@fortawesome/fontawesome-free/css/all.min.css';
 import './css/index.css';
 import './css/tab.css';
+import './css/ctx-menu.css';
 
 import './coord';
 import * as templates from './templates';
-import {createMap, } from './map';
-import * as settings from './settings';
+import {createMap, setCtxMenu} from './map';
+import { initSettings, initSidebar } from './settings';
 
 (async () => {
   main(document.body);
@@ -41,6 +42,20 @@ import * as settings from './settings';
 function main(root_el: HTMLElement)
 {
   root_el.innerHTML = templates.main();
+
   const map = createMap('map');
-  settings.init(root_el, map);
+  const settings = initSettings(map, root_el.querySelector('.settings'))
+  const sidebar = initSidebar(map, root_el.querySelector('.settings-side'))
+  setCtxMenu(map, document.getElementById('ctx-menu'));
+
+  //set hotkey
+  root_el.addEventListener('keydown', function (e) {
+      if (e.ctrlKey && e.key === 's')
+          settings.toggle();
+      else if (e.ctrlKey && e.key === 'x')
+          sidebar.toggleSpy();
+      else if (e.ctrlKey && e.key === 'f') {
+          root_el.requestFullscreen();
+      }
+  });
 }

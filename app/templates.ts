@@ -3,9 +3,10 @@ import './lib/handlebars-utils';
 
 import {toLonLat} from 'ol/proj';
 import {format} from 'ol/coordinate';
+import { gmapUrl } from './common';
 
 Handlebars.registerHelper('gmap', function(coordinate) {
-    return format(toLonLat(coordinate), 'https://www.google.com.tw/maps/@{y},{x},15z?hl=zh-TW', 7);
+    return gmapUrl(coordinate);
 });
 
 Handlebars.registerHelper('fmtEle', function(ele) {
@@ -35,6 +36,7 @@ export const ptPopup = Handlebars.compile(`
         <span class="pt-coord-value">N/A</span>
         <a class="pt-gmap" href="{{gmap coordinate}}" target="_blank">
             <img src="./images/googleg.png" alt="Google G">
+            <!--<i class="fa-brands fa-google"></i>-->
         </a>
     </div>
 
@@ -151,10 +153,22 @@ export const main = Handlebars.compile(`
     </div>
 
     <div class="settings collapsed"></div>
-
     <div class="settings-side ol-control">
         <button class="btn-spy" title="Spy Mode"><i class="fa fa-crosshairs"></i></button>
     </div>
 
+    <div id="ctx-menu">
+        {{ctxMenuItems}}
+    </div>
+
     <div id="map" class="ol-map-container"></div>
 `);
+
+const ctxMenuItems = Handlebars.compile(`
+    <div class="ctx-item"><a class="ctx-gmap" target="_blank"><i class="fa-brands fa-google"></i>GoogleMap&nbsp;Here</a></div>
+    <div class="ctx-item"><a class="ctx-add-wpt"><i class="fa-solid fa-location-dot"></i>新增航點</a></div>
+    <div class="ctx-item"><a class="ctx-save-gpx"><i class="fa-solid fa-file-contract"></i>匯出GPX航跡檔</a></div>
+`);
+Handlebars.registerHelper("ctxMenuItems", ()=>{
+    return new Handlebars.SafeString(ctxMenuItems());
+});

@@ -75,7 +75,7 @@ class Settings{
         this.init();
     }
 
-    init(){
+    private init(){
         tablink('.tablink', '.tabcontent', 0);
 
         this._btn_toggle.onclick = () => this._base.classList.toggle('collapsed');
@@ -123,6 +123,9 @@ class Settings{
         this.updateLayers(this.getLayersConf());  //for init
     }
 
+    public toggle(){
+        this._btn_toggle.click();
+    }
 
     updateLayers = (layers_conf) => setLayers(this.map, layers_conf);
     updateOptLayers = (layers_conf) => Opt.update({ layers: layers_conf });
@@ -142,9 +145,9 @@ class Settings{
     }
 }
 
-class SideSettings{
+class Sidebar{
     static of(el: HTMLElement, map: Map){
-        return new SideSettings(el, map);
+        return new Sidebar(el, map);
     }
 
     _base: HTMLElement;
@@ -162,8 +165,7 @@ class SideSettings{
 
     private init(){
         //init spy
-        Opt.spy.enabled? this._btn_spy.classList.add('active'):
-                            this._btn_spy.classList.remove('active');
+        this._btn_spy.classList.toggle('active', Opt.spy.enabled);
         this._btn_spy.title = Opt.tooltip.btn_spy;
         this._btn_spy.addEventListener('click', e =>{
             this._btn_spy.classList.toggle('active');
@@ -175,19 +177,17 @@ class SideSettings{
             return true;
         });
     }
+
+    public toggleSpy(){
+        this._btn_spy.click();
+    }
 }
 
-export function init(root_el: HTMLElement, map) {
-    const ctrl_panel = Settings.of(root_el.querySelector('.settings'), map);
-    const ctrl_side = SideSettings.of(root_el.querySelector('.settings-side'), map);
+//TODO: integrate into map object
+export function initSettings(map, el: HTMLElement){
+    return Settings.of(el, map);
+}
 
-    root_el.addEventListener('keydown', function (e) {
-        if (e.ctrlKey && e.key === 's') 
-            ctrl_panel._btn_toggle.click();
-        else if (e.ctrlKey && e.key === 'x') 
-            ctrl_side._btn_spy.click();
-        else if (e.ctrlKey && e.key === 'f') {
-            root_el.requestFullscreen();
-        }
-    });
+export function initSidebar(map, el: HTMLElement){
+    return Sidebar.of(el, map);
 }
