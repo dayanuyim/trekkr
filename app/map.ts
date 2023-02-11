@@ -376,17 +376,21 @@ export function setCtxMenu(map, menu: HTMLElement) {
   const base = map.getViewport();
 
   // set menu listeners ========
-  const ctx_gmap = menu.querySelector<HTMLAnchorElement>("a.ctx-gmap");
-  ctx_gmap.addEventListener('click', () =>{
-    ctx_gmap.href = gmapUrl(menu.dataset.coord.split(","));
+  const item_gmap = menu.querySelector<HTMLAnchorElement>("a.item-gmap");
+  item_gmap.addEventListener('click', () =>{
+    item_gmap.href = gmapUrl(menu.dataset.coord.split(","));
   });
 
-  menu.querySelector(".ctx-add-wpt").addEventListener('click', () =>{
-    alert("no implemented yet!");
+  const item_add_wpt = menu.querySelector<HTMLElement>("a.item-add-wpt");
+  item_add_wpt.style.color = "gray";
+  item_add_wpt.addEventListener('click', () =>{
+    alert("not implemented yet!");
   });
 
-  menu.querySelector(".ctx-save-gpx").addEventListener('click', () =>{
-    alert("no implemented yet!");
+  const item_save_gpx = menu.querySelector<HTMLElement>("a.item-save-gpx")
+  item_save_gpx.style.color = "gray";
+  item_save_gpx.addEventListener('click', () =>{
+    alert("not implemented yet!");
   });
 
   // set base listeners ==========
