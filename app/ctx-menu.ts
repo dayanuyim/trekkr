@@ -12,8 +12,8 @@ export class CtxMenu {
     evt.preventDefault();
 
     const {right: baseRight, bottom: baseBottom} = this._base.getBoundingClientRect();
-    const x = Math.min(evt.offsetX, baseRight  - this._menu.clientWidth);   //limit x
-    const y = Math.min(evt.offsetY, baseBottom - this._menu.clientHeight);  //limit y
+    const x = Math.min(mouseX(evt), baseRight  - this._menu.clientWidth);   //limit x
+    const y = Math.min(mouseY(evt), baseBottom - this._menu.clientHeight);  //limit y
     this._menu.style.left = `${x}px`;
     this._menu.style.top = `${y}px`;
 
@@ -28,28 +28,7 @@ export class CtxMenu {
   }
 }
 
-/*
-export function showCtxMenu(base: HTMLElement, menu: HTMLElement, evt: MouseEvent): void {
-    evt.preventDefault();
 
-    const {right: baseRight, bottom: baseBottom} = base.getBoundingClientRect();
-    const x = Math.min(evt.offsetX, baseRight  - menu.clientWidth);   //limit x
-    const y = Math.min(evt.offsetY, baseBottom - menu.clientHeight);  //limit y
-    menu.style.left = `${x}px`;
-    menu.style.top = `${y}px`;
-
-    //menu.classList.add("visible");
-    menu.classList.remove("visible");
-    setTimeout(()=> menu.classList.add("visible"));
-}
-
-export function hideCtxMenu(menu: HTMLElement, evt: MouseEvent){
-  if((evt.target as HTMLElement).offsetParent != menu)
-    menu.classList.remove('visible');
-}
-*/
-
-/*
 function mouseX(e){
   if(e.pageX) return e.pageX;
   if(e.clientX) return e.clientX + getScrollLeft();
@@ -73,4 +52,3 @@ function getScrollTop(){
          document.documentElement.scrollTop :
          document.body.scrollTop;
 }
-*/
