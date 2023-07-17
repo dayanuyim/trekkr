@@ -34,7 +34,8 @@
     background: #606060;
 }
 
-#ctx-menu .ctx-item i {
+#ctx-menu .ctx-item i,
+#ctx-menu .ctx-item svg {
     width: 16px;
     margin-right: 8px;
 }

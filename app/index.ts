@@ -1,10 +1,14 @@
 'use strict';
 
-import '../node_modules/ol/ol.css';
-import '../node_modules/@fortawesome/fontawesome-free/css/all.min.css';
+import 'ol/ol.css';
 import './css/index.css';
 import './css/tab.css';
 import './css/ctx-menu.css';
+
+import '@fortawesome/fontawesome-free/js/fontawesome';
+import '@fortawesome/fontawesome-free/js/solid';
+import '@fortawesome/fontawesome-free/js/regular';
+import '@fortawesome/fontawesome-free/js/brands';
 
 import './coord';
 import * as templates from './templates';

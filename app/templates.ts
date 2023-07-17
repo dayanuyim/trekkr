@@ -36,7 +36,7 @@ export const ptPopup = Handlebars.compile(`
         <span class="pt-coord-value">N/A</span>
         <a class="pt-gmap" href="{{gmap coordinate}}" target="_blank">
             <img src="./images/googleg.png" alt="Google G">
-            <!--<i class="fa-brands fa-google"></i>-->
+            <!--<i class="fab fa-google"></i>-->
         </a>
     </div>
 
@@ -87,10 +87,10 @@ export const mkLayer = Handlebars.compile(`
         <input class="ly-checked" type="checkbox" {{#if checked}}checked{{/if}}><!--
      --><span class="ly-body"><!--
          --><span class="ly-desc">{{desc}}</span>
-            <span class="ly-spy"><i class="fa fa-crosshairs"></i></span>
+            <span class="ly-spy"><i class="fas fa-crosshairs"></i></span>
         </span>
         <input class="ly-opacity" type="number" max="100" min="0" step="5" value="{{mul opacity 100}}">
-        <i class="fa fa-percent"></i>
+        <i class="fas fa-percent"></i>
     </li>
     {{/with}}
 `);
@@ -106,14 +106,14 @@ Handlebars.registerHelper("layer", (layer, options) => {
             <input class="ly-checked" type="checkbox" ${checked? 'checked': ''}><!--
          --><span class="ly-desc">${desc}</span>
             <input class="ly-opacity" type="number" max="100" min="0" step="5" value="${Math.floor(opacity*100)}">
-            <i class="fa fa-percent"></i>
+            <i class="fas fa-percent"></i>
         </li>
 `)});
 */
 
 export const settings = Handlebars.compile(`
     <div class="settings-ctrl ol-control">
-        <button class="btn-toggle"><i class="fa fa-cog"></i></button>
+        <button class="btn-toggle"><i class="fas fa-gear"></i></button>
     </div>
     <div class="settings-main">
         <div class="tab">
@@ -154,7 +154,7 @@ export const main = Handlebars.compile(`
 
     <div class="settings collapsed"></div>
     <div class="settings-side ol-control">
-        <button class="btn-spy" title="Spy Mode"><i class="fa fa-crosshairs"></i></button>
+        <button class="btn-spy" title="Spy Mode"><i class="fas fa-crosshairs"></i></button>
     </div>
 
     <div id="ctx-menu">
@@ -165,9 +165,9 @@ export const main = Handlebars.compile(`
 `);
 
 const ctxMenuItems = Handlebars.compile(`
-    <div class="ctx-item"><a class="item-gmap" target="_blank"><i class="fa-brands fa-google"></i>GoogleMap&nbsp;Here</a></div>
-    <div class="ctx-item"><a class="item-add-wpt"><i class="fa-solid fa-location-dot"></i>新增航點</a></div>
-    <div class="ctx-item"><a class="item-save-gpx"><i class="fa-solid fa-file-contract"></i>匯出GPX航跡檔</a></div>
+    <div class="ctx-item"><a class="item-gmap" target="_blank"><i class="fab fa-google"></i>GoogleMap&nbsp;Here</a></div>
+    <div class="ctx-item"><a class="item-add-wpt"><i class="fas fa-location-dot"></i>新增航點</a></div>
+    <div class="ctx-item"><a class="item-save-gpx"><i class="fas fa-file-contract"></i>匯出GPX航跡檔</a></div>
 `);
 Handlebars.registerHelper("ctxMenuItems", ()=>{
     return new Handlebars.SafeString(ctxMenuItems());
