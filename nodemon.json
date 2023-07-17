@@ -1,0 +1,12 @@
+{
+  "watch": [
+    "app",
+    "server.js"
+  ],
+  "ext": "js,ts,json",
+  "ignore": [
+    "node_modules",
+    ".git",
+    "sessions"
+  ]
+}
