@@ -163,5 +163,5 @@ export const gpxStyle = (feature) => {
 };
 
 export function gmapUrl(coord){
-    return fmtCoordinate(toLonLat(coord), 'https://www.google.com.tw/maps/@{y},{x},15z?hl=zh-TW', 7);
+    return fmtCoordinate(toLonLat(coord), `https://www.google.com.tw/maps/@{y},{x},${opt.zoom}z?hl=zh-TW`, 7);
 }

@@ -372,8 +372,19 @@ import { gmapUrl} from './common';
 import { CtxMenu } from './ctx-menu';
 
 export function setCtxMenu(map, menu: HTMLElement) {
-  //const base = map.getTargetElement();
-  const base = map.getViewport();
+  // set map listeners ==========
+  //const map_el = map.getTargetElement();
+  const map_el = map.getViewport();
+
+  const ctx = new CtxMenu(map_el, menu);
+  map_el.addEventListener('contextmenu', e => {
+    menu.dataset.coord = map.getEventCoordinate(e);
+    ctx.show(e);
+  });
+
+  map_el.addEventListener("click", e => {
+    ctx.hide(e);
+  });
 
   // set menu listeners ========
   const item_gmap = menu.querySelector<HTMLAnchorElement>("a.item-gmap");
@@ -391,16 +402,5 @@ export function setCtxMenu(map, menu: HTMLElement) {
   item_save_gpx.style.color = "gray";
   item_save_gpx.addEventListener('click', () =>{
     alert("not implemented yet!");
-  });
-
-  // set base listeners ==========
-  const ctx = new CtxMenu(base, menu);
-  base.addEventListener('contextmenu', e => {
-    menu.dataset.coord = map.getEventCoordinate(e);
-    ctx.show(e);
-  });
-
-  base.addEventListener("click", e => {
-    ctx.hide(e);
   });
 }
