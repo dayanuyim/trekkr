@@ -23,8 +23,17 @@ export class CtxMenu {
   }
 
   public hide(evt: MouseEvent) {
-    if ((evt.target as HTMLElement).offsetParent != this._menu)
+    if ((evt.target as HTMLElement).offsetParent != this._menu) //not click on menu
       this._menu.classList.remove('visible');
+  }
+
+  public setItem(cls, cb){
+    if(!cls.startsWith(".")) cls = `.${cls}`;
+    const el = this._menu.querySelector<HTMLAnchorElement>(`a${cls}`);
+    el.addEventListener('click', () => {
+      cb(el);
+      this._menu.classList.remove('visible');
+    });
   }
 }
 

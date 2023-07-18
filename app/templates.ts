@@ -28,7 +28,7 @@ export const ptPopup = Handlebars.compile(`
     <span class="pt-name">{{name}}</span>
     <div class="pt-coord" data-pt-coord="{{coordinate}}">
         <select class="pt-coord-title" dir="rtl">
-            {{selop ""      coordsys "?"  "disabled hidden"}}
+            {{selop ""      coordsys "-"  "disabled hidden"}}
             {{selop "twd67" coordsys "TWD67"}}
             {{selop "twd97" coordsys "TWD97"}}
             {{selop "wgs84" coordsys "WGS84"}}
@@ -42,12 +42,17 @@ export const ptPopup = Handlebars.compile(`
 
     <div class="pt-ele">
         <span class="pt-ele-title">ELE.</span>
-        <span class="pt-ele-value">{{fmtEle ele.value}} m{{#if ele.est}} (est.){{/if}}</span>
+        <span class="pt-ele-value">{{fmtEle ele.value}}</span> m
+        <span class="pt-ele-est">(est.)</span>
     </div>
 
     <div class="pt-time">
         <span class="pt-time-title">TIME</span>
         <span class="pt-time-value">{{fmtTime time}}</span>
+    </div>
+
+    <div class="pt-mk-wpt" title="Make Wpt">
+        <button><i class="fas fa-map-pin"></i></button>
     </div>
 
     <footer class="sym-copyright">&copy; The icon made by
@@ -167,7 +172,7 @@ export const main = Handlebars.compile(`
 const ctxMenuItems = Handlebars.compile(`
     <div class="ctx-item"><a class="item-gmap" target="_blank"><i class="fab fa-google"></i>GoogleMap&nbsp;Here</a></div>
     <div class="ctx-item"><a class="item-add-wpt"><i class="fas fa-location-dot"></i>新增航點</a></div>
-    <div class="ctx-item"><a class="item-save-gpx"><i class="fas fa-file-contract"></i>匯出GPX航跡檔</a></div>
+    <div class="ctx-item"><a class="item-save-gpx" style="color:gray"><i class="fas fa-file-contract"></i>匯出GPX航跡檔</a></div>
 `);
 Handlebars.registerHelper("ctxMenuItems", ()=>{
     return new Handlebars.SafeString(ctxMenuItems());

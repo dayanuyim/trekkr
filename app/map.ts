@@ -1,60 +1,22 @@
-import {defaults as defaultControls, ScaleLine, OverviewMap, ZoomSlider, Control} from 'ol/control';
-import {defaults as defaultInteractions, DragAndDrop, Modify, Select} from 'ol/interaction';
-import {toSize} from 'ol/size';
-import {Map, View, Overlay, Collection} from 'ol';
-import {Tile as TileLayer, Vector as VectorLayer} from 'ol/layer';
-import VectorSource from 'ol/source/Vector';
-import TileJSON from 'ol/source/TileJSON';
-import XYZ from 'ol/source/XYZ';
-import OSM from 'ol/source/OSM';
-import {GPX, GeoJSON, IGC, KML, TopoJSON} from 'ol/format';
-import {getRenderPixel} from 'ol/render';
-import {platformModifierKeyOnly} from 'ol/events/condition';
+import { defaults as defaultControls, ScaleLine, OverviewMap, ZoomSlider, Control } from 'ol/control';
+import { defaults as defaultInteractions, DragAndDrop, Modify, Select } from 'ol/interaction';
+import { toSize } from 'ol/size';
+import { Map, View, Overlay, Collection } from 'ol';
+import { Tile as TileLayer } from 'ol/layer';
+import { Vector as VectorSource, TileJSON, XYZ, OSM } from 'ol/source';
+import { GeoJSON, IGC, KML, TopoJSON } from 'ol/format';
+import { getRenderPixel } from 'ol/render';
+import { platformModifierKeyOnly } from 'ol/events/condition';
 
-import { Icon as IconStyle, Circle as CircleStyle, Fill, Stroke, Style } from 'ol/style';
-import GeometryType from  'ol/geom/GeometryType';
-
-import {getSymbol, toSymPath, gpxStyle} from './common'
+import { googleElevation } from './common'
+import { GPXFormat, mkGpxLayer, mkWptFeature } from './layer-gpx'
 import PtPopupOverlay from './pt-popup';
 import Opt from './opt';
 import * as LayerRepo from './layer-repo';
 
-// GPX format which reads extensions node
-class ExtGPX extends GPX {
-  constructor(options?){
-    super(Object.assign({
-      readExtensions: (feat, node) => {
-        //set color for track if any
-        if(node && feat.getGeometry().getType() ==  'MultiLineString') {
-          const color = this._getTrackColor(node) ;
-          if(color) feat.set('color', color);
-        }
-      },
-    }, options));
-  }
-
-  _getTrackColor(extensions) {
-    let color = null;
-
-    if (extensions) {
-      extensions.childNodes.forEach((ext) => {
-        if (ext.nodeName == "gpxx:TrackExtension") {
-          ext.childNodes.forEach((attr) => {
-            if (attr.nodeName == "gpxx:DisplayColor") {
-              color = attr.textContent;
-            }
-          });
-        }
-      });
-    }
-    return color;
-  }
-
-}
-
 export const createMap = (target) => {
   const drag_interaciton = new DragAndDrop({
-    formatConstructors: [ ExtGPX, GeoJSON, IGC, KML, TopoJSON, ]
+    formatConstructors: [ GPXFormat, GeoJSON, IGC, KML, TopoJSON, ]
   });
 
   const map = new Map({
@@ -71,11 +33,8 @@ export const createMap = (target) => {
       drag_interaciton,
       //new Select(),
     ]),
-    /*
-    layers: [
-      createSpyLayer(Opt.spy.layer),
-    ],
-    */
+    //layers: [
+    //],
     view: new View({
       center: Opt.xy,
       zoom: Opt.zoom,
@@ -87,32 +46,18 @@ export const createMap = (target) => {
     ],
   });
 
+  // pseudo gpx layer
+  addLayerWithInteraction(map, mkGpxLayer())
+
   drag_interaciton.on('addfeatures', function(e) {
-    addGPXLayer(map, e.features);
+    const layer = mkGpxLayer({features: e.features});
+    addLayerWithInteraction(map, layer);
+    map.getView().fit(layer.getSource().getExtent(), { maxZoom: 16 });
   });
 
   initEvents(map);
   return map;
 };
-
-function addGPXLayer(map, features)
-{
-    const source = new VectorSource({
-      features,
-    });
-
-    map.addLayer(new VectorLayer({
-      source,
-      style: gpxStyle,
-    }));
-    map.getView().fit(source.getExtent(), {maxZoom: 16});
-
-    //let trkpt feature as 'Point', instead of 'MultiLineString'
-    map.addInteraction(new Modify({
-      source,
-      condition: platformModifierKeyOnly,
-    }));
-}
 
 /*
 function getQueryParameters()
@@ -171,10 +116,10 @@ function initEvents(map)
 function handleSpyRadiusChange(map, e, inc){
     const radius = Math.max(25, Math.min(Opt.spy.radius + inc, 250));
     if(radius != Opt.spy.radus){
-      map.render();
-      e.preventDefault();
       Opt.spy.radius = radius;
       Opt.update();
+      map.render();  //trigger prerender
+      e.preventDefault();
     }
 }
 
@@ -209,14 +154,14 @@ const hoverFeatures = function (e) {
 
 const showFeatures = function (e) {
   let hasPopup = false;
+  const popup_overlay = () => e.map.getOverlayById('pt-popup');
 
   const features = _getFeatures(e);
   features.forEach(feature => {
     switch (feature.getGeometry().getType()) {
-      case 'Point': {   // TODO: Waypoint or Track point
+      case 'Point': {   // Waypoint or Track point
         hasPopup = true;
-        const overlay = e.map.getOverlayById('pt-popup');
-        overlay.popContent(feature);
+        popup_overlay().popContent(feature);
         break;
       }
       case 'LineString': {  //grid line
@@ -234,21 +179,41 @@ const showFeatures = function (e) {
     return true;
   });
 
-  //hide old popup, if any
-  if(!hasPopup){
-    const overlay = e.map.getOverlayById('pt-popup');
-    overlay.setPosition(undefined);
-  }
+  //hide old popup, anyway
+  if(!hasPopup) popup_overlay().setPosition(undefined);
 };
+
+////////////////////////////////////////////////////////////////
+
+function indexOfSpyLayer(){
+  return Opt.layers.filter(ly => ly.checked).length;   // after all enabled layers
+}
+
+function indexOfPseudoGpxLayer(){
+  return indexOfSpyLayer() + 1;  //after spy layer
+}
+
+function addLayerWithInteraction(map, layer){
+    map.addLayer(layer);
+    map.addInteraction(new Modify({    //let trkpt feature as 'Point', instead of 'MultiLineString'
+      source: layer.getSource(),
+      condition: platformModifierKeyOnly,
+    }));
+}
+
 
 //Note:
 // 1. OL is anti-order against @conf.
-//   OL:
-//     layers[0] is the most bottom layer; 
-//     layers[n-1] is the most top layer
+//    OL:
+//     layers[0]     is the most bottom layer from conf;
+//     layers[n-1]   is the most top layer from conf
+//     layers[n]     is the spy layer
+//     layers[n+1]   is the pseudo gpx layer
+//     layers[n+2]   is the 1st user-provided gpx laeyr
+//     layers[n+1+m] is the mth user-provided gpx laeyr
 // 2. remove only the layers whith are set disabled in @conf
 // 3. invoke getLayer only for those enalbed in @conf
-// 4. as more as graceful to reorder the map's layers.
+// 4. as mush as graceful to reorder the map's layers.
 export function setLayers(map, conf)
 {
   const in_right_pos = (arr, idx, elem) => arr.getLength() > idx && arr.item(idx) === elem;
@@ -281,6 +246,8 @@ export function setLayers(map, conf)
       });
 }
 
+////////////////////////////////////////////////////////////////
+
 export function setLayerOpacity(id, opacity)
 {
   const layer = LayerRepo.get(id);
@@ -288,6 +255,38 @@ export function setLayerOpacity(id, opacity)
     layer.setOpacity(opacity);
   else
     console.error(`Set layer opacity error: layer ${id} not found`);
+}
+
+////////////////////////////////////////////////////////////////
+
+//TODO: are there beter ways than creating spy layer everytime?
+//      Or creating spy layer everytime really hurt the performance?
+export function setSpyLayer(map, id)
+{
+  const layers = map.getLayers();
+
+  let has_old_spy = false;
+  let idx = 0;
+  for(; idx < layers.getLength(); ++idx){
+    const layer = layers.item(idx);
+    const id = LayerRepo.getId(layer);
+    if(!id) break;    //beyond normal layers, e.g., gpx layer
+    if(id === 'SPY'){
+      has_old_spy = true;
+      break;
+    }
+  }
+
+  if(has_old_spy)
+    layers.removeAt(idx);
+  layers.insertAt(idx, createSpyLayer(id));
+}
+
+function createSpyLayer(id)
+{
+  const spy_conf = Object.assign({}, LayerRepo.getConf(id), { id: 'SPY' });
+  const layer = LayerRepo.createByConf(spy_conf);
+  return setSpyEvents(layer);
 }
 
 function setSpyEvents(layer)
@@ -326,50 +325,12 @@ function setSpyEvents(layer)
   return layer;
 }
 
-function createSpyLayer(id)
-{
-  const spy_conf = Object.assign({}, LayerRepo.getConf(id), { id: 'SPY' });
-  const layer = LayerRepo.createByConf(spy_conf);
-  return setSpyEvents(layer);
-}
+/////////////////////// Context Menu ///////////////////////////
 
-//TODO: are there beter ways than creating spy layer everytime?
-//      Or creating spy layer everytime really hurt the performance?
-export function setSpyLayer(map, id)
-{
-  function findIdx(ol_collection, cb) {
-    for(let i = 0; i < ol_collection.getLength(); ++i){
-      const layer = ol_collection.item(i);
-      if(cb(layer))
-        return i;
-    }
-    return -1;
-  }
-
-  const layers = map.getLayers();
-
-  // get appropriate index to insert
-  let has_old_spy = false;
-  let idx = findIdx(layers, layer => {
-    const id = LayerRepo.getId(layer);
-    if(!id) return true;    //beyond normal layers, ig, gpx layer
-    if(id === 'SPY'){
-      has_old_spy = true;
-      return true;
-    }
-    return false;
-  });
-  if(idx < 0) idx = layers.getLength();
-
-  if(has_old_spy)
-    layers.removeAt(idx);
-
-  layers.insertAt(idx, createSpyLayer(id));
-}
-
-/********************* context menu ******************/
 import { gmapUrl} from './common';
 import { CtxMenu } from './ctx-menu';
+
+let __ctxmenu_coord;
 
 export function setCtxMenu(map, menu: HTMLElement) {
   // set map listeners ==========
@@ -378,7 +339,7 @@ export function setCtxMenu(map, menu: HTMLElement) {
 
   const ctx = new CtxMenu(map_el, menu);
   map_el.addEventListener('contextmenu', e => {
-    menu.dataset.coord = map.getEventCoordinate(e);
+    __ctxmenu_coord = map.getEventCoordinate(e);
     ctx.show(e);
   });
 
@@ -387,20 +348,23 @@ export function setCtxMenu(map, menu: HTMLElement) {
   });
 
   // set menu listeners ========
-  const item_gmap = menu.querySelector<HTMLAnchorElement>("a.item-gmap");
-  item_gmap.addEventListener('click', () =>{
-    item_gmap.href = gmapUrl(menu.dataset.coord.split(","));
+
+  ctx.setItem(".item-gmap", (el) => {
+    el.href = gmapUrl(__ctxmenu_coord);
   });
 
-  const item_add_wpt = menu.querySelector<HTMLElement>("a.item-add-wpt");
-  item_add_wpt.style.color = "gray";
-  item_add_wpt.addEventListener('click', () =>{
-    alert("not implemented yet!");
+  ctx.setItem(".item-add-wpt", (el) => {
+    addWaypoint(map, __ctxmenu_coord);
   });
 
-  const item_save_gpx = menu.querySelector<HTMLElement>("a.item-save-gpx")
-  item_save_gpx.style.color = "gray";
-  item_save_gpx.addEventListener('click', () =>{
+  ctx.setItem(".item-save-gpx", (el) => {
     alert("not implemented yet!");
   });
+}
+
+function addWaypoint(map, coord){
+  map.getLayers().item(indexOfPseudoGpxLayer())
+    .getSource()
+    .addFeature(mkWptFeature(coord));
+  //console.log(gpx.getSource().getFeatures());
 }

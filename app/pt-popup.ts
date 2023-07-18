@@ -44,7 +44,9 @@ export default class PtPopupOverlay extends Overlay{
     _pt_coord_value: HTMLElement;
     _pt_gmap: HTMLAnchorElement;
     _pt_ele: HTMLElement;
+    _pt_ele_est: HTMLElement;
     _pt_time: HTMLElement;
+    _pt_mk_wpt: HTMLElement;
     _sym_copyright: HTMLElement;
     _sym_maker: HTMLAnchorElement;
     _sym_provider: HTMLAnchorElement;
@@ -108,7 +110,9 @@ export default class PtPopupOverlay extends Overlay{
         this._pt_coord_value = this._pt_coord.querySelector<HTMLElement>('.pt-coord-value');
         this._pt_gmap =        el.querySelector<HTMLAnchorElement>('a.pt-gmap');
         this._pt_ele =         el.querySelector<HTMLElement>('.pt-ele-value');
+        this._pt_ele_est =     el.querySelector<HTMLElement>('.pt-ele-est');
         this._pt_time =        el.querySelector<HTMLElement>('.pt-time-value');
+        this._pt_mk_wpt =      el.querySelector<HTMLElement>('.pt-mk-wpt');
         this._sym_copyright =  el.querySelector<HTMLElement>('.sym-copyright');
         this._sym_maker =      this._sym_copyright.querySelector<HTMLAnchorElement>('.sym-maker');
         this._sym_provider =   this._sym_copyright.querySelector<HTMLAnchorElement>('.sym-provider');
@@ -162,8 +166,11 @@ export default class PtPopupOverlay extends Overlay{
         this.pt_gmap = gmapUrl(coordinate);
 
         this.pt_name = name;
-        this.pt_ele = ele? `${fmtEle(ele.value)} m${ele.est? '(est.)': ''}`: '-';
+        this.pt_ele = ele? fmtEle(ele.value): '-';
+        this._pt_ele_est.classList.toggle('hidden', !ele.est)
         this.pt_time = time? fmtTime(time): '-';
+
+        this._pt_mk_wpt.classList.toggle('hidden', !!name);
 
         this._pt_sym.classList.toggle('hidden', !symbol);
         this._sym_copyright.classList.toggle('hidden', !symbol);
