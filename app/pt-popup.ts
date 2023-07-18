@@ -47,13 +47,16 @@ export default class PtPopupOverlay extends Overlay{
     _pt_ele_est: HTMLElement;
     _pt_time: HTMLElement;
     _pt_mk_wpt: HTMLElement;
+    _pt_rm_wpt: HTMLElement;
     _sym_copyright: HTMLElement;
     _sym_maker: HTMLAnchorElement;
     _sym_provider: HTMLAnchorElement;
     _sym_license: HTMLAnchorElement;
 
-    _coords: Array<number>;
-    _listener_wptmade: CallableFunction;
+    _feature;
+    _coordinates;
+    _listener_mkwpt: CallableFunction;
+    _listener_rmwpt: CallableFunction;
 
     get pt_sym() { return this._pt_sym.src; }
     set pt_sym(src) { this._pt_sym.src = src;}
@@ -72,7 +75,8 @@ export default class PtPopupOverlay extends Overlay{
     get pt_time() { return this._pt_time.textContent; }
     set pt_time(value) { this._pt_time.textContent = value; }
 
-    set onwptmade(listener) {this._listener_wptmade = listener; }
+    set onmkwpt(listener) {this._listener_mkwpt = listener; }
+    set onrmwpt(listener) {this._listener_rmwpt = listener; }
 
     //_coord_title;
     constructor(el: HTMLElement){
@@ -102,7 +106,8 @@ export default class PtPopupOverlay extends Overlay{
         this._pt_ele =         el.querySelector<HTMLElement>('.pt-ele-value');
         this._pt_ele_est =     el.querySelector<HTMLElement>('.pt-ele-est');
         this._pt_time =        el.querySelector<HTMLElement>('.pt-time-value');
-        this._pt_mk_wpt =      el.querySelector<HTMLElement>('.pt-mk-wpt');
+        this._pt_mk_wpt =      el.querySelector<HTMLElement>('.pt-tool-mk-wpt');
+        this._pt_rm_wpt =      el.querySelector<HTMLElement>('.pt-tool-rm-wpt');
         this._sym_copyright =  el.querySelector<HTMLElement>('.sym-copyright');
         this._sym_maker =      this._sym_copyright.querySelector<HTMLAnchorElement>('.sym-maker');
         this._sym_provider =   this._sym_copyright.querySelector<HTMLAnchorElement>('.sym-provider');
@@ -125,12 +130,26 @@ export default class PtPopupOverlay extends Overlay{
             Opt.update({coordsys});
         };
 
+        // make wpt from trkpt
         this._pt_mk_wpt.onclick = e => {
-            const wpt = mkWptFeature(this._coords, {sym: "City (Small)"});
+            /*
+            //sometimes coordiantes changed when getting it from feature again. Why??
+            const wpt = this._feature.clone();
+            wpt.setProperties({
+                name: "WPT",
+                sym: "City (Small)",
+            });
+            */
+            const wpt = mkWptFeature(this._coordinates, {sym: "City (Small)"});
             this.popContent(wpt);
-            if(this._listener_wptmade)
-                this._listener_wptmade(wpt);
+            if(this._listener_mkwpt)
+                this._listener_mkwpt(wpt);
         };
+
+        this._pt_rm_wpt.onclick = e => {
+            if(this._listener_rmwpt)
+                this._listener_rmwpt(this._feature);
+        }
     }
 
     async popContent(feature) {
@@ -138,7 +157,10 @@ export default class PtPopupOverlay extends Overlay{
         const name = feature.get('name') || feature.get('desc');   //may undefined
         const sym = feature.get('sym');              //may undefined
         const coordinates = feature.getGeometry().getCoordinates();
-        //console.log(coordinates);
+
+        // saving for later to use
+        this._feature = feature;
+        this._coordinates = coordinates;
 
         this.setContent({
             name,
@@ -151,9 +173,6 @@ export default class PtPopupOverlay extends Overlay{
 
         //position
         this.setPosition(coordinates);
-
-        // saving for later to use
-        this._coords = coordinates;
     }
 
     private setContent({name, coordsys, coordinate, time, ele, symbol})
@@ -169,6 +188,7 @@ export default class PtPopupOverlay extends Overlay{
         this.pt_time = time? fmtTime(time): '-';
 
         this._pt_mk_wpt.classList.toggle('hidden', !!name);
+        this._pt_rm_wpt.classList.toggle('hidden', !name);
 
         this._pt_sym.classList.toggle('hidden', !symbol);
         this._sym_copyright.classList.toggle('hidden', !symbol);

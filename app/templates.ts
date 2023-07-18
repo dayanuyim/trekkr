@@ -51,8 +51,12 @@ export const ptPopup = Handlebars.compile(`
         <span class="pt-time-value">{{fmtTime time}}</span>
     </div>
 
-    <div class="pt-mk-wpt" title="Make Wpt">
+    <div class="pt-tool pt-tool-mk-wpt" title="Make Wpt">
         <button><i class="fas fa-map-pin"></i></button>
+    </div>
+
+    <div class="pt-tool pt-tool-rm-wpt" title="Delete Wpt">
+        <button><i class="fas fa-trash-can"></i></button>
     </div>
 
     <footer class="sym-copyright">&copy; The icon made by

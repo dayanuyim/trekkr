@@ -91,9 +91,10 @@ function initEvents(map)
     saveViewConf(e.map.getView());
   });
 
-  // when pt-popup overlay crate a wpt feature
+  // when pt-popup overlay make or remove a wpt feature
   const pt_popup = map.getOverlayById('pt-popup');
-  pt_popup.onwptmade = (wpt) => addWaypoint(map, wpt);
+  pt_popup.onmkwpt = (wpt) => addWaypoint(map, wpt);
+  pt_popup.onrmwpt = (wpt) => rmWaypoint(map, wpt);
 
   // record the pixel position with every move
   document.addEventListener('mousemove', function (e) {
@@ -371,4 +372,31 @@ function addWaypoint(map, wpt){
     .getSource()
     .addFeature(wpt);
   //console.log(gpx.getSource().getFeatures());
+}
+
+function rmWaypoint(map, wpt){
+  const layer = findLayerByFeature(map, wpt);
+  if(!layer){
+    console.error('cannot find the layer for wpt', wpt);
+    return;
+  }
+  layer.getSource().removeFeature(wpt);
+
+  //close popup
+  map.getOverlayById('pt-popup')
+     .setPosition(undefined);
+}
+
+//TODO: better way to do this?
+// NOTE: the function is called only with 'wpt' feature feed,
+// so the index range should be in [ indexOfPseudoGpxLayer(), layers.getLength() ),
+// so do the search by rever order.
+function findLayerByFeature(map, feature){
+  const layers = map.getLayers();
+  for(let i = layers.getLength() -1; i >= 0; --i){
+    const layer = layers.item(i);
+    if(layer.getSource().getFeatures().includes(feature))
+      return layer;
+  }
+  return undefined;
 }
