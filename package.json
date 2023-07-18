@@ -9,13 +9,13 @@
     "start": "nodemon server.js",
     "test": "mocha --watch --reporter min"
   },
-  "//": {
-  },
+  "//": {},
   "devDependencies": {
     "@fortawesome/fontawesome-free": "^6.4.0",
     "@popperjs/core": "^2.1.1",
     "@types/ol": "6.5.3",
     "@types/proj4": "^2.5.2",
+    "bidirectional-map": "^1.1.1",
     "bootstrap": "^4.4.1",
     "copy-webpack-plugin": "^11.0.0",
     "css-loader": "^6.8.1",

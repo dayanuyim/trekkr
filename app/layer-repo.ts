@@ -4,7 +4,9 @@ import {GPX, GeoJSON, IGC, KML, TopoJSON} from 'ol/format';
 import {Stroke, Text, Fill} from 'ol/style';
 import Graticule from 'ol/layer/Graticule';
 
-import {gpxStyle} from './common';
+import BiMap from 'bidirectional-map';
+
+import { mkGpxLayer } from './layer-gpx';
 import Confs from './data/layer-conf';
 
 const def_label_style = {
@@ -115,18 +117,19 @@ function jsonLayer(url, options?){
 }
 
 function gpxLayer(url, options?){
+  return mkGpxLayer({url}, options)
+  /*
   return new VectorLayer(Object.assign({
     source: new VectorSource({
-      format: new GPX(/*{
-        readExtensions: (x) => { console.log(x); }
-      }*/),
+      format: new GPXFormat(),
       url
     }),
     style: gpxStyle,
   }, options));
+  */
 }
 
-function conf2layer({legend, type, url, urls})
+function mkLayer({legend, type, url, urls})
 {
   const opt = legend? {transition: 0}: undefined;
   switch(type){
@@ -140,39 +143,31 @@ function conf2layer({legend, type, url, urls})
 }
 
 //////////////////////////////////////////////////////////////////////
-const _layers = new Map();
-const _ids = new Map();
+
+const _layers = new BiMap();   // id <-> layer
 
 export function createByConf(conf) {
-  const layer = conf2layer(conf);
-
-  const orig = _layers.get(conf.id)
-  if(orig) _ids.delete(orig);
-
+  const layer = mkLayer(conf);
+  _layers.delete(conf.id);
   _layers.set(conf.id, layer);
-  _ids.set(layer, conf.id);
   return layer;
 }
 
-//lazy initialization for _layers/_ids
+//lazy initialization for _layers
 export function get(id){
   let layer = _layers.get(id);
+  if(layer) return layer;
 
   //try to get layer from conf
-  if(!layer){
-    const conf = Confs.find(conf => conf.id === id);
-    if(!conf){
-      console.error(`get layer error: layer ${id} unconfiguration.`)
-      return undefined;
-    }
-    layer = createByConf(conf);
-  }
+  const conf = getConf(id);
+  if(conf) return createByConf(conf);
 
-  return layer;
+  console.error(`get layer error: layer ${id} unconfiguration.`)
+  return undefined;
 }
 
 export function getId(layer){
-  return _ids.get(layer);
+  return _layers.getKey(layer);
 }
 
 export function getConf(id){
