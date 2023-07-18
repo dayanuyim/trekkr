@@ -8,7 +8,6 @@ import { GeoJSON, IGC, KML, TopoJSON } from 'ol/format';
 import { getRenderPixel } from 'ol/render';
 import { platformModifierKeyOnly } from 'ol/events/condition';
 
-import { googleElevation } from './common'
 import { GPXFormat, mkGpxLayer, mkWptFeature } from './layer-gpx'
 import PtPopupOverlay from './pt-popup';
 import Opt from './opt';
@@ -42,9 +41,10 @@ export const createMap = (target) => {
       maxZoom: 23,
     }),
     overlays: [
-        new PtPopupOverlay(document.getElementById('pt-popup')),
+      new PtPopupOverlay(document.getElementById('pt-popup')),
     ],
   });
+
 
   // pseudo gpx layer
   addLayerWithInteraction(map, mkGpxLayer())
@@ -91,6 +91,10 @@ function initEvents(map)
     saveViewConf(e.map.getView());
   });
 
+  // when pt-popup overlay crate a wpt feature
+  const pt_popup = map.getOverlayById('pt-popup');
+  pt_popup.onwptmade = (wpt) => addWaypoint(map, wpt);
+
   // record the pixel position with every move
   document.addEventListener('mousemove', function (e) {
     Opt.mousepos = map.getEventPixel(e);
@@ -104,8 +108,6 @@ function initEvents(map)
   
   //document events
   document.addEventListener('keydown', function(e) {
-    //console.log(e.key);
-
     if (Opt.spy.enabled && e.key === 'ArrowUp')
       handleSpyRadiusChange(map, e, 5);
     else if (Opt.spy.enabled && e.key === 'ArrowDown')
@@ -354,7 +356,7 @@ export function setCtxMenu(map, menu: HTMLElement) {
   });
 
   ctx.setItem(".item-add-wpt", (el) => {
-    addWaypoint(map, __ctxmenu_coord);
+    addWaypoint(map, mkWptFeature(__ctxmenu_coord));
   });
 
   ctx.setItem(".item-save-gpx", (el) => {
@@ -362,9 +364,11 @@ export function setCtxMenu(map, menu: HTMLElement) {
   });
 }
 
-function addWaypoint(map, coord){
-  map.getLayers().item(indexOfPseudoGpxLayer())
+function addWaypoint(map, wpt){
+  const layers = map.getLayers();
+  //layers.item(indexOfPseudoGpxLayer())
+  layers.item(layers.getLength() - 1)   //use the topmost layer anyway, this may be pseudo gpx layer or not
     .getSource()
-    .addFeature(mkWptFeature(coord));
+    .addFeature(wpt);
   //console.log(gpx.getSource().getFeatures());
 }

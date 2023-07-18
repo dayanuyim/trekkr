@@ -3,10 +3,10 @@ import Overlay from 'ol/Overlay';
 import {toStringXY} from 'ol/coordinate';
 import {toLonLat} from 'ol/proj';
 import {toTWD97, toTWD67} from './coord';
-import { gmapUrl } from './common';
 
 import * as moment from 'moment-timezone';
-import {toSymPath, getSymbol, getElevationByCoords, getLocalTimeByCoords} from './common'
+import {toSymPath, getSymbol, getElevationByCoords, getLocalTimeByCoords, gmapUrl} from './common'
+import { mkWptFeature } from './layer-gpx';
 import Opt from './opt';
 
 const toXY = {
@@ -51,21 +51,9 @@ export default class PtPopupOverlay extends Overlay{
     _sym_maker: HTMLAnchorElement;
     _sym_provider: HTMLAnchorElement;
     _sym_license: HTMLAnchorElement;
-    /*
-    get _closer()         { return this.getElement().querySelector('.ol-popup-closer'); }
-    get _content()        { return this.getElement().querySelector('.ol-popup-content'); }
-    get _pt_name()        { return this.getElement().querySelector<HTMLElement>('.pt-name'); }
-    get _pt_coord()       { return this.getElement().querySelector<HTMLSelectElement>('.pt-coord'); }
-    get _pt_coord_title() { return this._pt_coord.querySelector<HTMLSelectElement>('.pt-coord-title'); }
-    get _pt_coord_value() { return this._pt_coord.querySelector<HTMLElement>('.pt-coord-value'); }
-    get _pt_gmap()        { return this.getElement().querySelector<HTMLAnchorElement>('a.pt-gmap'); }
-    get _pt_ele()         { return this.getElement().querySelector<HTMLElement>('.pt-ele-value'); }
-    get _pt_time()        { return this.getElement().querySelector<HTMLElement>('.pt-time-value'); }
-    get _sym_copyright()  { return this.getElement().querySelector<HTMLElement>('.sym-copyright'); }
-    get _sym_maker()      { return this._sym_copyright.querySelector<HTMLAnchorElement>('.sym-maker'); }
-    get _sym_provider()   { return this._sym_copyright.querySelector<HTMLAnchorElement>('.sym-provider'); }
-    get _sym_license()    { return this._sym_copyright.querySelector<HTMLAnchorElement>('.sym-license'); }
-    */
+
+    _coords: Array<number>;
+    _listener_wptmade: CallableFunction;
 
     get pt_sym() { return this._pt_sym.src; }
     set pt_sym(src) { this._pt_sym.src = src;}
@@ -83,6 +71,8 @@ export default class PtPopupOverlay extends Overlay{
     set pt_ele(value) { this._pt_ele.textContent = value; }
     get pt_time() { return this._pt_time.textContent; }
     set pt_time(value) { this._pt_time.textContent = value; }
+
+    set onwptmade(listener) {this._listener_wptmade = listener; }
 
     //_coord_title;
     constructor(el: HTMLElement){
@@ -120,6 +110,7 @@ export default class PtPopupOverlay extends Overlay{
     }
 
     private initEvents(){
+        //close popup
         this._closer.onclick = e => {
             this.setPosition(undefined);
             (<HTMLElement>e.currentTarget).blur();
@@ -130,18 +121,19 @@ export default class PtPopupOverlay extends Overlay{
         this._pt_coord_title.onchange = e => {
             const el = <HTMLSelectElement>e.currentTarget;
             const coordsys = el.value;
-
             this.pt_coord_value = toXY[coordsys](this.pt_coord)
-
             Opt.update({coordsys});
+        };
+
+        this._pt_mk_wpt.onclick = e => {
+            const wpt = mkWptFeature(this._coords, {sym: "City (Small)"});
+            this.popContent(wpt);
+            if(this._listener_wptmade)
+                this._listener_wptmade(wpt);
         };
     }
 
     async popContent(feature) {
-
-        //position
-        this.setPosition(feature.getGeometry().getCoordinates());
-
         // get data
         const name = feature.get('name') || feature.get('desc');   //may undefined
         const sym = feature.get('sym');              //may undefined
@@ -156,6 +148,12 @@ export default class PtPopupOverlay extends Overlay{
             ele: await getElevationByCoords(coordinates),
             symbol: getSymbol(sym),
         });
+
+        //position
+        this.setPosition(coordinates);
+
+        // saving for later to use
+        this._coords = coordinates;
     }
 
     private setContent({name, coordsys, coordinate, time, ele, symbol})

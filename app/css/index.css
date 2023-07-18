@@ -312,6 +312,7 @@ select::-ms-expand {
     background: transparent;
     color: royalblue;
     font-size: large;
+    transform: rotate(30deg);
 }
 
 .pt-mk-wpt button:hover {

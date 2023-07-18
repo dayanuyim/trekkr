@@ -127,13 +127,13 @@ export function mkGpxLayer(source_props?, layer_props?){
     }, layer_props));
 }
 
-//@coord is openlayer coord [x, y, ele, time], ele and tiem is optional.
-export function mkWptFeature(coord){
-  if(coord.length < 3) coord.push(null);  // ele // getElevationByCoords(coord)
-  if(coord.length < 4) coord.push(Math.round(new Date().getTime() / 1000));   //time
-  return new Feature({
-    geometry: new Point(coord),
+//@coords is openlayer coords [x, y, ele, time], ele and tiem is optional.
+export function mkWptFeature(coords, options?){
+  if(coords.length < 3) coords.push(null);  // ele // getElevationByCoords(coords)
+  if(coords.length < 4) coords.push(Math.round(new Date().getTime() / 1000));   //time
+  return new Feature(Object.assign({
+    geometry: new Point(coords),
     name: "WPT",
     sym: "waypoint",
-  });
+  }, options));
 }
