@@ -260,7 +260,7 @@ input[type=number] {
     background-color: white;
     -webkit-filter: drop-shadow(0 1px 4px rgba(0,0,0,0.2));
     filter: drop-shadow(0 1px 4px rgba(0,0,0,0.2));
-    padding: 15px;
+    padding: 15px 2em 15px 15px;
     border-radius: 10px;
     border: 1px solid #cccccc;
     bottom: 12px;
@@ -309,14 +309,34 @@ select::-ms-expand {
     display: none;
 }
 
+/******************* Point Popup Overlay ********************/
+#pt-popup input,
+#pt-popup span[contenteditable]{
+    padding: 2px 4px;
+    border-radius: 4px;
+    border: solid 1px transparent;
+}
+
+#pt-popup input:focus-visible,
+#pt-popup span[contenteditable]:focus-visible{
+    outline: 0;
+    background-color: #e8e8e8;
+    border: solid 1px #d0d0d0;
+}
+
+.pt-header {
+    white-space: nowrap;
+}
+
 .pt-sym {
-    margin-left: 15px;
+    margin-left: 12px;
     vertical-align: sub;
 }
 
 .pt-name {
     /*font-weight: bold;*/
     font-size: 20px;
+    /*width: 9em;*/
 }
 
 .pt-coord, .pt-ele, .pt-time{
@@ -333,6 +353,7 @@ select::-ms-expand {
 }
 
 .pt-coord-title{
+    outline: 0;
     border: 0px;
     color: gray;
     background: transparent;
@@ -343,12 +364,17 @@ select::-ms-expand {
     cursor: pointer;
 }
 
+/* to align editable ele and time fields */
+.pt-coord-title { padding-right: 5px; width: 65px;}
+.pt-time-value { padding-left:5px; }
+
 .pt-gmap img {
     width: 12px;
     height: 12px;
     border: 0;
 }
 
+/*----------------------------------------------------------------*/
 .pt-tool button {
     border: none;
     border-radius: 4px;
@@ -365,8 +391,8 @@ select::-ms-expand {
 .pt-tool-mk-wpt,
 .pt-tool-rm-wpt{
     position: absolute;
-    right: 1em;
-    top: 1em;
+    right: .5em;
+    top: .5em;
 }
 
 .pt-tool-mk-wpt button svg {

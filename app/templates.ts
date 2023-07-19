@@ -24,8 +24,12 @@ Handlebars.registerHelper("selop", (value, selected, text, attrs, options)=>{
 });
 
 export const ptPopup = Handlebars.compile(`
-    <img class="pt-sym" width="24" heigh="24" src="{{sym}}">
-    <span class="pt-name">{{name}}</span>
+    <div class="pt-header">
+        <img class="pt-sym" width="24" heigh="24" src="{{sym}}">
+        <span class="pt-name" contenteditable>{{name}}</span>
+        <!--<input type="text" class="pt-name" value="{{name}}">-->
+    </div>
+
     <div class="pt-coord" data-pt-coord="{{coordinate}}">
         <select class="pt-coord-title" dir="rtl">
             {{selop ""      coordsys "-"  "disabled hidden"}}
@@ -42,7 +46,8 @@ export const ptPopup = Handlebars.compile(`
 
     <div class="pt-ele">
         <span class="pt-ele-title">ELE.</span>
-        <span class="pt-ele-value">{{fmtEle ele.value}}</span> m
+        <span class="pt-ele-value" contenteditable>{{fmtEle ele.value}}</span> m
+        <!--<input type="text" class="pt-ele-value" pattern="[0-9]+([\.][0-9]+)?" value="{{fmtEle ele.value}}"> m-->
         <span class="pt-ele-est">(est.)</span>
     </div>
 

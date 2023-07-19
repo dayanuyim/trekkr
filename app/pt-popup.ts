@@ -37,6 +37,7 @@ export default class PtPopupOverlay extends Overlay{
 
     _closer: HTMLElement;
     _content: HTMLElement;
+    _pt_header: HTMLElement;
     _pt_sym: HTMLImageElement;
     _pt_name: HTMLElement;
     _pt_coord: HTMLElement;
@@ -54,7 +55,7 @@ export default class PtPopupOverlay extends Overlay{
     _sym_license: HTMLAnchorElement;
 
     _feature;
-    _coordinates;
+    _data;
     _listener_mkwpt: CallableFunction;
     _listener_rmwpt: CallableFunction;
 
@@ -97,6 +98,7 @@ export default class PtPopupOverlay extends Overlay{
         const el = this.getElement();
         this._closer =         el.querySelector<HTMLElement>('.ol-popup-closer');
         this._content =        el.querySelector<HTMLElement>('.ol-popup-content');
+        this._pt_header =      el.querySelector<HTMLElement>('.pt-header');
         this._pt_sym =         el.querySelector<HTMLImageElement>('.pt-sym');
         this._pt_name =        el.querySelector<HTMLElement>('.pt-name');
         this._pt_coord =       el.querySelector<HTMLElement>('.pt-coord');
@@ -122,7 +124,52 @@ export default class PtPopupOverlay extends Overlay{
             return false;
         };
 
-        // view control
+        const listener_enter_to_blur = e => {
+            if(e.key == "Enter"){
+                e.preventDefault();
+                e.target.blur();
+            }
+        }
+
+        // change name
+        this._pt_name.onkeydown = listener_enter_to_blur;
+        this._pt_name.onblur = e => {
+            if(this._data.name != this.pt_name){   //cache != ui
+                this._data.name = this.pt_name;
+                this._feature.set('name', this._data.name);
+            }
+        }
+
+        // check elevation, be careful not to limit editing key
+        //const valid_ele_char = (c) => /^\d$/.test(c) || (c == "." && !this.pt_ele.includes("."));
+        this._pt_ele.addEventListener('keydown', listener_enter_to_blur);
+        this._pt_ele.addEventListener('keydown', (e) => {
+            if(e.key == "." && this.pt_ele.includes("."))  //multiple 'dot'
+                e.preventDefault();
+        });
+        this._pt_ele.onkeyup = e => {
+            if(isNaN(+this.pt_ele))
+                this.pt_ele = this.pt_ele.replace(/[^0-9.]/g, "");  // remove non-digit characters
+        }
+        this._pt_ele.onblur = e => {
+            const ele = +this.pt_ele;
+            let changed = false;
+
+            if(this._data.coordinates.length < 3){
+                this._data.coordinates.push(ele);
+                changed = true;
+            }
+            else if(this._data.coordinates[2] != this.pt_ele){   //cache != ui
+                this._data.coordinates[2] = ele;
+                changed = true;
+            }
+            if(changed){
+                this._pt_ele_est.classList.add('hidden');
+                this._feature.getGeometry().setCoordinates(this._data.coordinates);
+            }
+        }
+
+        // change coordsys
         this._pt_coord_title.onchange = e => {
             const el = <HTMLSelectElement>e.currentTarget;
             const coordsys = el.value;
@@ -140,7 +187,7 @@ export default class PtPopupOverlay extends Overlay{
                 sym: "City (Small)",
             });
             */
-            const wpt = mkWptFeature(this._coordinates, {sym: "City (Small)"});
+            const wpt = mkWptFeature(this._data.coordinates, {sym: "City (Small)"});
             this.popContent(wpt);
             if(this._listener_mkwpt)
                 this._listener_mkwpt(wpt);
@@ -154,13 +201,13 @@ export default class PtPopupOverlay extends Overlay{
 
     async popContent(feature) {
         // get data
-        const name = feature.get('name') || feature.get('desc');   //may undefined
-        const sym = feature.get('sym');              //may undefined
-        const coordinates = feature.getGeometry().getCoordinates();
+        const name = feature.get('name') || feature.get('desc');     //maybe undefined
+        const sym = feature.get('sym');                              //maybe undefined
+        const coordinates = feature.getGeometry().getCoordinates();  //x, y, ele, time
 
         // saving for later to use
-        this._feature = feature;
-        this._coordinates = coordinates;
+        this._feature = feature;                 //for removing
+        this._data = {name, sym, coordinates};   //for creating/updating
 
         this.setContent({
             name,
@@ -187,10 +234,11 @@ export default class PtPopupOverlay extends Overlay{
         this._pt_ele_est.classList.toggle('hidden', !ele.est)
         this.pt_time = time? fmtTime(time): '-';
 
-        this._pt_mk_wpt.classList.toggle('hidden', !!name);
-        this._pt_rm_wpt.classList.toggle('hidden', !name);
+        this._pt_mk_wpt.classList.toggle('hidden', !!symbol);
+        this._pt_rm_wpt.classList.toggle('hidden', !symbol);
 
-        this._pt_sym.classList.toggle('hidden', !symbol);
+        //this._pt_sym.classList.toggle('hidden', !symbol);
+        this._pt_header.classList.toggle('hidden', !symbol);   //sym & name
         this._sym_copyright.classList.toggle('hidden', !symbol);
         if(symbol){
             this.pt_sym = toSymPath(symbol, 128);
