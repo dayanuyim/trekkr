@@ -265,11 +265,13 @@ select::-ms-expand {
 }
 
 .pt-sym {
-    vertical-align: bottom;
+    margin-left: 15px;
+    vertical-align: sub;
 }
 
 .pt-name {
-    font-weight: bold;
+    /*font-weight: bold;*/
+    font-size: 20px;
 }
 
 .pt-coord, .pt-ele, .pt-time{
@@ -288,6 +290,7 @@ select::-ms-expand {
 .pt-coord-title{
     border: 0px;
     color: gray;
+    background: transparent;
     font-size: 95%;
 }
 
@@ -324,6 +327,10 @@ select::-ms-expand {
 .pt-tool-mk-wpt button svg {
     color: royalblue;
     transform: rotate(25deg);
+}
+
+.pt-tool-rm-wpt button svg {
+    color: dimgray;
 }
 
 .sym-copyright ,
