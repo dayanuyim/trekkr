@@ -25,7 +25,7 @@ function _toStyleText(text){
     textAlign: 'left',
     offsetX: 8,
     offsetY: -8,
-    font: 'normal 14px "cwTeXYen", "Open Sans", "Arial Unicode MS", "sans-serif"',
+    font: 'normal 16px "Noto Sans TC", "Open Sans", "Arial Unicode MS", "sans-serif"',
     placement: 'point',
     fill: new Fill({color: '#fff'}),
     stroke: new Stroke({color: '#000', width: 2}),
