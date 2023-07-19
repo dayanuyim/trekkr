@@ -13,7 +13,7 @@ import { GPX } from 'ol/format';
 import { Feature } from 'ol';
 import { Point } from 'ol/geom';
 
-import { toSymPath, getSymbol } from './common'
+import { toSymPath, getSymbol } from './sym'
 import Opt from './opt';
 
 function _toStyleText(text){

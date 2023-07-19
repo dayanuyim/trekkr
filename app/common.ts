@@ -6,29 +6,9 @@ import {fromLonLat, toLonLat} from 'ol/proj';
 import {format as fmtCoordinate} from 'ol/coordinate';
 import elevationApi from 'google-elevation-api';
 import Opt from './opt';
-import symbols from './data/symbols.json';
 
 const Param = {
   tz: undefined,
-}
-
-const symDir = './images/sym';
-export function toSymPath(sym, size=32)
-{
-  return `${symDir}/${size}/${sym.filename}`;
-}
-
-export function getSymbol(symName){
-  if(!symName)   // may be a track point
-    return undefined;
-
-  const id = symName.toLowerCase();
-  const sym = symbols[id];
-  if(!sym){
-    console.log(`The symbol '${symName}' is not found`)
-    return symbols['waypoint'];
-  }
-  return sym;
 }
 
 export function gmapUrl(coord){
@@ -87,7 +67,7 @@ export function getLocalTimeByCoords(coordinates)
   if(!epoch)
     return undefined;
 
-  //TODO: the optimization is really needed?
+  //cache tz to optimize since tzlookup is very slow
   if(!Param.tz){
     const [lon, lat] = toLonLat(coordinates);
     Param.tz = tzlookup(lat, lon);

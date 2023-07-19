@@ -5,7 +5,8 @@ import {toLonLat} from 'ol/proj';
 import {toTWD97, toTWD67} from './coord';
 
 import * as moment from 'moment-timezone';
-import {toSymPath, getSymbol, getElevationByCoords, getLocalTimeByCoords, gmapUrl} from './common'
+import { toSymPath, getSymbol, matchRules } from './sym'
+import { getElevationByCoords, getLocalTimeByCoords, gmapUrl } from './common'
 import { mkWptFeature } from './layer-gpx';
 import Opt from './opt';
 
@@ -134,9 +135,24 @@ export default class PtPopupOverlay extends Overlay{
         // change name
         this._pt_name.onkeydown = listener_enter_to_blur;
         this._pt_name.onblur = e => {
+            let name_changed = false;
+            let sym_changed = false;
+
             if(this._data.name != this.pt_name){   //cache != ui
                 this._data.name = this.pt_name;
+                name_changed = true;
+            }
+            if(name_changed){
                 this._feature.set('name', this._data.name);
+                const sym = matchRules(this._data.name);
+                if(sym && this._data.sym != sym){
+                    this._data.sym = sym;
+                    sym_changed = true;
+                }
+            }
+            if(sym_changed){
+                this._feature.set('sym', this._data.sym);
+                this.setContent(this._data);
             }
         }
 
@@ -209,7 +225,15 @@ export default class PtPopupOverlay extends Overlay{
         this._feature = feature;                 //for removing
         this._data = {name, sym, coordinates};   //for creating/updating
 
-        this.setContent({
+        this.setContent(this._data);
+
+        //position
+        this.setPosition(coordinates);
+    }
+
+    private async setContent({name, sym, coordinates})
+    {
+        this.setContentRaw({
             name,
             coordsys: Opt.coordsys,
             coordinate: coordinates.slice(0, 2),
@@ -217,12 +241,9 @@ export default class PtPopupOverlay extends Overlay{
             ele: await getElevationByCoords(coordinates),
             symbol: getSymbol(sym),
         });
-
-        //position
-        this.setPosition(coordinates);
     }
 
-    private setContent({name, coordsys, coordinate, time, ele, symbol})
+    private setContentRaw({name, coordsys, coordinate, time, ele, symbol})
     {
         this.pt_coord = coordinate;
         this.pt_coord_title = coordsys;
