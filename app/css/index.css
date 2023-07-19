@@ -265,7 +265,7 @@ input[type=number] {
     border: 1px solid #cccccc;
     bottom: 12px;
     left: -50px;
-    min-width: 265px;
+    min-width: 225px;
 }
 .ol-popup:after, .ol-popup:before {
     top: 100%;
@@ -324,7 +324,10 @@ select::-ms-expand {
     border: solid 1px #d0d0d0;
 }
 
-.pt-header {
+.pt-header,
+.pt-coord,
+.pt-ele,
+.pt-time {
     white-space: nowrap;
 }
 
