@@ -12,6 +12,8 @@ import { Icon as IconStyle, Circle as CircleStyle, Fill, Stroke, Style, Text } f
 import { GPX } from 'ol/format';
 import { Feature } from 'ol';
 import { Point } from 'ol/geom';
+import { toLonLat } from 'ol/proj';
+import { create as createXML } from 'xmlbuilder2';
 
 import { getSymbol } from './sym'
 import Opt from './opt';
@@ -98,8 +100,8 @@ export class GPXFormat extends GPX {
       readExtensions: (feat, node) => {
         //set color for track if any
         if(node && feat.getGeometry().getType() ==  'MultiLineString') {
-          const color = this._getTrackColor(node) ;
-          if(color) feat.set('color', color);
+          const color = this._getTrackColor(node);
+          feat.set('color', color);
         }
       },
     }, options));
@@ -146,22 +148,114 @@ export function mkWptFeature(coords, options?){
 }
 
 export function genGpxText(layers){
+  const wpts = [];
+  const trks = [];
   layers.forEach(layer => {
     layer.getSource().getFeatures().forEach(feature => {
       switch (feature.getGeometry().getType()) {
-        case 'Point': {   // Waypoint or Track point
-          console.log("Point feature: ", feature.get('name'));
+        case 'Point':   // Waypoint or Track point
+          //console.log("Point feature: ", feature.get('name'));
+          wpts.push(feature);
           break;
-        }
-        case 'LineString': {  //grid line
-          console.log("LineString feature: ", feature.get('name'));
+        case 'LineString':  //grid line
+          //console.log("LineString feature: ", feature.get('name'));
+          // !! should not happen here !!
           break;
-        }
-        case 'MultiLineString': {  //track
-          console.log("MultiLineString feature: ", feature.get('name'));
+        case 'MultiLineString':  //track
+          //console.log("MultiLineString feature: ", feature.get('name'), feature.getGeometry().getCoordinates());
+          trks.push(feature);
           break;
-        }
       }
     });
   });
+
+  const [minx, miny, maxx, maxy] = wpts.concat(trks)
+    .map(f => f.getGeometry().getExtent())
+    .reduce(([minx1, miny1, maxx1, maxy1], [minx2, miny2, maxx2, maxy2]) => {
+      return [
+        Math.min(minx1, minx2),
+        Math.min(miny1, miny2),
+        Math.max(maxx1, maxx2),
+        Math.max(maxy1, maxy2),
+      ];
+    }, [Infinity, Infinity, -Infinity, -Infinity]);
+  const [minlon, minlat] = toLonLat([minx, miny]);
+  const [maxlon, maxlat] = toLonLat([maxx, maxy]);
+
+  // root & metadata ============================================
+  let doc = createXML({ version: '1.0', encoding: "UTF-8" })
+    .ele('gpx', {
+      creator: "trekkr",
+      version: "1.1",
+      xmlns: "http://www.topografix.com/GPX/1/1",
+      'xmlns:xsi': "http://www.w3.org/2001/XMLSchema-instance",
+      'xsi:schemaLocation': "http://www.topografix.com/GPX/1/1 http://www.topografix.com/GPX/1/1/gpx.xsd",
+    })
+      .ele('metadata')
+        .ele('link', {href: 'http://garmin.com'})
+          .ele('text').txt("Garmin International").up()
+        .up()
+        .ele('time').txt(new Date().toISOString()).up()
+        .ele('bounds', { maxlat, maxlon, minlat, minlon }).up()
+      .up();
+
+  // wpt ========================================================
+  const first_char = /(^\w{1})|(\s+\w{1})/g;
+  wpts.forEach(wpt => {
+    const [x, y, ele, time ]= wpt.getGeometry().getCoordinates();
+    const [lon, lat] = toLonLat([x, y]);
+    const name = wpt.get('name');
+    const sym = wpt.get('sym');
+    const cmt = wpt.get('cmt');
+    const desc = wpt.get('desc');
+
+    doc = doc.ele('wpt', {lat, lon});
+    if(ele)  doc.ele('ele').txt(ele).up();
+    if(time) doc.ele('time').txt(new Date(time*1000).toISOString()).up();
+    if(name) doc.ele('name').txt(name).up();
+    if(sym)  doc.ele('sym').txt(sym.replace(first_char, c => c.toUpperCase())).up();
+    if(cmt)  doc.ele('cmt').txt(cmt).up();
+    if(desc) doc.ele('desc').txt(desc).up();
+    doc.ele('extensions')
+      .ele('gpxx:WaypointExtension', {'xmlns:gpxx': 'http://www.garmin.com/xmlschemas/GpxExtensions/v3'})
+        .ele('gpxx:DisplayMode').txt('SymbolAndName').up()
+      .up()
+    .up();
+    doc = doc.up();
+  });
+
+  // track ========================================================
+  trks.forEach(trk => {
+    const name = trk.get('name');
+    const color = trk.get('color');
+    doc = doc.ele('trk');
+    if(name) doc.ele('name').txt(name).up();
+    if(color)
+      doc.ele('extensions')
+        .ele('gpxx:TrackExtension', { 'xmlns:gpxx': 'http://www.garmin.com/xmlschemas/GpxExtensions/v3' })
+          .ele('gpxx:DisplayColor').txt(color).up()
+        .up()
+      .up();
+
+    trk.getGeometry().getCoordinates().forEach(trkseg => {
+      doc = doc.ele('trkseg');
+      trkseg.forEach(trkpt => {
+        const [x, y, ele, time ]= trkpt;
+        const [lon, lat] = toLonLat([x, y]);
+        doc = doc.ele('trkpt', {lat, lon});
+        if(ele)  doc.ele('ele').txt(ele).up();
+        if(time) doc.ele('time').txt(new Date(time*1000).toISOString()).up();
+        doc = doc.up();
+      });
+      doc = doc.up();
+    });
+
+    doc = doc.up(); //trk node
+  });
+
+  doc = doc.up();  //'gpx' node
+
+  // convert the XML tree to string
+  const xml = doc.end({ prettyPrint: true });
+  console.log(xml);
 }

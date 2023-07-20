@@ -8,7 +8,7 @@ import { GeoJSON, IGC, KML, TopoJSON } from 'ol/format';
 import { getRenderPixel } from 'ol/render';
 import { platformModifierKeyOnly } from 'ol/events/condition';
 
-import { GPXFormat, mkGpxLayer, genGpxText, mkWptFeature } from './layer-gpx'
+import { GPXFormat, mkGpxLayer, genGpxText, mkWptFeature } from './gpx'
 import PtPopupOverlay from './pt-popup';
 import Opt from './opt';
 import * as LayerRepo from './layer-repo';

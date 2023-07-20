@@ -6,7 +6,7 @@ import Graticule from 'ol/layer/Graticule';
 
 import BiMap from 'bidirectional-map';
 
-import { mkGpxLayer } from './layer-gpx';
+import { mkGpxLayer } from './gpx';
 import Confs from './data/layer-conf';
 
 const def_label_style = {

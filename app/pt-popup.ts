@@ -7,7 +7,7 @@ import {toTWD97, toTWD67} from './coord';
 import * as moment from 'moment-timezone';
 import { getSymbol, matchRules } from './sym'
 import { getElevationByCoords, getLocalTimeByCoords, gmapUrl } from './common'
-import { mkWptFeature } from './layer-gpx';
+import { mkWptFeature } from './gpx';
 import Opt from './opt';
 
 const toXY = {
