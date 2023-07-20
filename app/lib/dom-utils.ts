@@ -191,3 +191,22 @@ export function tablink(tab_q, content_q, def_idx?)
     tabs.forEach(tab => tab.onclick = e => activate(e.currentTarget));
     if(def_idx !== undefined) tabs[def_idx].click();
 }
+
+export function saveTextAsFile(textToWrite, fileNameToSaveAs, fileType) {
+    let textFileAsBlob = new Blob([textToWrite], { type: fileType });
+    let downloadLink = document.createElement('a');
+    downloadLink.download = fileNameToSaveAs;
+    downloadLink.innerHTML = 'Download File';
+
+    if (window.webkitURL != null) {
+        downloadLink.href = window.webkitURL.createObjectURL(
+            textFileAsBlob
+        );
+    } else {
+        downloadLink.href = window.URL.createObjectURL(textFileAsBlob);
+        downloadLink.style.display = 'none';
+        document.body.appendChild(downloadLink);
+    }
+
+    downloadLink.click();
+}

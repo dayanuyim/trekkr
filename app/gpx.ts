@@ -17,6 +17,7 @@ import { create as createXML } from 'xmlbuilder2';
 
 import { getSymbol } from './sym'
 import Opt from './opt';
+import { saveTextAsFile } from './lib/dom-utils';
 
 function _toStyleText(text){
   if(Opt.zoom < 13.5)
@@ -148,28 +149,43 @@ export function mkWptFeature(coords, options?){
 }
 
 export function genGpxText(layers){
+  // get wpts and trks features
   const wpts = [];
   const trks = [];
   layers.forEach(layer => {
     layer.getSource().getFeatures().forEach(feature => {
       switch (feature.getGeometry().getType()) {
-        case 'Point':   // Waypoint or Track point
-          //console.log("Point feature: ", feature.get('name'));
-          wpts.push(feature);
-          break;
-        case 'LineString':  //grid line
-          //console.log("LineString feature: ", feature.get('name'));
-          // !! should not happen here !!
-          break;
-        case 'MultiLineString':  //track
-          //console.log("MultiLineString feature: ", feature.get('name'), feature.getGeometry().getCoordinates());
-          trks.push(feature);
-          break;
+        case 'Point':
+          wpts.push(feature); break;
+        case 'MultiLineString':
+          trks.push(feature); break;
       }
     });
   });
 
-  const [minx, miny, maxx, maxy] = wpts.concat(trks)
+  // create gpx by wpts and trks
+  let node = createXML({ version: '1.0', encoding: "UTF-8" })
+    .ele('gpx', {
+      creator: "trekkr",
+      version: "1.1",
+      xmlns: "http://www.topografix.com/GPX/1/1",
+      'xmlns:xsi': "http://www.w3.org/2001/XMLSchema-instance",
+      'xsi:schemaLocation': "http://www.topografix.com/GPX/1/1 http://www.topografix.com/GPX/1/1/gpx.xsd",
+    });
+    addGpxMetadata(node, wpts.concat(trks));
+    addGpxWaypoints(node, wpts);
+    addGpxTracks(node, trks)
+  .up();
+
+  // convert the XML tree to string
+  const xml = node.end({ prettyPrint: true });
+  saveTextAsFile(xml, 'your.gpx', 'application/gpx+xml');
+  //console.log(xml);
+}
+
+// @node is a gpx node
+function addGpxMetadata(node, features){
+  const [minx, miny, maxx, maxy] = features
     .map(f => f.getGeometry().getExtent())
     .reduce(([minx1, miny1, maxx1, maxy1], [minx2, miny2, maxx2, maxy2]) => {
       return [
@@ -182,24 +198,17 @@ export function genGpxText(layers){
   const [minlon, minlat] = toLonLat([minx, miny]);
   const [maxlon, maxlat] = toLonLat([maxx, maxy]);
 
-  // root & metadata ============================================
-  let doc = createXML({ version: '1.0', encoding: "UTF-8" })
-    .ele('gpx', {
-      creator: "trekkr",
-      version: "1.1",
-      xmlns: "http://www.topografix.com/GPX/1/1",
-      'xmlns:xsi': "http://www.w3.org/2001/XMLSchema-instance",
-      'xsi:schemaLocation': "http://www.topografix.com/GPX/1/1 http://www.topografix.com/GPX/1/1/gpx.xsd",
-    })
-      .ele('metadata')
-        .ele('link', {href: 'http://garmin.com'})
-          .ele('text').txt("Garmin International").up()
-        .up()
-        .ele('time').txt(new Date().toISOString()).up()
-        .ele('bounds', { maxlat, maxlon, minlat, minlon }).up()
-      .up();
+  return node.ele('metadata')
+    .ele('link', { href: 'http://garmin.com' })
+      .ele('text').txt("Garmin International").up()
+    .up()
+    .ele('time').txt(new Date().toISOString()).up()
+    .ele('bounds', { maxlat, maxlon, minlat, minlon }).up()
+  .up();
+}
 
-  // wpt ========================================================
+// @node is a gpx node
+function addGpxWaypoints(node, wpts){
   const first_char = /(^\w{1})|(\s+\w{1})/g;
   wpts.forEach(wpt => {
     const [x, y, ele, time ]= wpt.getGeometry().getCoordinates();
@@ -209,53 +218,54 @@ export function genGpxText(layers){
     const cmt = wpt.get('cmt');
     const desc = wpt.get('desc');
 
-    doc = doc.ele('wpt', {lat, lon});
-    if(ele)  doc.ele('ele').txt(ele).up();
-    if(time) doc.ele('time').txt(new Date(time*1000).toISOString()).up();
-    if(name) doc.ele('name').txt(name).up();
-    if(sym)  doc.ele('sym').txt(sym.replace(first_char, c => c.toUpperCase())).up();
-    if(cmt)  doc.ele('cmt').txt(cmt).up();
-    if(desc) doc.ele('desc').txt(desc).up();
+    node = node.ele('wpt', {lat, lon});
+    if(ele)  node.ele('ele').txt(ele).up();
+    if(time) node.ele('time').txt(new Date(time*1000).toISOString()).up();
+    if(name) node.ele('name').txt(name).up();
+    if(sym)  node.ele('sym').txt(sym.replace(first_char, c => c.toUpperCase())).up();
+    if(cmt)  node.ele('cmt').txt(cmt).up();
+    if(desc) node.ele('desc').txt(desc).up();
+    /*
+    //@@! the extensions has any practical use?
     doc.ele('extensions')
       .ele('gpxx:WaypointExtension', {'xmlns:gpxx': 'http://www.garmin.com/xmlschemas/GpxExtensions/v3'})
         .ele('gpxx:DisplayMode').txt('SymbolAndName').up()
       .up()
     .up();
-    doc = doc.up();
+    */
+    node = node.up();
   });
+  return node;
+}
 
-  // track ========================================================
+// @node is a gpx node
+function addGpxTracks(node, trks){
   trks.forEach(trk => {
     const name = trk.get('name');
     const color = trk.get('color');
-    doc = doc.ele('trk');
-    if(name) doc.ele('name').txt(name).up();
+    node = node.ele('trk');
+    if(name) node.ele('name').txt(name).up();
     if(color)
-      doc.ele('extensions')
+      node.ele('extensions')
         .ele('gpxx:TrackExtension', { 'xmlns:gpxx': 'http://www.garmin.com/xmlschemas/GpxExtensions/v3' })
           .ele('gpxx:DisplayColor').txt(color).up()
         .up()
       .up();
 
     trk.getGeometry().getCoordinates().forEach(trkseg => {
-      doc = doc.ele('trkseg');
+      node = node.ele('trkseg');
       trkseg.forEach(trkpt => {
         const [x, y, ele, time ]= trkpt;
         const [lon, lat] = toLonLat([x, y]);
-        doc = doc.ele('trkpt', {lat, lon});
-        if(ele)  doc.ele('ele').txt(ele).up();
-        if(time) doc.ele('time').txt(new Date(time*1000).toISOString()).up();
-        doc = doc.up();
+        node = node.ele('trkpt', {lat, lon});
+        if(ele)  node.ele('ele').txt(ele).up();
+        if(time) node.ele('time').txt(new Date(time*1000).toISOString()).up();
+        node = node.up();
       });
-      doc = doc.up();
+      node = node.up();
     });
 
-    doc = doc.up(); //trk node
+    node = node.up(); //trk node
   });
-
-  doc = doc.up();  //'gpx' node
-
-  // convert the XML tree to string
-  const xml = doc.end({ prettyPrint: true });
-  console.log(xml);
+  return node;
 }
