@@ -178,31 +178,34 @@ export function genGpxText(layers){
   .up();
 
   // convert the XML tree to string
-  const xml = node.end({ prettyPrint: true });
+  const xml = node.end({ prettyPrint: true, indent: '\t' });
   saveTextAsFile(xml, 'your.gpx', 'application/gpx+xml');
   //console.log(xml);
 }
+
+// decimal degrees 6 ~= 0.1 metres precision, ref https://en.wikipedia.org/wiki/Decimal_degrees
+const fmt_coord = (n) => n.toFixed(6);
+const fmt_ele = (n) => n.toFixed(1);
+const fmt_time = (sec?) => (sec? new Date(sec*1000): new Date()).toISOString().split('.')[0]+'Z';
 
 // @node is a gpx node
 function addGpxMetadata(node, features){
   const [minx, miny, maxx, maxy] = features
     .map(f => f.getGeometry().getExtent())
-    .reduce(([minx1, miny1, maxx1, maxy1], [minx2, miny2, maxx2, maxy2]) => {
-      return [
+    .reduce(([minx1, miny1, maxx1, maxy1], [minx2, miny2, maxx2, maxy2]) => [
         Math.min(minx1, minx2),
         Math.min(miny1, miny2),
         Math.max(maxx1, maxx2),
         Math.max(maxy1, maxy2),
-      ];
-    }, [Infinity, Infinity, -Infinity, -Infinity]);
-  const [minlon, minlat] = toLonLat([minx, miny]);
-  const [maxlon, maxlat] = toLonLat([maxx, maxy]);
+    ], [Infinity, Infinity, -Infinity, -Infinity]);
+  const [minlon, minlat] = toLonLat([minx, miny]).map(fmt_coord);
+  const [maxlon, maxlat] = toLonLat([maxx, maxy]).map(fmt_coord);
 
   return node.ele('metadata')
     .ele('link', { href: 'http://garmin.com' })
       .ele('text').txt("Garmin International").up()
     .up()
-    .ele('time').txt(new Date().toISOString()).up()
+    .ele('time').txt(fmt_time()).up()
     .ele('bounds', { maxlat, maxlon, minlat, minlon }).up()
   .up();
 }
@@ -212,15 +215,15 @@ function addGpxWaypoints(node, wpts){
   const first_char = /(^\w{1})|(\s+\w{1})/g;
   wpts.forEach(wpt => {
     const [x, y, ele, time ]= wpt.getGeometry().getCoordinates();
-    const [lon, lat] = toLonLat([x, y]);
+    const [lon, lat] = toLonLat([x, y]).map(fmt_coord);
     const name = wpt.get('name');
     const sym = wpt.get('sym');
     const cmt = wpt.get('cmt');
     const desc = wpt.get('desc');
 
     node = node.ele('wpt', {lat, lon});
-    if(ele)  node.ele('ele').txt(ele).up();
-    if(time) node.ele('time').txt(new Date(time*1000).toISOString()).up();
+    if(ele)  node.ele('ele').txt(fmt_ele(ele)).up();
+    if(time) node.ele('time').txt(fmt_time(time)).up();
     if(name) node.ele('name').txt(name).up();
     if(sym)  node.ele('sym').txt(sym.replace(first_char, c => c.toUpperCase())).up();
     if(cmt)  node.ele('cmt').txt(cmt).up();
@@ -256,10 +259,10 @@ function addGpxTracks(node, trks){
       node = node.ele('trkseg');
       trkseg.forEach(trkpt => {
         const [x, y, ele, time ]= trkpt;
-        const [lon, lat] = toLonLat([x, y]);
+        const [lon, lat] = toLonLat([x, y]).map(fmt_coord);
         node = node.ele('trkpt', {lat, lon});
-        if(ele)  node.ele('ele').txt(ele).up();
-        if(time) node.ele('time').txt(new Date(time*1000).toISOString()).up();
+        if(ele)  node.ele('ele').txt(fmt_ele(ele)).up();
+        if(time) node.ele('time').txt(fmt_time(time)).up();
         node = node.up();
       });
       node = node.up();
