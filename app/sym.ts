@@ -1,29 +1,30 @@
 import symbols from './data/symbols.json';
 import rules from './data/symbol-rules.json';
 
+const Sym_dir = './images/sym';
+const Def_sym_name = 'waypoint';
+
 rules.forEach(r => {
     if(r.type == "regex" && typeof r.text === "string"){
         r.txet = RegExp(r.text);
     }
 });
 
-const symDir = './images/sym';
-export function toSymPath(sym, size=32)
-{
-  return `${symDir}/${size}/${sym.filename}`;
-}
+Object.values<any>(symbols).forEach(s => {
+  s.path = (size=32) => `${Sym_dir}/${size}/${s.filename}`;
+});
 
-export function getSymbol(symName){
-  if(!symName)   // may be a track point
+export function getSymbol(name){
+  if(!name)   // may be a track point
     return undefined;
 
-  const id = symName.toLowerCase();
-  const sym = symbols[id];
-  if(!sym){
-    console.log(`The symbol '${symName}' is not found`)
-    return symbols['waypoint'];
+  name = name.toLowerCase();
+  const symbol = symbols[name];
+  if(!symbol){
+    console.log(`The symbol '${name}' is not found, use default symbol '${Def_sym_name}'`);
+    return symbols[Def_sym_name];
   }
-  return sym;
+  return symbol;
 }
 
 export function matchRules(str){

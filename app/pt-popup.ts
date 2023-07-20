@@ -5,7 +5,7 @@ import {toLonLat} from 'ol/proj';
 import {toTWD97, toTWD67} from './coord';
 
 import * as moment from 'moment-timezone';
-import { toSymPath, getSymbol, matchRules } from './sym'
+import { getSymbol, matchRules } from './sym'
 import { getElevationByCoords, getLocalTimeByCoords, gmapUrl } from './common'
 import { mkWptFeature } from './layer-gpx';
 import Opt from './opt';
@@ -117,10 +117,14 @@ export default class PtPopupOverlay extends Overlay{
         this._sym_license =    this._sym_copyright.querySelector<HTMLAnchorElement>('.sym-license');
     }
 
+    public hide(){
+        this.setPosition(undefined);
+    }
+
     private initEvents(){
         //close popup
         this._closer.onclick = e => {
-            this.setPosition(undefined);
+            this.hide();
             (<HTMLElement>e.currentTarget).blur();
             return false;
         };
@@ -166,24 +170,25 @@ export default class PtPopupOverlay extends Overlay{
         this._pt_ele.onkeyup = e => {
             if(isNaN(+this.pt_ele))
                 this.pt_ele = this.pt_ele.replace(/[^0-9.]/g, "");  // remove non-digit characters
-        }
+        };
         this._pt_ele.onblur = e => {
             const ele = +this.pt_ele;
-            let changed = false;
-
+            let ele_changed = false;
             if(this._data.coordinates.length < 3){
                 this._data.coordinates.push(ele);
-                changed = true;
+                ele_changed = true;
             }
             else if(this._data.coordinates[2] != this.pt_ele){   //cache != ui
+                //console.log(`ele changed from ${this._data.coordinates[2]} to ${this.pt_ele}`);
                 this._data.coordinates[2] = ele;
-                changed = true;
+                ele_changed = true;
             }
-            if(changed){
+
+            if(ele_changed){
                 this._pt_ele_est.classList.add('hidden');
                 this._feature.getGeometry().setCoordinates(this._data.coordinates);
             }
-        }
+        };
 
         // change coordsys
         this._pt_coord_title.onchange = e => {
@@ -233,7 +238,7 @@ export default class PtPopupOverlay extends Overlay{
 
     private async setContent({name, sym, coordinates})
     {
-        this.setContentRaw({
+        this._setContent({
             name,
             coordsys: Opt.coordsys,
             coordinate: coordinates.slice(0, 2),
@@ -243,8 +248,11 @@ export default class PtPopupOverlay extends Overlay{
         });
     }
 
-    private setContentRaw({name, coordsys, coordinate, time, ele, symbol})
+    private _setContent({name, coordsys, coordinate, time, ele, symbol})
     {
+        const is_trkpt = !name;   // not use 'symbol', a wpt may has no sym
+        const is_wpt = !is_trkpt;
+
         this.pt_coord = coordinate;
         this.pt_coord_title = coordsys;
         this.pt_coord_value = toXY[coordsys](coordinate)
@@ -255,14 +263,14 @@ export default class PtPopupOverlay extends Overlay{
         this._pt_ele_est.classList.toggle('hidden', !ele.est)
         this.pt_time = time? fmtTime(time): '-';
 
-        this._pt_mk_wpt.classList.toggle('hidden', !!symbol);
-        this._pt_rm_wpt.classList.toggle('hidden', !symbol);
+        this._pt_mk_wpt.classList.toggle('hidden', is_wpt);
+        this._pt_rm_wpt.classList.toggle('hidden', is_trkpt);
 
-        //this._pt_sym.classList.toggle('hidden', !symbol);
-        this._pt_header.classList.toggle('hidden', !symbol);   //sym & name
-        this._sym_copyright.classList.toggle('hidden', !symbol);
+        //this._pt_sym.classList.toggle('hidden', is_trkpt);
+        this._pt_header.classList.toggle('hidden', is_trkpt);   // header contains sym & name
+        this._sym_copyright.classList.toggle('hidden', is_trkpt); //
         if(symbol){
-            this.pt_sym = toSymPath(symbol, 128);
+            this.pt_sym = symbol.path(128);
             this.setUrlContent(this._sym_maker,    symbol.maker);
             this.setUrlContent(this._sym_provider, symbol.provider);
             this.setUrlContent(this._sym_license,  symbol.license);

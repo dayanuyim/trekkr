@@ -8,7 +8,7 @@ import { GeoJSON, IGC, KML, TopoJSON } from 'ol/format';
 import { getRenderPixel } from 'ol/render';
 import { platformModifierKeyOnly } from 'ol/events/condition';
 
-import { GPXFormat, mkGpxLayer, mkWptFeature } from './layer-gpx'
+import { GPXFormat, mkGpxLayer, genGpxText, mkWptFeature } from './layer-gpx'
 import PtPopupOverlay from './pt-popup';
 import Opt from './opt';
 import * as LayerRepo from './layer-repo';
@@ -134,36 +134,20 @@ function saveViewConf(view)
   });
 }
 
-const _getFeatures = function (e) {
-  const isPt = f => f.getGeometry().getType() === 'Point';
-  const hasWptProp = f => f.get('name') || f.get('desc') || f.get('sym');
-  const isWpt = f => isPt(f) && hasWptProp(f);
-  const isTrkpt = f => isPt(f) && !hasWptProp(f);
-
-  const pixel = e.map.getEventPixel(e.originalEvent); // TODO: what is the diff between 'originalevent' and 'event'?
-
-  // NOTE: not use forEach..., it is hard to point to Wpt if there are Trkpt in the same place. (Why?)
-  //const hit = e.map.forEachFeatureAtPixel(pixel, handleFeature);
-  //e.map.getTargetElement().style.cursor = hit? 'pointer': '';
-
-  const features = e.map.getFeaturesAtPixel(pixel, {hitTolerance: 2});
-  return features.find(isWpt)? features.filter(f => !isTrkpt(f)): features;  //filter out trkpts if wpt exists
-};
-
 const hoverFeatures = function (e) {
   const features = _getFeatures(e);
   e.map.getTargetElement().style.cursor = features.length? 'pointer': '';
 };
 
 const showFeatures = function (e) {
-  let hasPopup = false;
+  let has_popup_shown = false;
   const popup_overlay = () => e.map.getOverlayById('pt-popup');
 
   const features = _getFeatures(e);
   features.forEach(feature => {
     switch (feature.getGeometry().getType()) {
       case 'Point': {   // Waypoint or Track point
-        hasPopup = true;
+        has_popup_shown = true;
         popup_overlay().popContent(feature);
         break;
       }
@@ -182,8 +166,24 @@ const showFeatures = function (e) {
     return true;
   });
 
-  //hide old popup, anyway
-  if(!hasPopup) popup_overlay().setPosition(undefined);
+  //no popup in this run, but hide the old popup if any
+  if(!has_popup_shown) popup_overlay().hide();
+};
+
+function _getFeatures(e) {
+  const isPt = f => f.getGeometry().getType() === 'Point';
+  const hasWptProp = f => f.get('name') || f.get('desc') || f.get('sym');
+  const isWpt = f => isPt(f) && hasWptProp(f);
+  const isTrkpt = f => isPt(f) && !hasWptProp(f);
+
+  const pixel = e.map.getEventPixel(e.originalEvent); // TODO: what is the diff between 'originalevent' and 'event'?
+
+  // NOTE: not use forEach..., it is hard to point to Wpt if there are Trkpt in the same place. (Why?)
+  //const hit = e.map.forEachFeatureAtPixel(pixel, handleFeature);
+  //e.map.getTargetElement().style.cursor = hit? 'pointer': '';
+
+  const features = e.map.getFeaturesAtPixel(pixel, {hitTolerance: 2});
+  return features.find(isWpt)? features.filter(f => !isTrkpt(f)): features;  //filter out trkpts if wpt exists
 };
 
 ////////////////////////////////////////////////////////////////
@@ -361,7 +361,7 @@ export function setCtxMenu(map, menu: HTMLElement) {
   });
 
   ctx.setItem(".item-save-gpx", (el) => {
-    alert("not implemented yet!");
+    genGpxText(map.getLayers().getArray().slice(indexOfPseudoGpxLayer()));
   });
 }
 
@@ -377,14 +377,15 @@ function addWaypoint(map, wpt){
 function rmWaypoint(map, wpt){
   const layer = findLayerByFeature(map, wpt);
   if(!layer){
-    console.error('cannot find the layer for wpt', wpt);
+    console.error('cannot find the layer for the wpt', wpt);
+    alert('[Error] cannot find the layer for the wpt');
     return;
   }
+
   layer.getSource().removeFeature(wpt);
 
   //close popup
-  map.getOverlayById('pt-popup')
-     .setPosition(undefined);
+  map.getOverlayById('pt-popup').hide();
 }
 
 //TODO: better way to do this?

@@ -1,4 +1,5 @@
 [
+    { "enabled": true, "type": "equals",   "text": "水",        "symbol": "water source" },
     { "enabled": true, "type": "contains", "text": "水源",      "symbol": "water source" },
     { "enabled": true, "type": "contains", "text": "河",        "symbol": "water source" },
     { "enabled": true, "type": "endswith", "text": "江",        "symbol": "water source" },
@@ -93,5 +94,5 @@
     { "enabled": true, "type": "endswith", "text": "叉",        "symbol": "crossing" },
     { "enabled": true, "type": "endswith", "text": "岔",        "symbol": "crossing" },
     { "enabled": true, "type": "contains", "text": "-",         "symbol": "crossing" },
-    { "enabled": true, "type": "contains", "text": "",        "symbol": "city (small)" }
+    { "enabled": true, "type": "contains", "text": "",          "symbol": "city (small)" }
 ]

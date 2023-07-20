@@ -13,7 +13,7 @@ import { GPX } from 'ol/format';
 import { Feature } from 'ol';
 import { Point } from 'ol/geom';
 
-import { toSymPath, getSymbol } from './sym'
+import { getSymbol } from './sym'
 import Opt from './opt';
 
 function _toStyleText(text){
@@ -34,12 +34,18 @@ function _toStyleText(text){
 export const gpxStyle = (feature) => {
   switch (feature.getGeometry().getType()) {
     case 'Point': {
-      const sym = getSymbol(feature.get('sym'));
       const name = feature.get('name');
+      let sym = feature.get('sym');
+      // set default symbol name, although 'sym' (symbol name) is not a mandatory filed for wpt, specifiy one helps wpt edit
+      if(!sym){
+        sym = 'waypoint';
+        feature.set('sym', sym);
+      }
+
       if(sym){
         return new Style({
           image: new IconStyle({
-            src: toSymPath(sym, 128),
+            src: getSymbol(sym).path(128),
             //rotateWithView: true,
             //size: toSize([32, 32]),
             //opacity: 0.8,
@@ -49,6 +55,7 @@ export const gpxStyle = (feature) => {
           text: _toStyleText(name),
         });
       }
+      // for a wpt without sym specified (but the block of code shoulde be useless now, since a default sym is used always)
       else {
         return new Style({
           image: new CircleStyle({
@@ -136,4 +143,25 @@ export function mkWptFeature(coords, options?){
     name: "WPT",
     sym: "waypoint",
   }, options));
+}
+
+export function genGpxText(layers){
+  layers.forEach(layer => {
+    layer.getSource().getFeatures().forEach(feature => {
+      switch (feature.getGeometry().getType()) {
+        case 'Point': {   // Waypoint or Track point
+          console.log("Point feature: ", feature.get('name'));
+          break;
+        }
+        case 'LineString': {  //grid line
+          console.log("LineString feature: ", feature.get('name'));
+          break;
+        }
+        case 'MultiLineString': {  //track
+          console.log("MultiLineString feature: ", feature.get('name'));
+          break;
+        }
+      }
+    });
+  });
 }

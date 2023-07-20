@@ -181,7 +181,7 @@ export const main = Handlebars.compile(`
 const ctxMenuItems = Handlebars.compile(`
     <div class="ctx-item"><a class="item-gmap" target="_blank"><i class="fab fa-google"></i>GoogleMap&nbsp;Here</a></div>
     <div class="ctx-item"><a class="item-add-wpt"><i class="fas fa-location-dot"></i>新增航點</a></div>
-    <div class="ctx-item"><a class="item-save-gpx" style="color:gray"><i class="fas fa-file-contract"></i>匯出GPX航跡檔</a></div>
+    <div class="ctx-item"><a class="item-save-gpx"><i class="fas fa-file-contract"></i>匯出GPX航跡檔</a></div>
 `);
 Handlebars.registerHelper("ctxMenuItems", ()=>{
     return new Handlebars.SafeString(ctxMenuItems());
