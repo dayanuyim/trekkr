@@ -190,6 +190,20 @@ const fmt_time = (sec?) => (sec? new Date(sec*1000): new Date()).toISOString().s
 
 // @node is a gpx node
 function addGpxMetadata(node, features){
+  const bounds = getBounds(features);
+  node = node.ele('metadata')
+    .ele('link', { href: 'https://dayanuyim.github.io/maps/' })
+      .ele('text').txt("Trekkr").up()
+    .up()
+    .ele('time').txt(fmt_time()).up();
+    if(bounds) node.ele('bounds', bounds).up()
+  return node.up();
+}
+
+function getBounds(features){
+  if(features.length == 0)
+    return undefined;
+
   const [minx, miny, maxx, maxy] = features
     .map(f => f.getGeometry().getExtent())
     .reduce(([minx1, miny1, maxx1, maxy1], [minx2, miny2, maxx2, maxy2]) => [
@@ -200,14 +214,7 @@ function addGpxMetadata(node, features){
     ], [Infinity, Infinity, -Infinity, -Infinity]);
   const [minlon, minlat] = toLonLat([minx, miny]).map(fmt_coord);
   const [maxlon, maxlat] = toLonLat([maxx, maxy]).map(fmt_coord);
-
-  return node.ele('metadata')
-    .ele('link', { href: 'http://garmin.com' })
-      .ele('text').txt("Garmin International").up()
-    .up()
-    .ele('time').txt(fmt_time()).up()
-    .ele('bounds', { maxlat, maxlon, minlat, minlon }).up()
-  .up();
+  return { maxlat, maxlon, minlat, minlon };
 }
 
 // @node is a gpx node
