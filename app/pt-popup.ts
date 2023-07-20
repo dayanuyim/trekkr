@@ -139,6 +139,10 @@ export default class PtPopupOverlay extends Overlay{
         // change name
         this._pt_name.onkeydown = listener_enter_to_blur;
         this._pt_name.onblur = e => {
+            if(!this.pt_name){
+                this.setContent(this._data);  //reload the data to restore the erased value
+                return;
+            }
             let name_changed = false;
             let sym_changed = false;
 
@@ -172,6 +176,10 @@ export default class PtPopupOverlay extends Overlay{
                 this.pt_ele = this.pt_ele.replace(/[^0-9.]/g, "");  // remove non-digit characters
         };
         this._pt_ele.onblur = e => {
+            if(!this.pt_ele){
+                this.setContent(this._data);  //reload the data to restore the erased value
+                return;
+            }
             const ele = +this.pt_ele;
             let ele_changed = false;
             if(this._data.coordinates.length < 3){
