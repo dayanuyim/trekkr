@@ -8,10 +8,28 @@ import { GeoJSON, IGC, KML, TopoJSON } from 'ol/format';
 import { getRenderPixel } from 'ol/render';
 import { platformModifierKeyOnly } from 'ol/events/condition';
 
-import { GPXFormat, mkGpxLayer, genGpxText, mkWptFeature } from './gpx'
+import { GPXFormat, mkGpxLayer, genGpxText, mkWptFeature, forEachWpts, setSymByRules } from './gpx';
 import PtPopupOverlay from './pt-popup';
 import Opt from './opt';
 import * as LayerRepo from './layer-repo';
+
+/*
+//TODO: better way to do this?
+// NOTE: the function is called only with 'wpt' feature feed,
+// so the index range should be in [ indexOfPseudoGpxLayer(), layers.getLength() ),
+// so do the search by rever order.
+function findLayerByFeature(map, feature){
+  const layers = map.getLayers();
+  for(let i = layers.getLength() -1; i >= 0; --i){
+    const layer = layers.item(i);
+    if(layer.getSource().getFeatures().includes(feature))
+      return layer;
+  }
+  return undefined;
+}
+*/
+
+////////////////////////////////////////////////////////////////
 
 export const createMap = (target) => {
   const drag_interaciton = new DragAndDrop({
@@ -196,6 +214,10 @@ function indexOfPseudoGpxLayer(){
   return indexOfSpyLayer() + 1;  //after spy layer
 }
 
+function getGpxLayers(map){
+    return map.getLayers().getArray().slice(indexOfPseudoGpxLayer());
+}
+
 function addLayerWithInteraction(map, layer){
     map.addLayer(layer);
     map.addInteraction(new Modify({    //let trkpt feature as 'Point', instead of 'MultiLineString'
@@ -332,6 +354,7 @@ function setSpyEvents(layer)
 
 import { gmapUrl} from './common';
 import { CtxMenu } from './ctx-menu';
+import { matchRules } from './sym';
 
 let __ctxmenu_coord;
 
@@ -361,7 +384,10 @@ export function setCtxMenu(map, menu: HTMLElement) {
   });
 
   ctx.setItem(".item-save-gpx", (el) => {
-    genGpxText(map.getLayers().getArray().slice(indexOfPseudoGpxLayer()));
+    genGpxText(getGpxLayers(map));
+  });
+  ctx.setItem(".item-apply-sym", (el) => {
+    forEachWpts(getGpxLayers(map), setSymByRules);
   });
 }
 
@@ -375,7 +401,8 @@ function addWaypoint(map, wpt){
 }
 
 function rmWaypoint(map, wpt){
-  const layer = findLayerByFeature(map, wpt);
+  const layer = getGpxLayers(map)
+                .findLast(lay => lay.getSource().getFeatures().includes(wpt));  //find from last should be more efficient in the case
   if(!layer){
     console.error('cannot find the layer for the wpt', wpt);
     alert('[Error] cannot find the layer for the wpt');
@@ -386,18 +413,4 @@ function rmWaypoint(map, wpt){
 
   //close popup
   map.getOverlayById('pt-popup').hide();
-}
-
-//TODO: better way to do this?
-// NOTE: the function is called only with 'wpt' feature feed,
-// so the index range should be in [ indexOfPseudoGpxLayer(), layers.getLength() ),
-// so do the search by rever order.
-function findLayerByFeature(map, feature){
-  const layers = map.getLayers();
-  for(let i = layers.getLength() -1; i >= 0; --i){
-    const layer = layers.item(i);
-    if(layer.getSource().getFeatures().includes(feature))
-      return layer;
-  }
-  return undefined;
 }

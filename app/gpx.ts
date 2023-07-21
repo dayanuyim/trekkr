@@ -15,7 +15,7 @@ import { Point } from 'ol/geom';
 import { toLonLat } from 'ol/proj';
 import { create as createXML } from 'xmlbuilder2';
 
-import { getSymbol } from './sym'
+import { getSymbol, matchRules } from './sym'
 import Opt from './opt';
 import { saveTextAsFile } from './lib/dom-utils';
 
@@ -148,6 +148,12 @@ export function mkWptFeature(coords, options?){
   }, options));
 }
 
+export function forEachWpts(layers, cb){
+  layers.flatMap(layer => layer.getSource().getFeatures())
+        .filter(feature => feature.getGeometry().getType() == 'Point')
+        .forEach(cb);
+}
+
 export function genGpxText(layers){
   // get wpts and trks features
   const wpts = [];
@@ -278,4 +284,9 @@ function addGpxTracks(node, trks){
     node = node.up(); //trk node
   });
   return node;
+}
+
+export function setSymByRules(wpt: Feature<Point>) {
+  const sym = matchRules(wpt.get('name'));
+  if (sym) wpt.set('sym', sym);
 }
