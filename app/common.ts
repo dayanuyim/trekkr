@@ -67,7 +67,7 @@ export function getLocalTimeByCoords(coordinates)
   if(!epoch)
     return undefined;
 
-  //cache tz to optimize since tzlookup is very slow
+  //cache tz to optimize since tzlookup is a slow operation
   if(!Param.tz){
     const [lon, lat] = toLonLat(coordinates);
     Param.tz = tzlookup(lat, lon);

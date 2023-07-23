@@ -234,11 +234,11 @@ export default class PtPopupOverlay extends Overlay{
         const sym = feature.get('sym');                              //maybe undefined
         const coordinates = feature.getGeometry().getCoordinates();  //x, y, ele, time
 
-        // saving for later to use
+        // chche for later to use
         this._feature = feature;                 //for removing
         this._data = {name, sym, coordinates};   //for creating/updating
 
-        this.setContent(this._data);
+        await this.setContent(this._data);
 
         //position
         this.setPosition(coordinates);
