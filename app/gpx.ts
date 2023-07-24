@@ -18,7 +18,7 @@ import { create as createXML } from 'xmlbuilder2';
 import Opt from './opt';
 import { getSymbol, matchRules } from './sym'
 import { saveTextAsFile } from './lib/dom-utils';
-import { getXYZM } from './common';
+import { getEpochOfCoords, getXYZMOfCoords } from './common';
 
 function _toStyleText(text){
   if(Opt.zoom < 13.5)
@@ -149,26 +149,31 @@ export function mkWptFeature(coords, options?){
   }, options));
 }
 
-export function forEachWpts(layers, cb){
-  layers.flatMap(layer => layer.getSource().getFeatures())
-        .filter(feature => feature.getGeometry().getType() == 'Point')
-        .forEach(cb);
+export function getGpxWpts(layers){
+  return layers.flatMap(layer => layer.getSource().getFeatures())
+        .filter(feature => feature.getGeometry().getType() == 'Point');
+}
+
+export function getGpxTrks(layers){
+  return layers.flatMap(layer => layer.getSource().getFeatures())
+        .filter(feature => feature.getGeometry().getType() == 'MultiLineString');
+}
+
+export function getGpxWptsTrks(layers){
+  const wpts = [];
+  const trks = [];
+  layers.flatMap(layer => layer.getSource().getFeatures()).forEach(feature => {
+      switch (feature.getGeometry().getType()) {
+        case 'Point':           wpts.push(feature); break;
+        case 'MultiLineString': trks.push(feature); break;
+      }
+  });
+  return [wpts, trks];
 }
 
 export function genGpxText(layers){
   // get wpts and trks features
-  const wpts = [];
-  const trks = [];
-  layers.forEach(layer => {
-    layer.getSource().getFeatures().forEach(feature => {
-      switch (feature.getGeometry().getType()) {
-        case 'Point':
-          wpts.push(feature); break;
-        case 'MultiLineString':
-          trks.push(feature); break;
-      }
-    });
-  });
+  const [wpts, trks ] = getGpxWptsTrks(layers);
 
   // create gpx by wpts and trks
   let node = createXML({ version: '1.0', encoding: "UTF-8" })
@@ -194,6 +199,24 @@ export function genGpxText(layers){
 const fmt_coord = (n) => n.toFixed(6);
 const fmt_ele = (n) => n.toFixed(1);
 const fmt_time = (sec?) => (sec? new Date(sec*1000): new Date()).toISOString().split('.')[0]+'Z';
+const cmp_wpt_time = (w1, w2) => {
+  const time = wpt => {
+    const coords = wpt.getGeometry().getCoordinates();
+    const layout = wpt.getGeometry().getLayout();
+    return getEpochOfCoords(coords, layout) || 0;
+  };
+  return time(w1) - time(w2);
+}
+const cmp_trk_time = (t1, t2) => {
+  const time = trk => {
+    const coords = trk.getGeometry().getCoordinates();
+    const layout = trk.getGeometry().getLayout();
+    if(coords.length > 0 && coords[0].length > 0)
+      return getEpochOfCoords(coords[0][0], layout) || 0;  //first trkseg, first trkpt
+    return 0;
+  }
+  return time(t1) - time(t2);
+}
 
 // @node is a gpx node
 function addGpxMetadata(node, features){
@@ -227,9 +250,9 @@ function getBounds(features){
 // @node is a gpx node
 function addGpxWaypoints(node, wpts){
   const first_char = /(^\w{1})|(\s+\w{1})/g;
-  wpts.forEach(wpt => {
+  wpts.sort(cmp_wpt_time).forEach(wpt => {
     const geom = wpt.getGeometry();
-    const [x, y, ele, time ] = getXYZM(geom.getCoordinates(), geom.getLayout());
+    const [x, y, ele, time ] = getXYZMOfCoords(geom.getCoordinates(), geom.getLayout());
     const [lon, lat] = toLonLat([x, y]).map(fmt_coord);
     const name = wpt.get('name');
     const sym = wpt.get('sym');
@@ -258,7 +281,7 @@ function addGpxWaypoints(node, wpts){
 
 // @node is a gpx node
 function addGpxTracks(node, trks){
-  trks.forEach(trk => {
+  trks.sort(cmp_trk_time).forEach(trk => {
     const name = trk.get('name');
     const color = trk.get('color');
     node = node.ele('trk');
@@ -274,7 +297,7 @@ function addGpxTracks(node, trks){
     trk.getGeometry().getCoordinates().forEach(coordsset => {
       node = node.ele('trkseg');
       coordsset.forEach(coords => {
-        const [x, y, ele, time ]= getXYZM(coords, layout);
+        const [x, y, ele, time ]= getXYZMOfCoords(coords, layout);
         const [lon, lat] = toLonLat([x, y]).map(fmt_coord);
         node = node.ele('trkpt', {lat, lon});
         if(ele)  node.ele('ele').txt(fmt_ele(ele)).up();

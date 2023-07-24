@@ -6,7 +6,7 @@ import {toTWD97, toTWD67} from './coord';
 
 import * as moment from 'moment-timezone';
 import { getSymbol, matchRules } from './sym'
-import { getElevationByCoords, getLocalTimeByCoords, gmapUrl } from './common'
+import { getEleByCoords, getLocalTimeByCoords, gmapUrl } from './common'
 import { mkWptFeature } from './gpx';
 import Opt from './opt';
 
@@ -252,7 +252,7 @@ export default class PtPopupOverlay extends Overlay{
             coordsys: Opt.coordsys,
             coordinate: coordinates.slice(0, 2),
             time: getLocalTimeByCoords(coordinates),
-            ele: await getElevationByCoords(coordinates),
+            ele: await getEleByCoords(coordinates),
             symbol: getSymbol(sym),
         });
     }

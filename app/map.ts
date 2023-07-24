@@ -8,7 +8,7 @@ import { GeoJSON, IGC, KML, TopoJSON } from 'ol/format';
 import { getRenderPixel } from 'ol/render';
 import { platformModifierKeyOnly } from 'ol/events/condition';
 
-import { GPXFormat, mkGpxLayer, genGpxText, mkWptFeature, forEachWpts, setSymByRules } from './gpx';
+import { GPXFormat, mkGpxLayer, genGpxText, mkWptFeature, getGpxWpts, setSymByRules } from './gpx';
 import PtPopupOverlay from './pt-popup';
 import Opt from './opt';
 import * as LayerRepo from './layer-repo';
@@ -387,7 +387,7 @@ export function setCtxMenu(map, menu: HTMLElement) {
     genGpxText(getGpxLayers(map));
   });
   ctx.setItem(".item-apply-sym", (el) => {
-    forEachWpts(getGpxLayers(map), setSymByRules);
+    getGpxWpts(getGpxLayers(map)).forEach(setSymByRules);
   });
 }
 

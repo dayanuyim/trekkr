@@ -15,7 +15,7 @@ export function gmapUrl(coord){
     return fmtCoordinate(toLonLat(coord), `https://www.google.com.tw/maps/@{y},{x},${Opt.zoom}z?hl=zh-TW`, 7);
 }
 
-export function getXYZM(coords, layout?){
+export function getXYZMOfCoords(coords, layout?){
   switch(layout){
     case 'XY':   return coords.concat([undefined, undefined]);
     case 'XYZ':  return coords.concat([undefined]);
@@ -24,23 +24,29 @@ export function getXYZM(coords, layout?){
     default: return [
       coords[0],
       coords[1],
-      getElevationOfCoords(coords),
+      getEleOfCoords(coords),
       getEpochOfCoords(coords)
     ]
   }
 }
 
-function getElevationOfCoords (coordinates) {
-  if(coordinates.length > 2 && coordinates[2] < 10000.0){   //geometry.getLayout() == 'XYZ' or 'XYZM'
-    return coordinates[2];
+function getEleOfCoords(coords, layout?) {
+  if(layout){
+    return (layout == 'XYZ' || layout == 'XYZM')? coords[2]: undefined;
+  }
+  if(coords.length > 2 && coords[2] < 10000.0){   //geometry.getLayout() == 'XYZ' or 'XYZM'
+    return coords[2];
   }
   return undefined;
 };
 
-function getEpochOfCoords(coordinates){
-  const last = coordinates.length -1;
-  if(coordinates.length > 2 && coordinates[last] > 10000.0){   //geometry.getLayout() == 'XYM' or 'XYZM
-    return coordinates[last];
+export function getEpochOfCoords(coords, layout?){
+  if(layout){
+    return (layout == 'XYM' || layout == 'XYZM')?  coords[coords.length-1]: undefined;
+  }
+  const last = coords.length -1;
+  if(coords.length > 2 && coords[last] > 10000.0){   //geometry.getLayout() == 'XYM' or 'XYZM
+    return coords[last];
   }
   return undefined;
 };
@@ -60,8 +66,8 @@ function googleElevation(lat, lon)
     });
   });
 }
-export const getElevationByCoords = async (coordinates) => {
-  const ele = getElevationOfCoords(coordinates);
+export const getEleByCoords = async (coordinates) => {
+  const ele = getEleOfCoords(coordinates);
   if(ele)
     return {value: ele, est: false};
 
