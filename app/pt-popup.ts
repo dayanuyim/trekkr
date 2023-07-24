@@ -259,8 +259,9 @@ export default class PtPopupOverlay extends Overlay{
 
     private _setContent({name, coordsys, coordinate, time, ele, symbol})
     {
-        const is_trkpt = !name;   // not use 'symbol', a wpt may has no sym
-        const is_wpt = !is_trkpt;
+        const show = (el, en) => el.classList.toggle('hidden', !en)
+
+        const is_wpt = name || symbol;
 
         this.pt_coord = coordinate;
         this.pt_coord_title = coordsys;
@@ -269,15 +270,15 @@ export default class PtPopupOverlay extends Overlay{
 
         this.pt_name = name;
         this.pt_ele = ele? fmtEle(ele.value): '-';
-        this._pt_ele_est.classList.toggle('hidden', !ele.est)
+        show(this._pt_ele_est, ele.est);
         this.pt_time = time? fmtTime(time): '-';
 
-        this._pt_mk_wpt.classList.toggle('hidden', is_wpt);
-        this._pt_rm_wpt.classList.toggle('hidden', is_trkpt);
+        show(this._pt_mk_wpt, !is_wpt);
+        show(this._pt_rm_wpt, is_wpt);
 
         //this._pt_sym.classList.toggle('hidden', is_trkpt);
-        this._pt_header.classList.toggle('hidden', is_trkpt);   // header contains sym & name
-        this._sym_copyright.classList.toggle('hidden', is_trkpt); //
+        show(this._pt_header, is_wpt);   // header contains sym & name
+        show(this._sym_copyright, is_wpt);
         if(symbol){
             this.pt_sym = symbol.path(128);
             this.setUrlContent(this._sym_maker,    symbol.maker);
