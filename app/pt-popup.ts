@@ -85,9 +85,10 @@ export default class PtPopupOverlay extends Overlay{
         super({
             element: el,
             id: el.getAttribute('id'),
-            autoPan: true,
-            autoPanAnimation: {
-                duration: 250
+            autoPan: {
+                animation: {
+                    duration: 250,
+                }
             }
         });
 

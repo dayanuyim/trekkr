@@ -13,7 +13,6 @@
   "devDependencies": {
     "@fortawesome/fontawesome-free": "^6.4.0",
     "@popperjs/core": "^2.1.1",
-    "@types/ol": "6.5.3",
     "@types/proj4": "^2.5.2",
     "bidirectional-map": "^1.1.1",
     "bootstrap": "^4.4.1",
@@ -26,7 +25,7 @@
     "html5sortable": "^0.13.3",
     "jquery": "^3.6.0",
     "mini-css-extract-plugin": "^2.7.6",
-    "ol": "6.10.0",
+    "ol": "7.4.0",
     "proj4": "^2.7.5",
     "style-loader": "^3.3.3",
     "ts-loader": "^9.4.4",

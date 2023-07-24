@@ -218,7 +218,8 @@ input[type=number] {
 }
 
 .settings-side button:not(.active){
-    background: rgba(64, 64, 64, .5);
+    /*background: rgba(64, 64, 64, .5);*/
+    color: lightgray;
 }
 /*============= Map ======================*/
 
