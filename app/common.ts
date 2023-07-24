@@ -15,8 +15,23 @@ export function gmapUrl(coord){
     return fmtCoordinate(toLonLat(coord), `https://www.google.com.tw/maps/@{y},{x},${Opt.zoom}z?hl=zh-TW`, 7);
 }
 
+export function getXYZM(coords, layout?){
+  switch(layout){
+    case 'XY':   return coords.concat([undefined, undefined]);
+    case 'XYZ':  return coords.concat([undefined]);
+    case 'XYM':  return [coords[0], coords[1], undefined, coords[2]];
+    case 'XYZM': return coords;
+    default: return [
+      coords[0],
+      coords[1],
+      getElevationOfCoords(coords),
+      getEpochOfCoords(coords)
+    ]
+  }
+}
+
 function getElevationOfCoords (coordinates) {
-  if(coordinates.length > 2 && coordinates[2] < 10000.0){
+  if(coordinates.length > 2 && coordinates[2] < 10000.0){   //geometry.getLayout() == 'XYZ' or 'XYZM'
     return coordinates[2];
   }
   return undefined;
@@ -24,14 +39,14 @@ function getElevationOfCoords (coordinates) {
 
 function getEpochOfCoords(coordinates){
   const last = coordinates.length -1;
-  if(coordinates.length > 2 && coordinates[last] > 10000.0){
+  if(coordinates.length > 2 && coordinates[last] > 10000.0){   //geometry.getLayout() == 'XYM' or 'XYZM
     return coordinates[last];
   }
   return undefined;
 };
 
 // Promisify and Accept only a location
-export function googleElevation(lat, lon)
+function googleElevation(lat, lon)
 {
   return new Promise((resolve, reject)=>{
     elevationApi({

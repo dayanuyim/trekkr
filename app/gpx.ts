@@ -15,9 +15,10 @@ import { Point } from 'ol/geom';
 import { toLonLat } from 'ol/proj';
 import { create as createXML } from 'xmlbuilder2';
 
-import { getSymbol, matchRules } from './sym'
 import Opt from './opt';
+import { getSymbol, matchRules } from './sym'
 import { saveTextAsFile } from './lib/dom-utils';
+import { getXYZM } from './common';
 
 function _toStyleText(text){
   if(Opt.zoom < 13.5)
@@ -227,7 +228,8 @@ function getBounds(features){
 function addGpxWaypoints(node, wpts){
   const first_char = /(^\w{1})|(\s+\w{1})/g;
   wpts.forEach(wpt => {
-    const [x, y, ele, time ]= wpt.getGeometry().getCoordinates();
+    const geom = wpt.getGeometry();
+    const [x, y, ele, time ] = getXYZM(geom.getCoordinates(), geom.getLayout());
     const [lon, lat] = toLonLat([x, y]).map(fmt_coord);
     const name = wpt.get('name');
     const sym = wpt.get('sym');
@@ -268,10 +270,11 @@ function addGpxTracks(node, trks){
         .up()
       .up();
 
-    trk.getGeometry().getCoordinates().forEach(trkseg => {
+    const layout = trk.getGeometry().getLayout();
+    trk.getGeometry().getCoordinates().forEach(coordsset => {
       node = node.ele('trkseg');
-      trkseg.forEach(trkpt => {
-        const [x, y, ele, time ]= trkpt;
+      coordsset.forEach(coords => {
+        const [x, y, ele, time ]= getXYZM(coords, layout);
         const [lon, lat] = toLonLat([x, y]).map(fmt_coord);
         node = node.ele('trkpt', {lat, lon});
         if(ele)  node.ele('ele').txt(fmt_ele(ele)).up();
