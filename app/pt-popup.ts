@@ -153,9 +153,9 @@ export default class PtPopupOverlay extends Overlay{
             }
             if(name_changed){
                 this._feature.set('name', this._data.name);
-                const sym = matchRules(this._data.name);
-                if(sym && this._data.sym != sym){
-                    this._data.sym = sym;
+                const symbol = matchRules(this._data.name);
+                if(symbol && this._data.sym != symbol.name){
+                    this._data.sym = symbol.name;
                     sym_changed = true;
                 }
             }

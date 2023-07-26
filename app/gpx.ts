@@ -16,7 +16,7 @@ import { toLonLat } from 'ol/proj';
 import { create as createXML } from 'xmlbuilder2';
 
 import Opt from './opt';
-import { getSymbol, matchRules } from './sym'
+import { Def_symbol, getSymbol, matchRules } from './sym'
 import { saveTextAsFile } from './lib/dom-utils';
 import { getEpochOfCoords, getXYZMOfCoords } from './common';
 
@@ -40,9 +40,10 @@ export const gpxStyle = (feature) => {
     case 'Point': {
       const name = feature.get('name');
       let sym = feature.get('sym');
-      // set default symbol name, although 'sym' (symbol name) is not a mandatory filed for wpt, specifiy one helps wpt edit
+
+      // set default symbol name (although 'sym' is not a mandatory field for wpt, specifiy one helps wpt edit)
       if(!sym){
-        sym = 'waypoint';
+        sym = Def_symbol.name;
         feature.set('sym', sym);
       }
 
@@ -145,7 +146,7 @@ export function mkWptFeature(coords, options?){
   return new Feature(Object.assign({
     geometry: new Point(coords),
     name: "WPT",
-    sym: "waypoint",
+    sym: Def_symbol.name,
   }, options));
 }
 
@@ -249,7 +250,6 @@ function getBounds(features){
 
 // @node is a gpx node
 function addGpxWaypoints(node, wpts){
-  const first_char = /(^\w{1})|(\s+\w{1})/g;
   wpts.sort(cmp_wpt_time).forEach(wpt => {
     const geom = wpt.getGeometry();
     const [x, y, ele, time ] = getXYZMOfCoords(geom.getCoordinates(), geom.getLayout());
@@ -263,7 +263,7 @@ function addGpxWaypoints(node, wpts){
     if(ele)  node.ele('ele').txt(fmt_ele(ele)).up();
     if(time) node.ele('time').txt(fmt_time(time)).up();
     if(name) node.ele('name').txt(name).up();
-    if(sym)  node.ele('sym').txt(sym.replace(first_char, c => c.toUpperCase())).up();
+    if(sym)  node.ele('sym').txt(sym).up();
     if(cmt)  node.ele('cmt').txt(cmt).up();
     if(desc) node.ele('desc').txt(desc).up();
     /*
@@ -313,6 +313,6 @@ function addGpxTracks(node, trks){
 }
 
 export function setSymByRules(wpt: Feature<Point>) {
-  const sym = matchRules(wpt.get('name'));
-  if (sym) wpt.set('sym', sym);
+  const symbol = matchRules(wpt.get('name'));
+  if (symbol) wpt.set('sym', symbol.name);
 }

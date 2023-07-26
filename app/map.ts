@@ -354,7 +354,6 @@ function setSpyEvents(layer)
 
 import { gmapUrl} from './common';
 import { CtxMenu } from './ctx-menu';
-import { matchRules } from './sym';
 
 let __ctxmenu_coord;
 
