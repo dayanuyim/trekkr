@@ -337,6 +337,24 @@ select::-ms-expand {
     vertical-align: sub;
 }
 
+.pt-sym:hover {
+    cursor: pointer;
+}
+
+.pt-sym-board {
+    position: absolute;
+    z-index: 10;
+    height: 200px;
+    width: 400px;
+
+    /* glassmophism */
+    backdrop-filter: blur(6px) saturate(200%);
+    -webkit-backdrop-filter: blur(6px) saturate(200%);
+    background-color: rgba(255, 255, 255, 0.8);
+    border-radius: 12px;
+    border: 1px solid rgba(209, 213, 219, 0.3);
+}
+
 .pt-name {
     /*font-weight: bold;*/
     font-size: 20px;

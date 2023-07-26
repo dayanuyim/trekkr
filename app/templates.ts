@@ -30,6 +30,8 @@ export const ptPopup = Handlebars.compile(`
         <!--<input type="text" class="pt-name" value="{{name}}">-->
     </div>
 
+    <div class="pt-sym-board hidden"></div>
+
     <div class="pt-coord" data-pt-coord="{{coordinate}}">
         <select class="pt-coord-title" dir="rtl">
             {{selop ""      coordsys "-"  "disabled hidden"}}

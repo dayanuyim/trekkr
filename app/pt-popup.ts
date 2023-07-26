@@ -40,6 +40,7 @@ export default class PtPopupOverlay extends Overlay{
     _content: HTMLElement;
     _pt_header: HTMLElement;
     _pt_sym: HTMLImageElement;
+    _pt_sym_board: HTMLElement;
     _pt_name: HTMLElement;
     _pt_coord: HTMLElement;
     _pt_coord_title: HTMLSelectElement;
@@ -102,6 +103,7 @@ export default class PtPopupOverlay extends Overlay{
         this._content =        el.querySelector<HTMLElement>('.ol-popup-content');
         this._pt_header =      el.querySelector<HTMLElement>('.pt-header');
         this._pt_sym =         el.querySelector<HTMLImageElement>('.pt-sym');
+        this._pt_sym_board =        el.querySelector<HTMLElement>('.pt-sym-board');
         this._pt_name =        el.querySelector<HTMLElement>('.pt-name');
         this._pt_coord =       el.querySelector<HTMLElement>('.pt-coord');
         this._pt_coord_title = this._pt_coord.querySelector<HTMLSelectElement>('.pt-coord-title');
@@ -119,6 +121,7 @@ export default class PtPopupOverlay extends Overlay{
     }
 
     public hide(){
+        this._pt_sym_board.classList.add('hidden');  //auto hidden if any
         this.setPosition(undefined);
     }
 
@@ -130,10 +133,22 @@ export default class PtPopupOverlay extends Overlay{
             return false;
         };
 
+        this.getElement().addEventListener('click', e => {
+            this._pt_sym_board.classList.add('hidden');
+        });
+
+        this._pt_sym.onclick = e => {
+            e.stopPropagation();
+            this._pt_sym_board.classList.toggle('hidden');
+        }
+
+        this._pt_sym_board.onclick = e => e.stopPropagation();
+
         const listener_enter_to_blur = e => {
             if(e.key == "Enter"){
                 e.preventDefault();
                 e.target.blur();
+                return false;
             }
         }
 
@@ -167,11 +182,12 @@ export default class PtPopupOverlay extends Overlay{
 
         // check elevation, be careful not to limit editing key
         //const valid_ele_char = (c) => /^\d$/.test(c) || (c == "." && !this.pt_ele.includes("."));
-        this._pt_ele.addEventListener('keydown', listener_enter_to_blur);
-        this._pt_ele.addEventListener('keydown', (e) => {
+        this._pt_ele.onkeydown = (e) => {
+            if(listener_enter_to_blur(e) === false)
+                return false;
             if(e.key == "." && this.pt_ele.includes("."))  //multiple 'dot'
                 e.preventDefault();
-        });
+        };
         this._pt_ele.onkeyup = e => {
             if(isNaN(+this.pt_ele))
                 this.pt_ele = this.pt_ele.replace(/[^0-9.]/g, "");  // remove non-digit characters
