@@ -16,7 +16,7 @@ import { toLonLat } from 'ol/proj';
 import { create as createXML } from 'xmlbuilder2';
 
 import Opt from './opt';
-import { Def_symbol, getSymbol, matchRules } from './sym'
+import { def_symbol, getSymbol, matchRules } from './sym'
 import { saveTextAsFile } from './lib/dom-utils';
 import { getEpochOfCoords, getXYZMOfCoords } from './common';
 
@@ -43,7 +43,7 @@ export const gpxStyle = (feature) => {
 
       // set default symbol name (although 'sym' is not a mandatory field for wpt, specifiy one helps wpt edit)
       if(!sym){
-        sym = Def_symbol.name;
+        sym = def_symbol.name;
         feature.set('sym', sym);
       }
 
@@ -146,7 +146,7 @@ export function mkWptFeature(coords, options?){
   return new Feature(Object.assign({
     geometry: new Point(coords),
     name: "WPT",
-    sym: Def_symbol.name,
+    sym: def_symbol.name,
   }, options));
 }
 

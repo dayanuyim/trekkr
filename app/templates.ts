@@ -5,8 +5,16 @@ import {toLonLat} from 'ol/proj';
 import {format} from 'ol/coordinate';
 import { gmapUrl } from './common';
 
+Handlebars.registerHelper("mul", (val, mul, options) => {
+    return Math.floor(val * mul);
+});
+
 Handlebars.registerHelper('gmap', function(coordinate) {
     return gmapUrl(coordinate);
+});
+
+Handlebars.registerHelper('sympath', function(symbol, size) {
+    return symbol.path(size);
 });
 
 Handlebars.registerHelper('fmtEle', function(ele) {
@@ -74,6 +82,15 @@ export const ptPopup = Handlebars.compile(`
 
 `);
 
+export const symboard = Handlebars.compile(`
+    {{#each basics}}
+        <img class="pt-sym-board-item" src="{{sympath this 32}}" title="{{name}}">
+    {{/each}}
+    {{#each extras}}
+        <img class="pt-sym-board-item extra" src="{{sympath this 32}}" title="{{name}}">
+    {{/each}}
+`);
+
 Handlebars.registerHelper("ptPopup", (data, options)=>{
     data = Object.assign({
         name: '',
@@ -91,10 +108,6 @@ Handlebars.registerHelper("ptPopup", (data, options)=>{
         }
     }, data);
     return new Handlebars.SafeString(ptPopup(data));
-});
-
-Handlebars.registerHelper("mul", (val, mul, options) => {
-    return Math.floor(val * mul);
 });
 
 export const mkLayer = Handlebars.compile(`

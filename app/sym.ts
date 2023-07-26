@@ -1,8 +1,14 @@
 import symbols from './data/symbols.json';
 import rules from './data/symbol-rules.json';
+import inv from './data/symbol-inventory.json';
 
-const Sym_dir = './images/sym';
-export const Def_symbol = symbols['waypoint'];
+const sym_dir = './images/sym';
+
+///////////////////////////////////////////////////////
+
+Object.values<any>(symbols).forEach(s => {
+  s.path = (size=32) => `${sym_dir}/${size}/${s.filename}`;
+});
 
 rules.forEach(r => {
     if(r.type == "regex" && typeof r.text === "string"){
@@ -10,9 +16,14 @@ rules.forEach(r => {
     }
 });
 
-Object.values<any>(symbols).forEach(s => {
-  s.path = (size=32) => `${Sym_dir}/${size}/${s.filename}`;
-});
+export const def_symbol = symbols['waypoint'];
+
+export const symbol_inv = {
+  basics: inv.basics.map(getSymbol),
+  extras: inv.extras.map(getSymbol),
+};
+
+///////////////////////////////////////////////////////
 
 export function getSymbol(name){
   if(!name)   // may be a track point
@@ -22,8 +33,8 @@ export function getSymbol(name){
   const symbol = symbols[id];
   if(symbol) return symbol;
 
-  console.error(`The symbol '${name}' is not found, use default symbol '${Def_symbol.name}'`);
-  return Def_symbol;
+  console.error(`The symbol '${name}' is not found, use default symbol '${def_symbol.name}'`);
+  return def_symbol;
 }
 
 export function matchRules(str){
