@@ -1,5 +1,5 @@
 import {Tile as TileLayer, Vector as VectorLayer, Layer} from 'ol/layer';
-import {Vector as VectorSource, VectorTile, XYZ, OSM, TileJSON} from 'ol/source';
+import {Vector as VectorSource, VectorTile, XYZ, OSM, TileJSON, TileWMS } from 'ol/source';
 import {GPX, GeoJSON, IGC, KML, TopoJSON} from 'ol/format';
 import {Stroke, Text, Fill} from 'ol/style';
 import Graticule from 'ol/layer/Graticule';
@@ -107,6 +107,16 @@ function xyzLayer(url, urls, options?){
   }, options));
 }
 
+function wmsLayer(url, urls, layers, options?){
+  return new TileLayer(Object.assign({
+    source: new TileWMS({
+      url,
+      urls,
+      params: {'LAYERS': layers},
+    }),
+  }, options));
+}
+
 function jsonLayer(url, options?){
   return new VectorLayer(Object.assign({
     source: new VectorSource({
@@ -129,12 +139,13 @@ function gpxLayer(url, options?){
   */
 }
 
-function mkLayer({legend, type, url, urls})
+function mkLayer({legend, type, url, urls, layers})
 {
   const opt = legend? {transition: 0}: undefined;
   switch(type){
     case 'osm': return osmLayer();
     case 'xyz': return xyzLayer(url, urls, opt);
+    case 'wms': return wmsLayer(url, urls, layers);
     case 'json': return jsonLayer(url);
     case 'gpx': return gpxLayer(url);
     case 'grid': return graticule(url);
