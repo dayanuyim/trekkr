@@ -13,8 +13,8 @@ Handlebars.registerHelper('gmap', function(coordinate) {
     return gmapUrl(coordinate);
 });
 
-Handlebars.registerHelper('sympos', function(base, idx) {
-    return (base + idx) * 32;
+Handlebars.registerHelper('sympos', function(offset, idx) {
+    return (offset + idx) * 32;
 });
 
 Handlebars.registerHelper('fmtEle', function(ele) {
@@ -82,15 +82,6 @@ export const ptPopup = Handlebars.compile(`
 
 `);
 
-export const symboard = Handlebars.compile(`
-    {{#each basics}}
-        <div class="pt-sym-board-item" style="background-position-x:-{{sympos 0 @index}}px" title="{{name}}"></div>
-    {{/each}}
-    {{#each extras}}
-        <div class="pt-sym-board-item extra" style="background-position-x:-{{sympos ../basics.length @index}}px" title="{{name}}"></div>
-    {{/each}}
-`);
-
 Handlebars.registerHelper("ptPopup", (data, options)=>{
     data = Object.assign({
         name: '',
@@ -109,6 +100,23 @@ Handlebars.registerHelper("ptPopup", (data, options)=>{
     }, data);
     return new Handlebars.SafeString(ptPopup(data));
 });
+
+export const symboardItem = Handlebars.compile(`
+    {{#each symbols}}
+        <div class="pt-sym-board-item {{#if ../offset}}extra{{/if}}" title="{{name}}">
+            <div class="pt-sym-board-item-img" style="background-position-x:-{{sympos ../offset @index}}px"></div>
+        </div>
+    {{/each}}
+`);
+
+Handlebars.registerHelper("symboardItem", (offset, symbols, options) => {
+    return new Handlebars.SafeString(symboardItem({offset, symbols}));
+});
+
+export const symboard = Handlebars.compile(`
+    {{symboardItem             0 basics}}
+    {{symboardItem basics.length extras}}
+`);
 
 export const mkLayer = Handlebars.compile(`
     {{#with layer}}

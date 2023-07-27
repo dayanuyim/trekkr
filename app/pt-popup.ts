@@ -253,8 +253,8 @@ export default class PtPopupOverlay extends Overlay{
 
         const pick_sym_listener = e => {
             e.stopPropagation();
-            const sym = e.target.getAttribute("title");
-            console.log('pick sym', sym);
+            const el = e.target.closest('.pt-sym-board-item');
+            const sym = el.getAttribute("title");
 
             //TODO:  try to reduce the duplicate
             let sym_changed = false
