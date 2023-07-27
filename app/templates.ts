@@ -13,8 +13,8 @@ Handlebars.registerHelper('gmap', function(coordinate) {
     return gmapUrl(coordinate);
 });
 
-Handlebars.registerHelper('sympath', function(symbol, size) {
-    return symbol.path(size);
+Handlebars.registerHelper('sympos', function(base, idx) {
+    return (base + idx) * 32;
 });
 
 Handlebars.registerHelper('fmtEle', function(ele) {
@@ -84,10 +84,10 @@ export const ptPopup = Handlebars.compile(`
 
 export const symboard = Handlebars.compile(`
     {{#each basics}}
-        <img class="pt-sym-board-item" src="{{sympath this 32}}" title="{{name}}">
+        <div class="pt-sym-board-item" style="background-position-x:-{{sympos 0 @index}}px" title="{{name}}"></div>
     {{/each}}
     {{#each extras}}
-        <img class="pt-sym-board-item extra" src="{{sympath this 32}}" title="{{name}}">
+        <div class="pt-sym-board-item extra" style="background-position-x:-{{sympos ../basics.length @index}}px" title="{{name}}"></div>
     {{/each}}
 `);
 

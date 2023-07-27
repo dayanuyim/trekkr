@@ -345,6 +345,7 @@ select::-ms-expand {
     position: absolute;
     display: grid;
     grid-template-columns: repeat(20, 1fr);
+    padding: 4px;
     z-index: 10;
 
     /* glassmophism */
@@ -360,7 +361,10 @@ select::-ms-expand {
 }
 
 .pt-sym-board-item {
-    padding: 1px;
+    margin: 1px;
+    width: 32px;
+    height: 32px;
+    background-image: url("../images/sym/32/sprite.png");
 }
 .pt-sym-board-item:hover {
     cursor: pointer;
