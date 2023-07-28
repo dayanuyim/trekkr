@@ -41,7 +41,8 @@ export default class PtPopupOverlay extends Overlay{
     _content: HTMLElement;
     _pt_header: HTMLElement;
     _pt_sym: HTMLImageElement;
-    _pt_sym_board: HTMLElement;
+    _pt_symboard: HTMLElement;
+    _pt_symboard_filter: HTMLInputElement;
     _pt_name: HTMLElement;
     _pt_coord: HTMLElement;
     _pt_coord_title: HTMLSelectElement;
@@ -100,30 +101,32 @@ export default class PtPopupOverlay extends Overlay{
 
     private initProperties(){
         const el = this.getElement();
-        this._closer =         el.querySelector<HTMLElement>('.ol-popup-closer');
-        this._content =           el.querySelector<HTMLElement>('.ol-popup-content');
-        this._pt_header =         el.querySelector<HTMLElement>('.pt-header');
-        this._pt_sym =            el.querySelector<HTMLImageElement>('.pt-sym');
-        this._pt_sym_board =      el.querySelector<HTMLElement>('.pt-sym-board');
-        this._pt_name =           el.querySelector<HTMLElement>('.pt-name');
-        this._pt_coord =          el.querySelector<HTMLElement>('.pt-coord');
-        this._pt_coord_title =    this._pt_coord.querySelector<HTMLSelectElement>('.pt-coord-title');
-        this._pt_coord_value =    this._pt_coord.querySelector<HTMLElement>('.pt-coord-value');
-        this._pt_gmap =           el.querySelector<HTMLAnchorElement>('a.pt-gmap');
-        this._pt_ele =            el.querySelector<HTMLElement>('.pt-ele-value');
-        this._pt_ele_est =        el.querySelector<HTMLElement>('.pt-ele-est');
-        this._pt_time =           el.querySelector<HTMLElement>('.pt-time-value');
-        this._pt_mk_wpt =         el.querySelector<HTMLElement>('.pt-tool-mk-wpt');
-        this._pt_rm_wpt =         el.querySelector<HTMLElement>('.pt-tool-rm-wpt');
-        this._sym_copyright =     el.querySelector<HTMLElement>('.sym-copyright');
-        this._sym_maker =         this._sym_copyright.querySelector<HTMLAnchorElement>('.sym-maker');
-        this._sym_provider =      this._sym_copyright.querySelector<HTMLAnchorElement>('.sym-provider');
-        this._sym_license =       this._sym_copyright.querySelector<HTMLAnchorElement>('.sym-license');
+        this._closer =             el.querySelector<HTMLElement>('.ol-popup-closer');
+        this._content =            el.querySelector<HTMLElement>('.ol-popup-content');
+        this._pt_header =          el.querySelector<HTMLElement>('.pt-header');
+        this._pt_sym =             el.querySelector<HTMLImageElement>('.pt-sym');
+        this._pt_symboard =        el.querySelector<HTMLElement>('.pt-symboard');
+        //this._pt_symboard_filter = ... //DONT DO THIS since symboard is lazy initailized
+        this._pt_name =            el.querySelector<HTMLElement>('.pt-name');
+        this._pt_coord =           el.querySelector<HTMLElement>('.pt-coord');
+        this._pt_coord_title =     this._pt_coord.querySelector<HTMLSelectElement>('.pt-coord-title');
+        this._pt_coord_value =     this._pt_coord.querySelector<HTMLElement>('.pt-coord-value');
+        this._pt_gmap =            el.querySelector<HTMLAnchorElement>('a.pt-gmap');
+        this._pt_ele =             el.querySelector<HTMLElement>('.pt-ele-value');
+        this._pt_ele_est =         el.querySelector<HTMLElement>('.pt-ele-est');
+        this._pt_time =            el.querySelector<HTMLElement>('.pt-time-value');
+        this._pt_mk_wpt =          el.querySelector<HTMLElement>('.pt-tool-mk-wpt');
+        this._pt_rm_wpt =          el.querySelector<HTMLElement>('.pt-tool-rm-wpt');
+        this._sym_copyright =      el.querySelector<HTMLElement>('.sym-copyright');
+        this._sym_maker =          this._sym_copyright.querySelector<HTMLAnchorElement>('.sym-maker');
+        this._sym_provider =       this._sym_copyright.querySelector<HTMLAnchorElement>('.sym-provider');
+        this._sym_license =        this._sym_copyright.querySelector<HTMLAnchorElement>('.sym-license');
     }
 
     public hide(){
-        this._pt_sym_board.classList.add('hidden');  //auto hidden if any
         this.setPosition(undefined);
+        this._pt_symboard.classList.add('hidden');   //auto hidden if any
+        this.resetSymboardFilter();                  //auto clear if any
     }
 
     private initEvents(){
@@ -135,17 +138,17 @@ export default class PtPopupOverlay extends Overlay{
         };
 
         this.getElement().addEventListener('click', e => {
-            this._pt_sym_board.classList.add('hidden');
+            this._pt_symboard.classList.add('hidden');
         });
 
         this._pt_sym.onclick = e => {
             e.stopPropagation();
-            this._pt_sym_board.classList.toggle('hidden');
-            if(!this._pt_sym_board.childElementCount)  //lazy init
-                this.initSymBoard();
+            this._pt_symboard.classList.toggle('hidden');
+            if(!this._pt_symboard.childElementCount)  //lazy init
+                this.initSymboard();
         }
 
-        this._pt_sym_board.onclick = e => e.stopPropagation();
+        this._pt_symboard.onclick = e => e.stopPropagation();
 
         const listener_enter_to_blur = e => {
             if(e.key == "Enter"){
@@ -248,12 +251,12 @@ export default class PtPopupOverlay extends Overlay{
         }
     }
 
-    private initSymBoard(){
-        this._pt_sym_board.innerHTML = templates.symboard(symbol_inv);
+    private initSymboard(){
+        this._pt_symboard.innerHTML = templates.symboard(symbol_inv);
 
         const pick_sym_listener = e => {
             e.stopPropagation();
-            const el = e.target.closest('.pt-sym-board-item');
+            const el = e.target.closest('.pt-symboard-item');
             const sym = el.getAttribute("title");
 
             //TODO:  try to reduce the duplicate
@@ -267,11 +270,35 @@ export default class PtPopupOverlay extends Overlay{
                 this.setContent(this._data);
             }
 
-            this._pt_sym_board.classList.add('hidden');
+            this._pt_symboard.classList.add('hidden');
         };
 
-        this._pt_sym_board.querySelectorAll<HTMLElement>('.pt-sym-board-item').forEach(el =>
+        // pick
+        this._pt_symboard.querySelectorAll<HTMLElement>('.pt-symboard-item').forEach(el =>
             el.onclick = pick_sym_listener);
+
+        // filter
+        this._pt_symboard_filter = this._pt_symboard.querySelector<HTMLInputElement>('#pt-symboard-filter');
+        let filter_orig;
+        this._pt_symboard_filter.onkeydown= e => { filter_orig = this._pt_symboard_filter.value; }
+        this._pt_symboard_filter.onkeyup = e => {
+            if (filter_orig == this._pt_symboard_filter.value)
+                return;
+            const val = this._pt_symboard_filter.value.toLowerCase();
+            this._pt_symboard.querySelectorAll<HTMLElement>('.pt-symboard-item').forEach(el => {
+                const name = el.getAttribute('title').toLowerCase();
+                el.style.visibility = name.includes(val) ? "unset" : "hidden";
+            });
+        };
+    }
+
+    private resetSymboardFilter(){
+        if(!this._pt_symboard_filter)
+            return;
+        this._pt_symboard_filter.value = '';
+        this._pt_symboard.querySelectorAll<HTMLElement>('.pt-symboard-item').forEach(el => {
+            el.style.visibility = "unset";
+        });
     }
 
     async popContent(feature) {
@@ -332,8 +359,15 @@ export default class PtPopupOverlay extends Overlay{
         }
     }
 
-    private setUrlContent(el: HTMLAnchorElement, sym){
-        el.href = sym.url;
-        el.textContent = sym.title;
+    private setUrlContent(el: HTMLAnchorElement, link){
+        el.href = link.url;
+        el.textContent = link.title;
     }
+
+    /* image-wpt style
+    background-image:    url(images/background.svg);
+    background-size:     cover;
+    background-repeat:   no-repeat;
+    background-position: center center;
+    */
 }

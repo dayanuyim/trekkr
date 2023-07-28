@@ -38,7 +38,7 @@ export const ptPopup = Handlebars.compile(`
         <!--<input type="text" class="pt-name" value="{{name}}">-->
     </div>
 
-    <div class="pt-sym-board hidden"></div>
+    <div class="pt-symboard hidden"></div>
 
     <div class="pt-coord" data-pt-coord="{{coordinate}}">
         <select class="pt-coord-title" dir="rtl">
@@ -103,8 +103,8 @@ Handlebars.registerHelper("ptPopup", (data, options)=>{
 
 export const symboardItem = Handlebars.compile(`
     {{#each symbols}}
-        <div class="pt-sym-board-item {{#if ../offset}}extra{{/if}}" title="{{name}}">
-            <div class="pt-sym-board-item-img" style="background-position-x:-{{sympos ../offset @index}}px"></div>
+        <div class="pt-symboard-item {{#if ../offset}}extra{{/if}}" title="{{name}}">
+            <div class="pt-symboard-item-img" style="background-position-x:-{{sympos ../offset @index}}px"></div>
         </div>
     {{/each}}
 `);
@@ -114,8 +114,14 @@ Handlebars.registerHelper("symboardItem", (offset, symbols, options) => {
 });
 
 export const symboard = Handlebars.compile(`
-    {{symboardItem             0 basics}}
-    {{symboardItem basics.length extras}}
+    <div class="pt-symboard-items">
+        {{symboardItem             0 basics}}
+        {{symboardItem basics.length extras}}
+    </div>
+    <div class="pt-symboard-footer">
+        <label for="pt-symboard-filter"><i class="fas fa-magnifying-glass"></i></label>
+        <input type="text" id="pt-symboard-filter" placeholder="Search...">
+    </div>
 `);
 
 export const mkLayer = Handlebars.compile(`
