@@ -7,7 +7,7 @@
         "target": "ES6",
         "lib": [
             "DOM",
-            "ES2019",
+            "ES2019"
         ],
         "downlevelIteration": true,
         "allowJs": true,
