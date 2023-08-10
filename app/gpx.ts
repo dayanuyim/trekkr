@@ -141,8 +141,10 @@ export function mkGpxLayer(source_props?, layer_props?){
 
 //@coords is openlayer coords [x, y, ele, time], ele and tiem is optional.
 export function mkWptFeature(coords, options?){
-  if(coords.length < 3) coords.push(null);  // ele // getElevationByCoords(coords)
-  if(coords.length < 4) coords.push(Math.round(new Date().getTime() / 1000));   //time
+  if(coords.length < 3) coords.push(null);         // ele // getElevationByCoords(coords)
+  if(coords.length < 4) coords.push(new Date());   //time
+  if(coords[3] instanceof Date)
+    coords[3] = Math.round(coords[3].getTime() / 1000)  // to epoch seconds
   return new Feature(Object.assign({
     geometry: new Point(coords),
     name: "WPT",

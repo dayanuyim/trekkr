@@ -4,9 +4,11 @@ import { toSize } from 'ol/size';
 import { Map, View, Overlay, Collection } from 'ol';
 import { Tile as TileLayer } from 'ol/layer';
 import { Vector as VectorSource, TileJSON, XYZ, OSM } from 'ol/source';
-import { GeoJSON, IGC, KML, TopoJSON } from 'ol/format';
 import { getRenderPixel } from 'ol/render';
 import { platformModifierKeyOnly } from 'ol/events/condition';
+
+import { GeoJSON, IGC, KML, TopoJSON } from 'ol/format';
+import PhotoFormat from './format/Photo';
 
 import { GPXFormat, mkGpxLayer, genGpxText, mkWptFeature, getGpxWpts, setSymByRules } from './gpx';
 import PtPopupOverlay from './pt-popup';
@@ -33,7 +35,7 @@ function findLayerByFeature(map, feature){
 
 export const createMap = (target) => {
   const drag_interaciton = new DragAndDrop({
-    formatConstructors: [ GPXFormat, GeoJSON, IGC, KML, TopoJSON, ]
+    formatConstructors: [ GPXFormat, PhotoFormat, GeoJSON, IGC, KML, TopoJSON]
   });
 
   const map = new Map({
@@ -67,10 +69,18 @@ export const createMap = (target) => {
   // pseudo gpx layer
   addLayerWithInteraction(map, mkGpxLayer())
 
+  //create layer from features, and add it to the map
   drag_interaciton.on('addfeatures', function(e) {
-    const layer = mkGpxLayer({features: e.features});
-    addLayerWithInteraction(map, layer);
-    map.getView().fit(layer.getSource().getExtent(), { maxZoom: 16 });
+    if(e.features.length == 1 && e.features[0].getGeometry().getType() == 'Point'){  // not create the layer for a single wpt
+      const wpt = e.features[0];
+      addWaypoint(map, wpt);
+      map.getView().fit(wpt.getGeometry().getExtent(), { maxZoom: 16 });
+    }
+    else{
+      const layer = mkGpxLayer({features: e.features});
+      addLayerWithInteraction(map, layer);
+      map.getView().fit(layer.getSource().getExtent(), { maxZoom: 16 });
+    }
   });
 
   initEvents(map);
