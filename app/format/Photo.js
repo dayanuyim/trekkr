@@ -77,8 +77,10 @@ class Photo extends FeatureFormat {
     coords.push(this._meta_altitude(meta));
     coords.push(this._meta_time(meta));
 
+    const url = window.URL || window.webkitURL;
     const wpt = mkWptFeature(coords, {
       name: this._meta_name(meta) || 'WPT',
+      image_url: url.createObjectURL(new Blob([source], {type: "image/jpeg"})),
     });
     return [wpt];
   }

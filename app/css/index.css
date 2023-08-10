@@ -261,8 +261,9 @@ input[type=number] {
     background-color: white;
     -webkit-filter: drop-shadow(0 1px 4px rgba(0,0,0,0.2));
     filter: drop-shadow(0 1px 4px rgba(0,0,0,0.2));
-    padding: 15px 2em 15px 15px;
-    border-radius: 10px;
+    /*padding: 15px 2em 15px 15px;*/
+    padding: 4px;
+    border-radius: 6px;
     border: 1px solid #cccccc;
     bottom: 12px;
     left: -50px;
@@ -325,6 +326,32 @@ select::-ms-expand {
     border: solid 1px #d0d0d0;
 }
 
+.pt-image.active {
+    height: 300px;
+    width: 400px;
+    background-size:     cover;
+    background-repeat:   no-repeat;
+    background-position: center center;
+    border-radius: 4px;
+}
+
+.pt-image.active .ol-popup-content:hover{ background-color: rgba(255, 255, 255, 0.5); }
+.pt-image.active .ol-popup-content{ background-color: rgba(255, 255, 255, 0.25); }
+
+.pt-image.active .pt-coord,
+.pt-image.active .pt-coord-title,
+.pt-image.active .pt-ele,
+.pt-image.active .pt-time,
+.pt-image.active .sym-copyright,
+.pt-image.active .sym-copyright a:link,
+.pt-image.active .sym-copyright a:visited{
+    color: #202020;
+}
+
+.ol-popup-content {
+    padding: 4px;
+}
+
 .pt-header,
 .pt-coord,
 .pt-ele,
@@ -382,6 +409,7 @@ select::-ms-expand {
 .pt-symboard-footer{
     border-top: 2px solid lightgray;
     margin-top: 2px;
+    padding-top: 2px;
 }
 
 .pt-symboard-footer>label{
@@ -467,7 +495,7 @@ select::-ms-expand {
 }
 
 .pt-tool-rm-wpt button svg {
-    color: dimgray;
+    color: #505050;
 }
 
 .sym-copyright ,

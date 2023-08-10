@@ -20,7 +20,7 @@ import { def_symbol, getSymbol, matchRules } from './sym'
 import { saveTextAsFile } from './lib/dom-utils';
 import { getEpochOfCoords, getXYZMOfCoords } from './common';
 
-function _toStyleText(text){
+function toTextStyle(text){
   if(Opt.zoom < 13.5)
     return null;
 
@@ -35,47 +35,64 @@ function _toStyleText(text){
     stroke: new Stroke({color: '#000', width: 2}),
   });
 }
+
+const white_circle_style = new Style({
+  image: new CircleStyle({
+    fill: new Fill({
+      color: 'rgba(255,255,255,0.4)'
+    }),
+    radius: 20,
+    stroke: new Stroke({
+      color: '#f0f0f0',
+      width: 1
+    })
+  }),
+});
+
+function toWptStyle(name, sym, bg?)
+{
+  if(!sym){
+    return new Style({
+      image: new CircleStyle({
+        fill: new Fill({
+          color: 'rgba(255,255,0,0.4)'
+        }),
+        radius: 5,
+        stroke: new Stroke({
+          color: '#ff0',
+          width: 1
+        })
+      }),
+      text: toTextStyle(name),
+    });
+  }
+
+  const sym_style = new Style({
+    image: new IconStyle({
+      src: getSymbol(sym).path(128),
+      //rotateWithView: true,
+      //size: toSize([32, 32]),
+      //opacity: 0.8,
+      //anchor: sym.anchor,
+      scale: 0.25,
+    }),
+    text: toTextStyle(name),
+  });
+
+  return bg? [white_circle_style, sym_style]: sym_style;
+}
+
 export const gpxStyle = (feature) => {
   switch (feature.getGeometry().getType()) {
     case 'Point': {
+      const has_bg = !!feature.get('image_url');
       const name = feature.get('name');
       let sym = feature.get('sym');
-
-      // set default symbol name (although 'sym' is not a mandatory field for wpt, specifiy one helps wpt edit)
-      if(!sym){
+      if(!sym){ // set default symbol name (although 'sym' is not a mandatory field for wpt, specifiy one helps wpt edit)
         sym = def_symbol.name;
         feature.set('sym', sym);
       }
-
-      if(sym){
-        return new Style({
-          image: new IconStyle({
-            src: getSymbol(sym).path(128),
-            //rotateWithView: true,
-            //size: toSize([32, 32]),
-            //opacity: 0.8,
-            //anchor: sym.anchor,
-            scale: 0.25,
-          }),
-          text: _toStyleText(name),
-        });
-      }
-      // for a wpt without sym specified (but the block of code shoulde be useless now, since a default sym is used always)
-      else {
-        return new Style({
-          image: new CircleStyle({
-            fill: new Fill({
-              color: 'rgba(255,255,0,0.4)'
-            }),
-            radius: 5,
-            stroke: new Stroke({
-              color: '#ff0',
-              width: 1
-            })
-          }),
-          text: _toStyleText(name),
-        });
-      }
+      return toWptStyle(name, sym, has_bg);
     }
     case 'LineString': {
       return new Style({

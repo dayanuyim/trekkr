@@ -189,9 +189,11 @@ export const settings = Handlebars.compile(`
 
 export const main = Handlebars.compile(`
     <div id="pt-popup" class="ol-popup">
-        <a href="#" class="ol-popup-closer"></a>
-        <div class="ol-popup-content">
-            {{ptPopup}}
+        <div class="pt-image">
+            <a href="#" class="ol-popup-closer"></a>
+            <div class="ol-popup-content">
+                {{ptPopup}}
+            </div>
         </div>
     </div>
 

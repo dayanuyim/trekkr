@@ -39,6 +39,7 @@ export default class PtPopupOverlay extends Overlay{
 
     _closer: HTMLElement;
     _content: HTMLElement;
+    _pt_image: HTMLElement;
     _pt_header: HTMLElement;
     _pt_sym: HTMLImageElement;
     _pt_symboard: HTMLElement;
@@ -103,6 +104,7 @@ export default class PtPopupOverlay extends Overlay{
         const el = this.getElement();
         this._closer =             el.querySelector<HTMLElement>('.ol-popup-closer');
         this._content =            el.querySelector<HTMLElement>('.ol-popup-content');
+        this._pt_image =           el.querySelector<HTMLElement>('.pt-image');
         this._pt_header =          el.querySelector<HTMLElement>('.pt-header');
         this._pt_sym =             el.querySelector<HTMLImageElement>('.pt-sym');
         this._pt_symboard =        el.querySelector<HTMLElement>('.pt-symboard');
@@ -306,12 +308,18 @@ export default class PtPopupOverlay extends Overlay{
         const name = feature.get('name') || feature.get('desc');     //maybe undefined
         const sym = feature.get('sym');                              //maybe undefined
         const coordinates = feature.getGeometry().getCoordinates();  //x, y, ele, time
+        const image_url = feature.get('image_url');
 
         // chche for later to use
         this._feature = feature;                 //for removing
         this._data = {name, sym, coordinates};   //for creating/updating
 
+        //set content
         await this.setContent(this._data);
+
+        //set photo image
+        this._pt_image.classList.toggle('active', !!image_url);
+        this._pt_image.style.backgroundImage = image_url? `url('${image_url}')`: 'unset';
 
         //position
         this.setPosition(coordinates);
@@ -363,11 +371,4 @@ export default class PtPopupOverlay extends Overlay{
         el.href = link.url;
         el.textContent = link.title;
     }
-
-    /* image-wpt style
-    background-image:    url(images/background.svg);
-    background-size:     cover;
-    background-repeat:   no-repeat;
-    background-position: center center;
-    */
 }
