@@ -33,8 +33,8 @@ Handlebars.registerHelper("selop", (value, selected, text, attrs, options)=>{
 
 export const ptPopup = Handlebars.compile(`
     <div class="pt-header">
-        <img class="pt-sym" width="24" heigh="24" src="{{sym}}">
-        <span class="pt-name" contenteditable>{{name}}</span>
+        <img class="pt-sym" width="24" heigh="24" src="{{sym}}"><!--
+     --><span class="pt-name" contenteditable>{{name}}</span>
         <!--<input type="text" class="pt-name" value="{{name}}">-->
     </div>
 
