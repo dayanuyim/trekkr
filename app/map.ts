@@ -71,16 +71,12 @@ export const createMap = (target) => {
 
   //create layer from features, and add it to the map
   drag_interaciton.on('addfeatures', function(e) {
-    if(e.features.length == 1 && e.features[0].getGeometry().getType() == 'Point'){  // not create the layer for a single wpt
-      const wpt = e.features[0];
-      addWaypoint(map, wpt);
-      map.getView().fit(wpt.getGeometry().getExtent(), { maxZoom: 16 });
-    }
-    else{
-      const layer = mkGpxLayer({features: e.features});
-      addLayerWithInteraction(map, layer);
-      map.getView().fit(layer.getSource().getExtent(), { maxZoom: 16 });
-    }
+    const src = getGpxLayer(map).getSource();
+    src.addFeatures(e.features);
+    map.getView().fit(src.getExtent(), { maxZoom: 16 });
+    //const layer = mkGpxLayer({features: e.features});
+    //addLayerWithInteraction(map, layer);
+    //map.getView().fit(layer.getSource().getExtent(), { maxZoom: 16 });
   });
 
   initEvents(map);
@@ -121,8 +117,11 @@ function initEvents(map)
 
   // when pt-popup overlay make or remove a wpt feature
   const pt_popup = map.getOverlayById('pt-popup');
-  pt_popup.onmkwpt = (wpt) => addWaypoint(map, wpt);
-  pt_popup.onrmwpt = (wpt) => rmWaypoint(map, wpt);
+  pt_popup.onmkwpt = (wpt) => getGpxLayer(map).getSource().addFeature(wpt);
+  pt_popup.onrmwpt = (wpt) => {
+    getGpxLayer(map).getSource().removeFeature(wpt);
+    map.getOverlayById('pt-popup').hide(); //close popup
+  }
 
   // record the pixel position with every move
   document.addEventListener('mousemove', function (e) {
@@ -224,8 +223,14 @@ function indexOfPseudoGpxLayer(){
   return indexOfSpyLayer() + 1;  //after spy layer
 }
 
+/*
 function getGpxLayers(map){
     return map.getLayers().getArray().slice(indexOfPseudoGpxLayer());
+}
+*/
+
+function getGpxLayer(map){
+    return map.getLayers().item(indexOfPseudoGpxLayer());
 }
 
 function addLayerWithInteraction(map, layer){
@@ -389,37 +394,13 @@ export function setCtxMenu(map, menu: HTMLElement) {
   });
 
   ctx.setItem(".item-add-wpt", (el) => {
-    addWaypoint(map, mkWptFeature(__ctxmenu_coord));
+    getGpxLayer(map).getSource().addFeature(mkWptFeature(__ctxmenu_coord));
   });
 
   ctx.setItem(".item-save-gpx", (el) => {
-    genGpxText(getGpxLayers(map));
+    genGpxText([getGpxLayer(map)]);
   });
   ctx.setItem(".item-apply-sym", (el) => {
-    getGpxWpts(getGpxLayers(map)).forEach(setSymByRules);
+    getGpxWpts([getGpxLayer(map)]).forEach(setSymByRules);
   });
-}
-
-function addWaypoint(map, wpt){
-  const layers = map.getLayers();
-  //layers.item(indexOfPseudoGpxLayer())
-  layers.item(layers.getLength() - 1)   //use the topmost layer anyway, this may be pseudo gpx layer or not
-    .getSource()
-    .addFeature(wpt);
-  //console.log(gpx.getSource().getFeatures());
-}
-
-function rmWaypoint(map, wpt){
-  const layer = getGpxLayers(map)
-                .findLast(lay => lay.getSource().getFeatures().includes(wpt));  //find from last should be more efficient in the case
-  if(!layer){
-    console.error('cannot find the layer for the wpt', wpt);
-    alert('[Error] cannot find the layer for the wpt');
-    return;
-  }
-
-  layer.getSource().removeFeature(wpt);
-
-  //close popup
-  map.getOverlayById('pt-popup').hide();
 }
