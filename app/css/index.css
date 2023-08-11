@@ -267,7 +267,7 @@ input[type=number] {
     border: 1px solid #cccccc;
     bottom: 12px;
     left: -50px;
-    min-width: 225px;
+    /*min-width: 225px;*/
 }
 .ol-popup:after, .ol-popup:before {
     top: 100%;
@@ -301,6 +301,17 @@ input[type=number] {
 .ol-popup-closer:after {
     content: "✖";
 }
+
+.popup-resizer.active:not(.disabled) {
+    transform: rotateX(180deg);   /*resize cursor in top-right corner */
+    resize: both;
+    overflow: hidden;
+}
+
+.popup-resizer.active:not(.disabled) .popup-resizer-content{
+    transform: rotateX(180deg);
+}
+
 
 select, option {
     -webkit-appearance: none; /* WebKit/Chromium */

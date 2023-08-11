@@ -38,6 +38,8 @@ declare class Overlay{
 export default class PtPopupOverlay extends Overlay{
 
     _closer: HTMLElement;
+    _resizer: HTMLElement;
+    _resizer_content: HTMLElement;
     _content: HTMLElement;
     _pt_image: HTMLElement;
     _pt_header: HTMLElement;
@@ -103,6 +105,8 @@ export default class PtPopupOverlay extends Overlay{
     private initProperties(){
         const el = this.getElement();
         this._closer =             el.querySelector<HTMLElement>('.ol-popup-closer');
+        this._resizer =            el.querySelector<HTMLElement>('.popup-resizer');
+        this._resizer_content =    this._resizer.querySelector<HTMLElement>('.popup-resizer-content');
         this._content =            el.querySelector<HTMLElement>('.ol-popup-content');
         this._pt_image =           el.querySelector<HTMLElement>('.pt-image');
         this._pt_header =          el.querySelector<HTMLElement>('.pt-header');
@@ -127,17 +131,58 @@ export default class PtPopupOverlay extends Overlay{
 
     public hide(){
         this.setPosition(undefined);
-        this._pt_symboard.classList.add('hidden');   //auto hidden if any
-        this.resetSymboardFilter();                  //auto clear if any
+    }
+
+    private resetDisplay(image_url){
+        //symboard
+        this._pt_symboard.classList.add('hidden');   //symboard hidden, if any
+        this.resetSymboardFilter();                  //symboard filter reset
+
+        //resizer
+        this._resizer.style.width = '';              //reset resizer size
+        this._resizer.style.height = '';
+        this._resizer_content.style.width = '';      //reset resizer-content size
+        this._resizer_content.style.height = '';
+
+        //image
+        this._pt_image.style.backgroundImage = image_url? `url('${image_url}')`: '';
+        this._pt_image.classList.toggle('active', !!image_url);
+        this._resizer.classList.toggle('active', !!image_url);
     }
 
     private initEvents(){
         //close popup
-        this._closer.onclick = e => {
-            this.hide();
+        this._closer.onclick = e => { this.hide();
             (<HTMLElement>e.currentTarget).blur();
             return false;
         };
+
+        /*
+        // !! NOT WORK! NOT WAY TO CHANGE RESIZE CURSOR !!
+        //change resizer cursor, when mouser in right-top corner
+        this._resizer.onmousemove = e => {
+            const n = 16;
+            const {right, top} = this._resizer.getBoundingClientRect();
+            console.log(`x: ${e.pageX} > (${right} - ${n} = ${right -n}): ${e.pageX > (right - n)}`);
+            console.log(`y: ${e.pageY} < (${top} + ${n} = ${top + n}): ${e.pageY < (right - n)}`);
+            this._resizer.style.cursor= e.pageX > (right - n) && e.pageY < (top + n)? 'nesw-resize' : ''
+        };
+        */
+
+        // set resizer-conetnt as the same size as the resizer
+        new ResizeObserver((entries)=>{
+            const {width, height} = entries[0].contentRect;
+            if(width && height) {
+                this._resizer_content.style.width = width + 'px';
+                this._resizer_content.style.height = height + 'px';
+            }
+        }).observe(this._resizer);
+
+        // disable resizer if symboard is visible
+        new IntersectionObserver((entries) => {
+            const visible = entries[0].intersectionRatio > 0;
+            this._resizer.classList.toggle('disabled', visible);
+        }).observe(this._pt_symboard);
 
         this.getElement().addEventListener('click', e => {
             this._pt_symboard.classList.add('hidden');
@@ -310,18 +355,12 @@ export default class PtPopupOverlay extends Overlay{
         const coordinates = feature.getGeometry().getCoordinates();  //x, y, ele, time
         const image_url = feature.get('image_url');
 
-        // chche for later to use
+        // chache for later to use
         this._feature = feature;                 //for removing
         this._data = {name, sym, coordinates};   //for creating/updating
 
-        //set content
+        this.resetDisplay(image_url);
         await this.setContent(this._data);
-
-        //set photo image
-        this._pt_image.classList.toggle('active', !!image_url);
-        this._pt_image.style.backgroundImage = image_url? `url('${image_url}')`: 'unset';
-
-        //position
         this.setPosition(coordinates);
     }
 
