@@ -21,12 +21,13 @@ export function getXYZMOfCoords(coords, layout?){
     case 'XYZ':  return coords.concat([undefined]);
     case 'XYM':  return [coords[0], coords[1], undefined, coords[2]];
     case 'XYZM': return coords;
-    default: return [
-      coords[0],
-      coords[1],
-      getEleOfCoords(coords),
-      getEpochOfCoords(coords)
-    ]
+    default:
+      return (coords.length == 4)? coords: [
+        coords[0],
+        coords[1],
+        getEleOfCoords(coords),
+        getEpochOfCoords(coords)
+      ];
   }
 }
 

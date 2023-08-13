@@ -7,6 +7,7 @@ import * as exif from 'exifreader'
 import { transform } from 'ol/proj';
 import { WGS84 } from '../coord';
 import { mkWptFeature } from '../gpx';
+import { epochseconds } from '../lib/utils';
 
 /**
  * @classdesc
@@ -16,6 +17,9 @@ import { mkWptFeature } from '../gpx';
  * @api
  */
 class Photo extends FeatureFormat {
+
+  set onlookupcoords(listener){ this._lookupCoords = listener; }
+
   /**
    * @param {Options} [options] Options.
    */
@@ -65,24 +69,36 @@ class Photo extends FeatureFormat {
     if (!source) {
       return [];
     }
+
+    // read geo location
     const meta = exif.load(/** @type {ArrayBuffer} */ source)
     //console.log(meta);
-
     const lon = this._meta_longitude(meta);
     const lat = this._meta_latitude(meta);
-    if(!lon || !lat)
-      return null;
+    const time = this._meta_time(meta);
 
-    let coords = transform([lon, lat], this.dataProjection, options.featureProjection);  //fromLonLat()
-    coords.push(this._meta_altitude(meta));
-    coords.push(this._meta_time(meta));
+    let coords;
+    if(lon && lat){
+      coords = transform([lon, lat], this.dataProjection, options.featureProjection);  //fromLonLat()
+      coords.push(this._meta_altitude(meta));
+      coords.push(time);
+    }
+    else if(time && this._lookupCoords){
+      coords = this._lookupCoords(time);
+      if(!coords) console.log(`The photo time '${meta.DateTimeOriginal.description}' is not in the range.`);
+    }
 
-    const url = window.URL || window.webkitURL;
-    const wpt = mkWptFeature(coords, {
-      name: this._meta_name(meta) || 'WPT',
-      image_url: url.createObjectURL(new Blob([source], {type: "image/jpeg"})),
-    });
-    return [wpt];
+    //make feature from coords
+    if(coords){
+      const url = window.URL || window.webkitURL;
+      const wpt = mkWptFeature(coords, {
+        name: this._meta_name(meta) || 'WPT',
+        image_url: url.createObjectURL(new Blob([source], { type: "image/jpeg" })),
+      });
+      return [wpt];
+    }
+
+    return null;
   }
 
   _meta_altitude(meta){
@@ -113,7 +129,8 @@ class Photo extends FeatureFormat {
     if(!meta.DateTimeOriginal) return null;
     const [y, m , d, hh, mm, ss] = meta.DateTimeOriginal.description.split(/[: ]/);  // local time
     //TODO: for accuracy, we should use geo lacation to get tz, then get UTC time, not use the system's tz of Date()
-    return new Date(y, m-1, d, hh, mm, ss);  // view as local time by Date
+    const datetime = new Date(y, m-1, d, hh, mm, ss);  // view as local time by Date
+    return epochseconds(datetime);
   }
 
   /**

@@ -5,6 +5,10 @@ export const stripext = (filename) => {
 };
 
 //=========================== DATE/TIME =================================//
+export function epochseconds(date){
+  return Math.round(date.getTime() / 1000);
+}
+
 export const nextDay = (dt) => {
 	dt = new Date(dt);
 	dt.setDate(dt.getDate() + 1);

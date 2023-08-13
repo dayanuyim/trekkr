@@ -19,6 +19,7 @@ import Opt from './opt';
 import { def_symbol, getSymbol, matchRules } from './sym'
 import { saveTextAsFile } from './lib/dom-utils';
 import { getEpochOfCoords, getXYZMOfCoords } from './common';
+import { epochseconds } from './lib/utils';
 
 function toTextStyle(text){
   if(Opt.zoom < 13.5)
@@ -158,10 +159,8 @@ export function mkGpxLayer(source_props?, layer_props?){
 
 //@coords is openlayer coords [x, y, ele, time], ele and tiem is optional.
 export function mkWptFeature(coords, options?){
-  if(coords.length < 3) coords.push(null);         // ele // getElevationByCoords(coords)
-  if(coords.length < 4) coords.push(new Date());   //time
-  if(coords[3] instanceof Date)
-    coords[3] = Math.round(coords[3].getTime() / 1000)  // to epoch seconds
+  if(coords.length < 3) coords.push(null);                    // ele // getElevationByCoords(coords)
+  if(coords.length < 4) coords.push(epochseconds(new Date))  // time
   return new Feature(Object.assign({
     geometry: new Point(coords),
     name: "WPT",
@@ -313,9 +312,9 @@ function addGpxTracks(node, trks){
       .up();
 
     const layout = trk.getGeometry().getLayout();
-    trk.getGeometry().getCoordinates().forEach(coordsset => {
+    trk.getGeometry().getCoordinates().forEach(trkseg => {
       node = node.ele('trkseg');
-      coordsset.forEach(coords => {
+      trkseg.forEach(coords => {
         const [x, y, ele, time ]= getXYZMOfCoords(coords, layout);
         const [lon, lat] = toLonLat([x, y]).map(fmt_coord);
         node = node.ele('trkpt', {lat, lon});
@@ -334,4 +333,45 @@ function addGpxTracks(node, trks){
 export function setSymByRules(wpt: Feature<Point>) {
   const symbol = matchRules(wpt.get('name'));
   if (symbol) wpt.set('sym', symbol.name);
+}
+
+export function lookupCoords(layer, time){
+  const time_of = (coords) => coords[coords.length - 1];
+
+  const trksegs = layer.getSource().getFeatures()
+                .map(feature => feature.getGeometry())
+                .filter(geom => geom.getType() == 'MultiLineString')  // is track
+                .filter(geom => geom.getLayout().endsWith('M'))       // has time element
+                .flatMap(geom => geom.getCoordinates())               // trksegs
+                .filter(trkseg => {                                   // time in range
+                  const first = trkseg[0];
+                  const last = trkseg[trkseg.length - 1];
+                  return time_of(first) <= time && time <= time_of(last);
+                });
+
+  if(trksegs.length > 0){
+    const trkseg = trksegs[0];  //choose anyone
+    const i = trkseg.findIndex((coords) => time_of(coords) >= time);
+    const right = trkseg[i]
+    if(time_of(right) == time)
+      return getXYZMOfCoords(right);
+    const left = trkseg[i-1];
+    return interpCoords(left, right, time);
+  }
+  return null;
+}
+
+function interpCoords(c1, c2, time){
+  const t1 = c1[c1.length - 1];
+  const t2 = c2[c2.length - 1];
+  const ratio = (time - t1) / (t2 - t1)
+  const v = (v1, v2) => (v2 - v1) * ratio + v1;
+
+  const x = v(c1[0], c2[0]);
+  const y = v(c1[1], c2[1]);
+  if(Math.min(c1.length, c2.length) == 3)
+    return [x, y, null, time]
+
+  const ele = v(c1[2], c2[2]);
+  return [x, y, ele, time]
 }

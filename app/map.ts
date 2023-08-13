@@ -10,7 +10,7 @@ import { platformModifierKeyOnly } from 'ol/events/condition';
 import { GeoJSON, IGC, KML, TopoJSON } from 'ol/format';
 import PhotoFormat from './format/Photo';
 
-import { GPXFormat, mkGpxLayer, genGpxText, mkWptFeature, getGpxWpts, setSymByRules } from './gpx';
+import { GPXFormat, mkGpxLayer, genGpxText, mkWptFeature, getGpxWpts, setSymByRules, lookupCoords } from './gpx';
 import PtPopupOverlay from './pt-popup';
 import Opt from './opt';
 import * as LayerRepo from './layer-repo';
@@ -34,8 +34,9 @@ function findLayerByFeature(map, feature){
 ////////////////////////////////////////////////////////////////
 
 export const createMap = (target) => {
+  const photo_format = new PhotoFormat();
   const drag_interaciton = new DragAndDrop({
-    formatConstructors: [ GPXFormat, PhotoFormat, GeoJSON, IGC, KML, TopoJSON]
+    formatConstructors: [ GPXFormat, photo_format, GeoJSON, IGC, KML, TopoJSON]
   });
 
   const map = new Map({
@@ -65,6 +66,7 @@ export const createMap = (target) => {
     ],
   });
 
+  photo_format.onlookupcoords = (time) => lookupCoords(getGpxLayer(map), time);
 
   // pseudo gpx layer
   addLayerWithInteraction(map, mkGpxLayer())
