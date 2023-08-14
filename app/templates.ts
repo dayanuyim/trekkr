@@ -43,8 +43,9 @@ export const colorboardItems = Handlebars.compile(`
 Handlebars.registerHelper("colorboardItems", (options)=>{
     return new Handlebars.SafeString(colorboardItems({
         colors: [
-            'White', 'Cyan', 'Magenta', 'Blue', 'Yellow', 'Green', 'Red',
-            'DarkGray', 'LightGray', 'DarkCyan', 'DarkMagenta', 'DarkBlue', 'DarkGreen', 'DarkRed', 'Black'
+            'White', 'LightGray', 'DarkGray', 'Black', 'Yellow',
+            'Magenta', 'Cyan', 'Blue', 'Green', 'Red',
+            'DarkMagenta', 'DarkCyan', 'DarkBlue', 'DarkGreen', 'DarkRed',
         ]
     }));
 });
