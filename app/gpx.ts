@@ -159,8 +159,8 @@ export function mkGpxLayer(source_props?, layer_props?){
 
 //@coords is openlayer coords [x, y, ele, time], ele and tiem is optional.
 export function mkWptFeature(coords, options?){
-  if(coords.length < 3) coords.push(null);                    // ele // getElevationByCoords(coords)
-  if(coords.length < 4) coords.push(epochseconds(new Date))  // time
+  coords = getXYZMOfCoords(coords);
+  if(!coords[3]) coords[3] = epochseconds(new Date());
   return new Feature(Object.assign({
     geometry: new Point(coords),
     name: "WPT",
@@ -366,7 +366,7 @@ export function estimateCoords(layer, time){
             // time == time(idx), or time(idx-1) < time < time(idx)
             const right = trkseg[idx];
             if(time_of(right) == time)
-              return getXYZMOfCoords(right);
+              return right;
             const left = trkseg[idx -1];
             return interpCoords(left, right, time);
           })
