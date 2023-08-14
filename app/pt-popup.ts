@@ -390,7 +390,7 @@ export default class PtPopupOverlay extends Overlay{
     {
         const show = (el, en) => el.classList.toggle('hidden', !en)
 
-        const is_wpt = name || symbol;
+        const is_wpt = !!(name || symbol);
 
         this.pt_coord = coordinate;
         this.pt_coord_title = coordsys;

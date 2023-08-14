@@ -361,7 +361,7 @@ select::-ms-expand {
 }
 */
 
-.pt-header {
+.pt-header:not(.hidden) {
     display: inline-block;
     border-radius: 4px;
     margin-left: 4px;
