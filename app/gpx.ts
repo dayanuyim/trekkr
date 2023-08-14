@@ -21,6 +21,12 @@ import { saveTextAsFile } from './lib/dom-utils';
 import { getEpochOfCoords, getXYZMOfCoords } from './common';
 import { epochseconds, binsearchIndex } from './lib/utils';
 
+export const def_trk_color = 'DarkMagenta';
+//export const trk_colors = [
+//  'White', 'Cyan', 'Magenta', 'Blue', 'Yellow', 'Green', 'Red',
+//  'DarkGray', 'LightGray', 'DarkCyan', 'DarkMagenta', 'DarkBlue', 'DarkGreen', 'DarkRed', 'Black'
+//];
+
 function toTextStyle(text){
   if(Opt.zoom < 13.5)
     return null;
@@ -106,7 +112,7 @@ export const gpxStyle = (feature) => {
     case 'MultiLineString': {
       return new Style({
         stroke: new Stroke({
-          color: feature.get('color') || 'DarkMagenta',
+          color: feature.get('color') || def_trk_color,
           width: 3
         })
       });

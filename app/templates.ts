@@ -31,14 +31,39 @@ Handlebars.registerHelper("selop", (value, selected, text, attrs, options)=>{
     return new Handlebars.SafeString(`<option value="${value}" ${attrs}>${text}</option>`);
 });
 
+
+export const colorboardItems = Handlebars.compile(`
+    <div class="pt-colorboard-items">
+    {{#each colors}}
+        <div class="pt-colorboard-item" style="background-color:{{this}}" title="{{this}}"></div>
+    {{/each}}
+    </div>
+`);
+
+Handlebars.registerHelper("colorboardItems", (options)=>{
+    return new Handlebars.SafeString(colorboardItems({
+        colors: [
+            'White', 'Cyan', 'Magenta', 'Blue', 'Yellow', 'Green', 'Red',
+            'DarkGray', 'LightGray', 'DarkCyan', 'DarkMagenta', 'DarkBlue', 'DarkGreen', 'DarkRed', 'Black'
+        ]
+    }));
+});
+
 export const ptPopup = Handlebars.compile(`
-    <div class="pt-header">
+    <div class="pt-trk-header">
+        <div class="pt-trk-color"></div><!--
+     --><span class="pt-trk-name" contenteditable></span>
+    </div>
+    <div class="pt-colorboard glassmophism hidden">
+        {{colorboardItems}}
+    </div>
+
+    <div class="pt-wpt-header">
         <img class="pt-sym" width="24" heigh="24" src="{{sym}}"><!--
      --><span class="pt-name" contenteditable>{{name}}</span>
         <!--<input type="text" class="pt-name" value="{{name}}">-->
     </div>
-
-    <div class="pt-symboard hidden"></div>
+    <div class="pt-symboard glassmophism hidden"></div>
 
     <div class="pt-coord" data-pt-coord="{{coordinate}}">
         <select class="pt-coord-title" dir="rtl">
