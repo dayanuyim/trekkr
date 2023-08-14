@@ -69,6 +69,7 @@ export default class PtPopupOverlay extends Overlay{
 
     _feature;
     _data;
+    _resize_observer;
     _listener_mkwpt: CallableFunction;
     _listener_rmwpt: CallableFunction;
 
@@ -155,6 +156,7 @@ export default class PtPopupOverlay extends Overlay{
         this.resetSymboardFilter();                  //symboard filter reset
 
         //resizer
+        this._resize_observer.disconnect();
         this._resizer.style.width = '';              //reset resizer size
         this._resizer.style.height = '';
         this._resizer_content.style.width = '';      //reset resizer-content size
@@ -164,6 +166,7 @@ export default class PtPopupOverlay extends Overlay{
         this._pt_image.style.backgroundImage = image_url? `url('${image_url}')`: '';
         this._pt_image.classList.toggle('active', !!image_url);
         this._resizer.classList.toggle('active', !!image_url);
+        if(image_url) this._resize_observer.observe(this._resizer);
     }
 
     private initEvents(){
@@ -214,13 +217,13 @@ export default class PtPopupOverlay extends Overlay{
             el.onclick = pick_color_listener);
 
         // set resizer-conetnt as the same size as the resizer
-        new ResizeObserver((entries)=>{
+        this._resize_observer = new ResizeObserver((entries)=>{
             const {width, height} = entries[0].contentRect;
             if(width && height) {
                 this._resizer_content.style.width = width + 'px';
                 this._resizer_content.style.height = height + 'px';
             }
-        }).observe(this._resizer);
+        });
 
         // disable resizer if symboard is visible
         new IntersectionObserver((entries) => {
