@@ -168,6 +168,14 @@ export function mkWptFeature(coords, options?){
   }, options));
 }
 
+export function findWptFeature(layer, time){
+  const time_of = (coords) => coords[coords.length - 1];
+  return layer.getSource().getFeatures()
+          .filter(feature => feature.getGeometry().getType() == 'Point')              // is wpt
+          .filter(feature => feature.getGeometry().getLayout().endsWith('M'))         // has time element
+          .find(feature => time_of(feature.getGeometry().getCoordinates()) == time);  // exactly match
+}
+
 export function getGpxWpts(layers){
   return layers.flatMap(layer => layer.getSource().getFeatures())
         .filter(feature => feature.getGeometry().getType() == 'Point');
@@ -335,30 +343,28 @@ export function setSymByRules(wpt: Feature<Point>) {
   if (symbol) wpt.set('sym', symbol.name);
 }
 
-export function lookupCoords(layer, time){
+export function estimateCoords(layer, time){
   const time_of = (coords) => coords[coords.length - 1];
 
-  const trksegs = layer.getSource().getFeatures()
-                .map(feature => feature.getGeometry())
-                .filter(geom => geom.getType() == 'MultiLineString')  // is track
-                .filter(geom => geom.getLayout().endsWith('M'))       // has time element
-                .flatMap(geom => geom.getCoordinates())               // trksegs
-                .filter(trkseg => {                                   // time in range
-                  const first = trkseg[0];
-                  const last = trkseg[trkseg.length - 1];
-                  return time_of(first) <= time && time <= time_of(last);
-                });
-
-  if(trksegs.length > 0){
-    const trkseg = trksegs[0];  //choose anyone
-    const i = trkseg.findIndex((coords) => time_of(coords) >= time);
-    const right = trkseg[i]
-    if(time_of(right) == time)
-      return getXYZMOfCoords(right);
-    const left = trkseg[i-1];
-    return interpCoords(left, right, time);
-  }
-  return null;
+  return layer.getSource().getFeatures()
+          .map(feature => feature.getGeometry())                // get geom
+          .filter(geom => geom.getType() == 'MultiLineString')  // is track
+          .filter(geom => geom.getLayout().endsWith('M'))       // has time element
+          .flatMap(geom => geom.getCoordinates())               // cooordinates is the array of trekseg
+          .filter(trkseg => {                                   // time in range
+            const first = trkseg[0];
+            const last = trkseg[trkseg.length - 1];
+            return time_of(first) <= time && time <= time_of(last);
+          })
+          .map(trkseg => {                                      // interpolation
+            const i = trkseg.findIndex((coords) => time_of(coords) >= time);
+            const right = trkseg[i]
+            if(time_of(right) == time)
+              return getXYZMOfCoords(right);
+            const left = trkseg[i-1];
+            return interpCoords(left, right, time);
+          })
+          .find(coords => !!coords);       //return the first, otherwise undefined
 }
 
 function interpCoords(c1, c2, time){

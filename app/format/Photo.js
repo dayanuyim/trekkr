@@ -19,6 +19,7 @@ import { epochseconds } from '../lib/utils';
 class Photo extends FeatureFormat {
 
   set onlookupcoords(listener){ this._lookupCoords = listener; }
+  set onfeatureexists(listener){ this._featureExists = listener; }
 
   /**
    * @param {Options} [options] Options.
@@ -70,6 +71,8 @@ class Photo extends FeatureFormat {
       return [];
     }
 
+    const url = window.URL || window.webkitURL;
+
     // read geo location
     const meta = exif.load(/** @type {ArrayBuffer} */ source)
     //console.log(meta);
@@ -77,12 +80,24 @@ class Photo extends FeatureFormat {
     const lat = this._meta_latitude(meta);
     const time = this._meta_time(meta);
 
+    // check if the feature exits
+    if(time && this._featureExists){
+      const feature = this._featureExists(time);
+      if(feature){
+        if(!feature.get('image_url'))
+          feature.set('image_url', url.createObjectURL(new Blob([source], { type: "image/jpeg" })));
+        return null;
+      }
+    }
+
     let coords;
+    // check if having geo location
     if(lon && lat){
       coords = transform([lon, lat], this.dataProjection, options.featureProjection);  //fromLonLat()
       coords.push(this._meta_altitude(meta));
       coords.push(time);
     }
+    // check if the coords can be estimated
     else if(time && this._lookupCoords){
       coords = this._lookupCoords(time);
       if(!coords) console.log(`The photo time '${meta.DateTimeOriginal.description}' is not in the range.`);
@@ -90,12 +105,11 @@ class Photo extends FeatureFormat {
 
     //make feature from coords
     if(coords){
-      const url = window.URL || window.webkitURL;
-      const wpt = mkWptFeature(coords, {
+      const feature = mkWptFeature(coords, {
         name: this._meta_name(meta) || 'WPT',
         image_url: url.createObjectURL(new Blob([source], { type: "image/jpeg" })),
       });
-      return [wpt];
+      return [feature];
     }
 
     return null;

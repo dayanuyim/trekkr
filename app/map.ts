@@ -10,7 +10,7 @@ import { platformModifierKeyOnly } from 'ol/events/condition';
 import { GeoJSON, IGC, KML, TopoJSON } from 'ol/format';
 import PhotoFormat from './format/Photo';
 
-import { GPXFormat, mkGpxLayer, genGpxText, mkWptFeature, getGpxWpts, setSymByRules, lookupCoords } from './gpx';
+import { GPXFormat, mkGpxLayer, genGpxText, mkWptFeature, findWptFeature, getGpxWpts, setSymByRules, estimateCoords } from './gpx';
 import PtPopupOverlay from './pt-popup';
 import Opt from './opt';
 import * as LayerRepo from './layer-repo';
@@ -66,7 +66,8 @@ export const createMap = (target) => {
     ],
   });
 
-  photo_format.onlookupcoords = (time) => lookupCoords(getGpxLayer(map), time);
+  photo_format.onlookupcoords = (time) => estimateCoords(getGpxLayer(map), time);
+  photo_format.onfeatureexists = (time) => findWptFeature(getGpxLayer(map), time);
 
   // pseudo gpx layer
   addLayerWithInteraction(map, mkGpxLayer())
