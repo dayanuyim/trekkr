@@ -19,7 +19,7 @@ import Opt from './opt';
 import { def_symbol, getSymbol, matchRules } from './sym'
 import { saveTextAsFile } from './lib/dom-utils';
 import { getEpochOfCoords, getXYZMOfCoords } from './common';
-import { epochseconds } from './lib/utils';
+import { epochseconds, binsearchIndex } from './lib/utils';
 
 function toTextStyle(text){
   if(Opt.zoom < 13.5)
@@ -357,11 +357,17 @@ export function estimateCoords(layer, time){
             return time_of(first) <= time && time <= time_of(last);
           })
           .map(trkseg => {                                      // interpolation
-            const i = trkseg.findIndex((coords) => time_of(coords) >= time);
-            const right = trkseg[i]
+            //const idx = trkseg.findIndex((coords) => time_of(coords) >= time);
+            const idx = binsearchIndex(trkseg, (coords, i, arr) => {
+              const t = time_of(coords);
+              return (time >= t)? (time - t):
+                     (time > time_of(arr[i-1]))? 0: -1; // i should be larger than 0 here
+            });
+            // time == time(idx), or time(idx-1) < time < time(idx)
+            const right = trkseg[idx];
             if(time_of(right) == time)
               return getXYZMOfCoords(right);
-            const left = trkseg[i-1];
+            const left = trkseg[idx -1];
             return interpCoords(left, right, time);
           })
           .find(coords => !!coords);       //return the first, otherwise undefined
