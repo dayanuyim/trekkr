@@ -350,6 +350,9 @@ export default class PtPopupOverlay extends Overlay{
 
     async popContent(feature) {
         // get data
+        const track = this._getTrackFeature(feature);                // for trkpt
+        if(track) console.log('track name', track.get('name'));
+
         const name = feature.get('name') || feature.get('desc');     //maybe undefined
         const sym = feature.get('sym');                              //maybe undefined
         const coordinates = feature.getGeometry().getCoordinates();  //x, y, ele, time
@@ -362,6 +365,13 @@ export default class PtPopupOverlay extends Overlay{
         this.resetDisplay(image_url);
         await this.setContent(this._data);
         this.setPosition(coordinates);
+    }
+
+    private _getTrackFeature(feature){
+        const features = feature.get('features');
+        if(features)
+            return features.find(f => f.getGeometry().getType() == 'MultiLineString')
+        return undefined;
     }
 
     private async setContent({name, sym, coordinates})

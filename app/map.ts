@@ -187,9 +187,8 @@ const showFeatures = function (e) {
         break;
       }
       case 'MultiLineString': {  //track
-        //console.log(feature.getGeometry().getCoordinates());
         const name = feature.get('name');
-        //console.log(`track name: ${name}`);
+        console.log(`track name: ${name}`);
         break;
       }
     }
@@ -201,10 +200,11 @@ const showFeatures = function (e) {
 };
 
 function _getFeatures(e) {
-  const isPt = f => f.getGeometry().getType() === 'Point';
+  const isTrk      = f => f.getGeometry().getType() == 'MultiLineString';
+  const isPt       = f => f.getGeometry().getType() === 'Point';
   const hasWptProp = f => f.get('name') || f.get('desc') || f.get('sym');
-  const isWpt = f => isPt(f) && hasWptProp(f);
-  const isTrkpt = f => isPt(f) && !hasWptProp(f);
+  const isWpt      = f => isPt(f) && hasWptProp(f);
+  const isTrkpt    = f => isPt(f) && !hasWptProp(f);
 
   const pixel = e.map.getEventPixel(e.originalEvent); // TODO: what is the diff between 'originalevent' and 'event'?
 
@@ -213,7 +213,8 @@ function _getFeatures(e) {
   //e.map.getTargetElement().style.cursor = hit? 'pointer': '';
 
   const features = e.map.getFeaturesAtPixel(pixel, {hitTolerance: 2});
-  return features.find(isWpt)? features.filter(f => !isTrkpt(f)): features;  //filter out trkpts if wpt exists
+  //return features.some(isWpt)? features.filter(f => !isTrkpt(f)): features;  //filter out trkpts if wpt exists
+  return features.some(isWpt)? features.filter(isWpt): features.filter(isTrkpt);  //either wpt or trk/trkpt
 };
 
 ////////////////////////////////////////////////////////////////
