@@ -31,7 +31,7 @@ export function getXYZMOfCoords(coords, layout?){
   }
 }
 
-function getEleOfCoords(coords, layout?) {
+export function getEleOfCoords(coords, layout?) {
   if(layout){
     return (layout == 'XYZ' || layout == 'XYZM')? coords[2]: undefined;
   }
@@ -40,6 +40,22 @@ function getEleOfCoords(coords, layout?) {
   }
   return undefined;
 };
+
+export function setEleOfCoords(coords, ele, layout?) {
+  switch(layout){
+    case 'XY':   coords.push(ele); break;
+    case 'XYM':  coords.splice(2, 0, ele);  break;
+    case 'XYZ':  coords[2] = ele;  break;
+    case 'XYZM': coords[2] = ele;  break;
+    default:
+      if(coords.length == 2)
+        coords.push(ele);
+      else if(coords.length == 3 && coords[2] > 10000)
+        coords.splice(2, 0, ele);
+      else
+        coords[2] = ele;
+  }
+}
 
 export function getEpochOfCoords(coords, layout?){
   if(layout){
