@@ -35,7 +35,7 @@ Handlebars.registerHelper("selop", (value, selected, text, attrs, options)=>{
 export const colorboardItems = Handlebars.compile(`
     <div class="pt-colorboard-items">
     {{#each colors}}
-        <div class="pt-colorboard-item" style="background-color:{{this}}" title="{{this}}"></div>
+        <div class="pt-colorboard-item color-item" style="background-color:{{this}}" title="{{this}}"></div>
     {{/each}}
     </div>
 `);
@@ -52,7 +52,7 @@ Handlebars.registerHelper("colorboardItems", (options)=>{
 
 export const ptPopup = Handlebars.compile(`
     <div class="pt-trk-header">
-        <div class="pt-trk-color"></div><!--
+        <div class="pt-trk-color color-item"></div><!--
      --><span class="pt-trk-name" contenteditable></span>
     </div>
     <div class="pt-colorboard glassmophism hidden">

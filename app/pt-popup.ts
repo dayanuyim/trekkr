@@ -27,6 +27,43 @@ function fmtTime(moment) {
     return moment.format('YYYY-MM-DD HH:mm:ss');
 }
 
+function setSubBoardEvents(main: HTMLElement, trigger: HTMLElement, subboard: HTMLElement,
+    subitems: NodeListOf<HTMLElement>|HTMLElement[], subitem_cb: CallableFunction): void
+{
+    // main -> close subboard
+    main.addEventListener('click', e => {
+        subboard.classList.add('hidden');
+    });
+
+    // trigger -> togger subboard
+    trigger.addEventListener('click', e => {
+        e.stopPropagation();
+        subboard.classList.toggle('hidden');
+    });
+
+    // subboard -> do nothing
+    subboard.addEventListener('click', e => {
+        e.stopPropagation();
+    });
+
+    // subitems -> do something, then close subboard
+    subitems.forEach(item => {
+        item.addEventListener('click', e => {
+            e.stopPropagation();
+            if(subitem_cb) subitem_cb(item, e);
+            subboard.classList.add('hidden');
+        });
+    });
+}
+
+const enter_to_blur_listener = e => {
+    if(e.key == "Enter"){
+        e.preventDefault();
+        e.target.blur();
+        return false;
+    }
+}
+
 /*
 declare class Overlay{
     constructor(options: any);
@@ -189,32 +226,22 @@ export default class PtPopupOverlay extends Overlay{
         */
 
         // colorboard
-        this._pt_trk_color.onclick = e => {
-            e.stopPropagation();
-            this._pt_colorboard.classList.toggle('hidden');
-        }
-        this._pt_colorboard.onclick = e => e.stopPropagation();
-
-        const pick_color_listener = e => {
-            e.stopPropagation();
-            const el = e.target.closest('.pt-colorboard-item');
-            const color = el.getAttribute("title");
-
-            //TODO:  try to reduce the duplicate
-            let color_changed = false
-            if(this._data.trk.color != color){
-                this._data.trk.color = color;
-                color_changed = true;
-            }
-            if(color_changed){
-                this._track_feature_of(this._feature).set('color', this._data.trk.color);
-                this.setContent(this._data);
-            }
-            this._pt_colorboard.classList.add('hidden');
-        };
-        // pick
-        this._pt_colorboard.querySelectorAll<HTMLElement>('.pt-colorboard-item').forEach(el =>
-            el.onclick = pick_color_listener);
+        setSubBoardEvents(
+            this.getElement(),
+            this._pt_trk_color,
+            this._pt_colorboard,
+            this._pt_colorboard.querySelectorAll<HTMLElement>('.pt-colorboard-item'), (item) => {
+                const color = item.getAttribute("title");
+                let color_changed = false
+                if(this._data.trk.color != color){
+                    this._data.trk.color = color;
+                    color_changed = true;
+                }
+                if(color_changed){
+                    this._track_feature_of(this._feature).set('color', this._data.trk.color);
+                    this.setContent(this._data);
+                }
+            });
 
         // set resizer-conetnt as the same size as the resizer
         this._resize_observer = new ResizeObserver((entries)=>{
@@ -231,30 +258,14 @@ export default class PtPopupOverlay extends Overlay{
             this._resizer.classList.toggle('disabled', visible);
         }).observe(this._pt_symboard);
 
-        this.getElement().addEventListener('click', e => {
-            this._pt_symboard.classList.add('hidden');
-            this._pt_colorboard.classList.add('hidden');
-        });
-
-        this._pt_sym.onclick = e => {
-            e.stopPropagation();
-            this._pt_symboard.classList.toggle('hidden');
-            if(!this._pt_symboard.childElementCount)  //lazy init
-                this.initSymboard();
-        }
-
-        this._pt_symboard.onclick = e => e.stopPropagation();
-
-        const listener_enter_to_blur = e => {
-            if(e.key == "Enter"){
-                e.preventDefault();
-                e.target.blur();
-                return false;
-            }
-        }
+        //lazy init symboard
+        this._pt_sym.addEventListener('mousedown', () => {
+            console.log('init symboard');
+            this.initSymboard();
+        }, {once: true});
 
         // change trk name
-        this._pt_trk_name.onkeydown = listener_enter_to_blur;
+        this._pt_trk_name.onkeydown = enter_to_blur_listener;
         this._pt_trk_name.onblur = e => {
             if(!this.pt_trk_name)
                 return this.setContent(this._data);  //reload the data to restore the erased value
@@ -269,7 +280,7 @@ export default class PtPopupOverlay extends Overlay{
         }
 
         // change wpt name
-        this._pt_name.onkeydown = listener_enter_to_blur;
+        this._pt_name.onkeydown = enter_to_blur_listener;
         this._pt_name.onblur = e => {
             if(!this.pt_name)
                 return this.setContent(this._data);  //reload the data to restore the erased value
@@ -297,7 +308,7 @@ export default class PtPopupOverlay extends Overlay{
         // check elevation, be careful not to limit editing key
         //const valid_ele_char = (c) => /^\d$/.test(c) || (c == "." && !this.pt_ele.includes("."));
         this._pt_ele.onkeydown = (e) => {
-            if(listener_enter_to_blur(e) === false)
+            if(enter_to_blur_listener(e) === false)
                 return false;
             if(e.key == "." && this.pt_ele.includes("."))  //multiple 'dot'
                 e.preventDefault();
@@ -360,30 +371,28 @@ export default class PtPopupOverlay extends Overlay{
     }
 
     private initSymboard(){
+        if(this._pt_symboard.childElementCount) // already initialized
+            return;
         this._pt_symboard.innerHTML = templates.symboard(symbol_inv);
 
-        const pick_sym_listener = e => {
-            e.stopPropagation();
-            const el = e.target.closest('.pt-symboard-item');
-            const sym = el.getAttribute("title");
-
-            //TODO:  try to reduce the duplicate
-            let sym_changed = false
-            if(this._data.sym != sym){
-                this._data.sym = sym;
-                sym_changed = true;
-            }
-            if(sym_changed){
-                this._feature.set('sym', this._data.sym);
-                this.setContent(this._data);
-            }
-
-            this._pt_symboard.classList.add('hidden');
-        };
-
-        // pick
-        this._pt_symboard.querySelectorAll<HTMLElement>('.pt-symboard-item').forEach(el =>
-            el.onclick = pick_sym_listener);
+        // show the board and pick
+        setSubBoardEvents(
+            this.getElement(),
+            this._pt_sym,
+            this._pt_symboard,
+            this._pt_symboard.querySelectorAll<HTMLElement>('.pt-symboard-item'), (item) => {
+                const sym = item.getAttribute("title");
+                //TODO:  try to reduce the duplicate
+                let sym_changed = false
+                if(this._data.sym != sym){
+                    this._data.sym = sym;
+                    sym_changed = true;
+                }
+                if(sym_changed){
+                    this._feature.set('sym', this._data.sym);
+                    this.setContent(this._data);
+                }
+            });
 
         // filter
         this._pt_symboard_filter = this._pt_symboard.querySelector<HTMLInputElement>('#pt-symboard-filter');
