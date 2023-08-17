@@ -53,9 +53,11 @@ class Opt{
         return undefined;
     }
 
-    public update(modified?) {
-        if(modified)
-            Object.assign(this, modified)
+    public update(modified?, target?) {
+        if(modified){
+            target = target? this[target]: this;
+            Object.assign(target, modified)
+        }
 
         const value = JSON.stringify(this.strip());
         if(value.length >= 4096)

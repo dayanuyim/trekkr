@@ -136,50 +136,11 @@ class Settings{
     }
 
     updateOptSpy = (layer_id) => {
-        Opt.spy.layer = layer_id;
-        Opt.update();
+        Opt.update({layer: layer_id}, 'spy');
     }
 
     getLayersConf() {
         return this.layers.map(ly => ly.obj());
-    }
-}
-
-class Sidebar{
-    static of(el: HTMLElement, map: Map){
-        return new Sidebar(el, map);
-    }
-
-    _base: HTMLElement;
-    _btn_spy: HTMLButtonElement;
-    //get _btn_spy() { return this._base.querySelector<HTMLButtonElement>('button.btn-spy'); }
-
-    map: Map;
-
-    constructor(el: HTMLElement, map: Map){
-        this._base = el;
-        this._btn_spy = this._base.querySelector<HTMLButtonElement>('button.btn-spy');
-        this.map = map;
-        this.init();
-    }
-
-    private init(){
-        //init spy
-        this._btn_spy.classList.toggle('active', Opt.spy.enabled);
-        this._btn_spy.title = Opt.tooltip.btn_spy;
-        this._btn_spy.addEventListener('click', e =>{
-            this._btn_spy.classList.toggle('active');
-
-            Opt.spy.enabled = this._btn_spy.classList.contains('active');
-            Opt.update();
-
-            this.map.render();
-            return true;
-        });
-    }
-
-    public toggleSpy(){
-        this._btn_spy.click();
     }
 }
 
@@ -188,6 +149,8 @@ export function initSettings(map, el: HTMLElement){
     return Settings.of(el, map);
 }
 
+/*
 export function initSidebar(map, el: HTMLElement){
     return Sidebar.of(el, map);
 }
+*/

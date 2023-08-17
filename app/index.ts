@@ -13,7 +13,8 @@ import '@fortawesome/fontawesome-free/js/brands';
 import './coord';
 import * as templates from './templates';
 import {createMap, setCtxMenu} from './map';
-import { initSettings, initSidebar } from './settings';
+import { initSettings } from './settings';
+import { Sidebar } from './sidebar';
 
 (async () => {
   main(document.body);
@@ -43,23 +44,26 @@ import { initSettings, initSidebar } from './settings';
   */
 })();
 
-function main(root_el: HTMLElement)
+function main(main_el: HTMLElement)
 {
-  root_el.innerHTML = templates.main();
+  main_el.innerHTML = templates.main();
 
   const map = createMap('map');
-  const settings = initSettings(map, root_el.querySelector('.settings'))
-  const sidebar = initSidebar(map, root_el.querySelector('.settings-side'))
+  const settings = initSettings(map, main_el.querySelector('.settings'))
+
+  const sidebar = new Sidebar(main_el.querySelector('.settings-side'))
+  sidebar.onclick = () => map.render();
+
   setCtxMenu(map, document.getElementById('ctx-menu'));
 
   //set hotkey
-  root_el.addEventListener('keydown', function (e) {
+  main_el.addEventListener('keydown', function (e) {
       if (e.ctrlKey && e.key === 's')
           settings.toggle();
       else if (e.ctrlKey && e.key === 'x')
           sidebar.toggleSpy();
       else if (e.ctrlKey && e.key === 'f') {
-          root_el.requestFullscreen();
+          main_el.requestFullscreen();
       }
   });
 }
