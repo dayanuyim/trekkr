@@ -12,8 +12,8 @@ import '@fortawesome/fontawesome-free/js/brands';
 
 import './coord';
 import * as templates from './templates';
-import {createMap, setCtxMenu} from './map';
-import { initSettings } from './settings';
+import {createMap, setCtxMenu, setSpyLayer, setLayers, setLayerOpacity} from './map';
+import { Settings } from './settings';
 import { Sidebar } from './sidebar';
 
 (async () => {
@@ -49,10 +49,15 @@ function main(main_el: HTMLElement)
   main_el.innerHTML = templates.main();
 
   const map = createMap('map');
-  const settings = initSettings(map, main_el.querySelector('.settings'))
 
   const sidebar = new Sidebar(main_el.querySelector('.settings-side'))
-  sidebar.onclick = () => map.render();
+    .setListener('click', () => map.render());
+
+  const settings = new Settings(main_el.querySelector('.settings'))
+    .setListener('spychanged', (id) => setSpyLayer(map, id))
+    .setListener('layerschanged', (layers_conf) => setLayers(map, layers_conf))
+    .setListener('opacitychanged', (id, opacity) => setLayerOpacity(id, opacity))
+    .apply();
 
   setCtxMenu(map, document.getElementById('ctx-menu'));
 

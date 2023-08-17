@@ -252,7 +252,6 @@ function addLayerWithInteraction(map, layer){
 //     layers[n-1]   is the most top layer from conf
 //     layers[n]     is the spy layer
 //     layers[n+1]   is the pseudo gpx layer
-//     layers[n+2]   is the 1st user-provided gpx laeyr
 //     layers[n+1+m] is the mth user-provided gpx laeyr
 // 2. remove only the layers whith are set disabled in @conf
 // 3. invoke getLayer only for those enalbed in @conf
@@ -307,7 +306,8 @@ export function setLayerOpacity(id, opacity)
 export function setSpyLayer(map, id)
 {
   const layers = map.getLayers();
-
+  const idx = indexOfSpyLayer();  // !! the index is correct only if the configurated layers are set; otherwise do the following search to find out the proper index.
+/*
   let has_old_spy = false;
   let idx = 0;
   for(; idx < layers.getLength(); ++idx){
@@ -319,8 +319,8 @@ export function setSpyLayer(map, id)
       break;
     }
   }
-
-  if(has_old_spy)
+  if(has_old_spy)*/
+  if(LayerRepo.getId(layers.item(idx)) == 'SPY')  //remove the original if any
     layers.removeAt(idx);
   layers.insertAt(idx, createSpyLayer(id));
 }

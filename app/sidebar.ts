@@ -4,9 +4,7 @@ export class Sidebar{
 
     _base: HTMLElement;
     _btn_spy: HTMLButtonElement;
-    _click_listener: CallableFunction;
-
-    set onclick(listener){ this._click_listener = listener; }
+    _listeners = {}
 
     constructor(el: HTMLElement){
         this.initElements(el);
@@ -25,11 +23,17 @@ export class Sidebar{
         this._btn_spy.addEventListener('click', e =>{
             const enabled = this._btn_spy.classList.toggle('active');
             Opt.update({enabled}, 'spy');
-            if(this._click_listener) this._click_listener();
+            this._listeners['click']?.();
         });
+    }
+
+    public setListener(event, listener){
+        this._listeners[event] = listener;
+        return this;
     }
 
     public toggleSpy(){
         this._btn_spy.click();
+        return this;
     }
 }
