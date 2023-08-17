@@ -12,7 +12,7 @@ import '@fortawesome/fontawesome-free/js/brands';
 
 import './coord';
 import * as templates from './templates';
-import {createMap, setCtxMenu, setSpyLayer, setLayers, setLayerOpacity} from './map';
+import { AppMap } from './map';
 import { Settings } from './settings';
 import { Sidebar } from './sidebar';
 
@@ -48,18 +48,17 @@ function main(main_el: HTMLElement)
 {
   main_el.innerHTML = templates.main();
 
-  const map = createMap('map');
+  const map = new AppMap('map');
+  map.setCtxMenu(document.getElementById('ctx-menu'));
 
   const sidebar = new Sidebar(main_el.querySelector('.settings-side'))
     .setListener('click', () => map.render());
 
   const settings = new Settings(main_el.querySelector('.settings'))
-    .setListener('spychanged', (id) => setSpyLayer(map, id))
-    .setListener('layerschanged', (layers_conf) => setLayers(map, layers_conf))
-    .setListener('opacitychanged', (id, opacity) => setLayerOpacity(id, opacity))
+    .setListener('spychanged', (id) => map.setSpyLayer(id))
+    .setListener('layerschanged', (layers_conf) => map.setLayers(layers_conf))
+    .setListener('opacitychanged', (id, opacity) => map.setLayerOpacity(id, opacity))
     .apply();
-
-  setCtxMenu(map, document.getElementById('ctx-menu'));
 
   //set hotkey
   main_el.addEventListener('keydown', function (e) {
