@@ -8,7 +8,7 @@ import {toTWD97, toTWD67} from './coord';
 
 import * as moment from 'moment-timezone';
 import { getSymbol, matchRules, symbol_inv } from './sym'
-import { getEleByCoords, getLocalTimeByCoords, gmapUrl } from './common'
+import { getEleByCoords, getEleOfCoords, setEleOfCoords, getLocalTimeByCoords, gmapUrl } from './common'
 import { mkWptFeature, def_trk_color} from './gpx';
 import Opt from './opt';
 import * as templates from './templates';
@@ -232,14 +232,9 @@ export default class PtPopupOverlay extends Overlay{
             this._pt_colorboard,
             this._pt_colorboard.querySelectorAll<HTMLElement>('.pt-colorboard-item'), (item) => {
                 const color = item.getAttribute("title");
-                let color_changed = false
                 if(this._data.trk.color != color){
                     this._data.trk.color = color;
-                    color_changed = true;
-                }
-                if(color_changed){
-                    this._track_feature_of(this._feature).set('color', this._data.trk.color);
-                    this.setContent(this._data);
+                    this._data_trk_color_changed();
                 }
             });
 
@@ -269,13 +264,9 @@ export default class PtPopupOverlay extends Overlay{
         this._pt_trk_name.onblur = e => {
             if(!this.pt_trk_name)
                 return this.setContent(this._data);  //reload the data to restore the erased value
-            let trk_name_changed = false;
             if(this._data.trk.name != this.pt_trk_name){
                 this._data.trk.name = this.pt_trk_name;
-                trk_name_changed = true;
-            }
-            if(trk_name_changed){
-                this._track_feature_of(this._feature).set('name', this._data.trk.name);
+                this._data_trk_name_changed();
             }
         }
 
@@ -284,24 +275,9 @@ export default class PtPopupOverlay extends Overlay{
         this._pt_name.onblur = e => {
             if(!this.pt_name)
                 return this.setContent(this._data);  //reload the data to restore the erased value
-            let name_changed = false;
-            let sym_changed = false;
-
-            if(this._data.name != this.pt_name){   //cache != ui
+            if(this._data.name != this.pt_name){     //cache != ui
                 this._data.name = this.pt_name;
-                name_changed = true;
-            }
-            if(name_changed){
-                this._feature.set('name', this._data.name);
-                const symbol = matchRules(this._data.name);
-                if(symbol && this._data.sym != symbol.name){
-                    this._data.sym = symbol.name;
-                    sym_changed = true;
-                }
-            }
-            if(sym_changed){
-                this._feature.set('sym', this._data.sym);
-                this.setContent(this._data);
+                this._data_name_changed();
             }
         }
 
@@ -323,20 +299,9 @@ export default class PtPopupOverlay extends Overlay{
                 return;
             }
             const ele = +this.pt_ele;
-            let ele_changed = false;
-            if(this._data.coordinates.length < 3){
-                this._data.coordinates.push(ele);
-                ele_changed = true;
-            }
-            else if(this._data.coordinates[2] != this.pt_ele){   //cache != ui
-                //console.log(`ele changed from ${this._data.coordinates[2]} to ${this.pt_ele}`);
-                this._data.coordinates[2] = ele;
-                ele_changed = true;
-            }
-
-            if(ele_changed){
-                this._pt_ele_est.classList.add('hidden');
-                this._feature.getGeometry().setCoordinates(this._data.coordinates);
+            if(getEleOfCoords(this._data.coordinates) != ele){
+                setEleOfCoords(this._data.coordinates, ele);
+                this._data_ele_changed();
             }
         };
 
@@ -382,15 +347,9 @@ export default class PtPopupOverlay extends Overlay{
             this._pt_symboard,
             this._pt_symboard.querySelectorAll<HTMLElement>('.pt-symboard-item'), (item) => {
                 const sym = item.getAttribute("title");
-                //TODO:  try to reduce the duplicate
-                let sym_changed = false
-                if(this._data.sym != sym){
+                if (this._data.sym != sym){
                     this._data.sym = sym;
-                    sym_changed = true;
-                }
-                if(sym_changed){
-                    this._feature.set('sym', this._data.sym);
-                    this.setContent(this._data);
+                    this._data_sym_changed();
                 }
             });
 
@@ -417,6 +376,37 @@ export default class PtPopupOverlay extends Overlay{
             el.style.visibility = "unset";
         });
     }
+
+    private _data_trk_name_changed(){
+        this._track_feature_of(this._feature).set('name', this._data.trk.name);
+    }
+
+    private _data_trk_color_changed(){
+        this._track_feature_of(this._feature).set('color', this._data.trk.color);
+        this.setContent(this._data);
+    }
+
+    private _data_sym_changed(){
+        this._feature.set('sym', this._data.sym);
+        this.setContent(this._data);
+    }
+
+    private _data_name_changed(){
+        this._feature.set('name', this._data.name);
+        const symbol = matchRules(this._data.name); // auto pick symbol
+        if(symbol){
+            if(this._data.sym != symbol.name){
+                this._data.sym = symbol.name;
+                this._data_sym_changed();
+            }
+        }
+    }
+
+    private _data_ele_changed(){
+        this._pt_ele_est.classList.add('hidden');
+        this._feature.getGeometry().setCoordinates(this._data.coordinates);
+    }
+
 
     async popContent(feature) {
         // get data
