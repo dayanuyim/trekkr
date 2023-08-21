@@ -154,20 +154,25 @@ input[type=number] {
 }
 */
 
+/*
 #layer-grp:hover{
     overflow-y: scroll;
     padding-right: 0;
 }
+*/
 #layer-grp{
     height: calc(100% - 2em);
     box-sizing: border-box;
-    padding-right: 17px; /* width of scrollbar in Chrome, Firefox*/
+    overflow-y: auto;
+    /*padding-right: 17px; *//* width of scrollbar in Chrome, Firefox*/
 }
+/*
 @supports (-ms-ime-align:auto) {
     #layer-grp{
-        padding-right: 15px; /* width of scrollbar in Edge*/
+        padding-right: 15px; /* width of scrollbar in Edge
     }
 }
+*/
 
 #layer-grp ul{
     padding: 0;

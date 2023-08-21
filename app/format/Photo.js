@@ -80,12 +80,18 @@ class Photo extends FeatureFormat {
     const lat = this._meta_latitude(meta);
     const time = this._meta_time(meta);
 
+    const image_obj = () => ({
+      url: url.createObjectURL(new Blob([source], { type: "image/jpeg" })),
+      size: this._meta_size(meta),
+    });
+
     // check if the feature exits
     if(time && this._featureExists){
       const feature = this._featureExists(time);
       if(feature){
-        if(!feature.get('image_url'))
-          feature.set('image_url', url.createObjectURL(new Blob([source], { type: "image/jpeg" })));
+        if(!feature.get('image')){
+          feature.set('image', image_obj());
+        }
         return null;
       }
     }
@@ -107,7 +113,7 @@ class Photo extends FeatureFormat {
     if(coords){
       const feature = mkWptFeature(coords, {
         name: this._meta_name(meta) || 'WPT',
-        image_url: url.createObjectURL(new Blob([source], { type: "image/jpeg" })),
+        image: image_obj(),
       });
       return [feature];
     }
@@ -145,6 +151,19 @@ class Photo extends FeatureFormat {
     //TODO: for accuracy, we should use geo lacation to get tz, then get UTC time, not use the system's tz of Date()
     const datetime = new Date(y, m-1, d, hh, mm, ss);  // view as local time by Date
     return epochseconds(datetime);
+  }
+
+  _meta_size(meta){
+    if(meta['Image Width'] && meta['Image Height']){
+      const width = meta['Image Width'].value;
+      const height = meta['Image Height'].value;
+      //TODO: maybe it is better to let caller to check the orientation
+      if(meta.Orientation && meta.Orientation.value >= 5) // rotate 90deg or 270deg
+        return {width: height, height: width};
+      else
+        return {width, height};
+    }
+    return null;
   }
 
   /**

@@ -92,7 +92,7 @@ function toWptStyle(name, sym, bg?)
 export const gpxStyle = (feature) => {
   switch (feature.getGeometry().getType()) {
     case 'Point': {
-      const has_bg = !!feature.get('image_url');
+      const has_bg = !!feature.get('image');
       const name = feature.get('name');
       let sym = feature.get('sym');
       if(!sym){ // set default symbol name (although 'sym' is not a mandatory field for wpt, specifiy one helps wpt edit)

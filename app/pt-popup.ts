@@ -73,6 +73,16 @@ declare class Overlay{
 }
 */
 
+function scaleDown({width, height}, max){
+    if(width <= max && height <= max)
+        return {width, height};
+
+    if(width > height)
+        return {width: max, height: height/width*max};
+    else
+        return {width: width/height*max, height: max};
+}
+
 //TODO: convert this to typescript
 export default class PtPopupOverlay extends Overlay{
 
@@ -185,7 +195,7 @@ export default class PtPopupOverlay extends Overlay{
         this.setPosition(undefined);
     }
 
-    private resetDisplay(image_url){
+    private resetDisplay(image){
         this._pt_colorboard.classList.add('hidden');   //symboard hidden, if any
 
         //symboard
@@ -200,10 +210,16 @@ export default class PtPopupOverlay extends Overlay{
         this._resizer_content.style.height = '';
 
         //image
-        this._pt_image.style.backgroundImage = image_url? `url('${image_url}')`: '';
-        this._pt_image.classList.toggle('active', !!image_url);
-        this._resizer.classList.toggle('active', !!image_url);
-        if(image_url) this._resize_observer.observe(this._resizer);
+        const {url, size} = image;
+        this._pt_image.style.backgroundImage = url? `url('${url}')`: '';
+        this._pt_image.classList.toggle('active', !!url);
+        this._resizer.classList.toggle('active', !!url);
+        if(url) this._resize_observer.observe(this._resizer);
+        if(size){
+            const {width, height} = scaleDown(size, 400);
+            this._pt_image.style.width = width + 'px';
+            this._pt_image.style.height = height + 'px';
+        }
     }
 
     private initEvents(){
@@ -419,13 +435,13 @@ export default class PtPopupOverlay extends Overlay{
         const name = feature.get('name') || feature.get('desc');     //maybe undefined
         const sym = feature.get('sym');                              //maybe undefined
         const coordinates = feature.getGeometry().getCoordinates();  //x, y, ele, time
-        const image_url = feature.get('image_url');
+        const image = feature.get('image');
 
         // chache for later to use
         this._feature = feature;                        //for removing
         this._data = {trk, name, sym, coordinates};   //for creating/updating
 
-        this.resetDisplay(image_url);
+        this.resetDisplay(image);
         await this.setContent(this._data);
         this.setPosition(coordinates);
     }
