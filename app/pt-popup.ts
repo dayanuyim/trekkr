@@ -196,7 +196,7 @@ export default class PtPopupOverlay extends Overlay{
     }
 
     private resetDisplay(image){
-        this._pt_colorboard.classList.add('hidden');   //symboard hidden, if any
+        this._pt_colorboard.classList.add('hidden');   //colorboard hidden, if any
 
         //symboard
         this._pt_symboard.classList.add('hidden');   //symboard hidden, if any
@@ -204,22 +204,20 @@ export default class PtPopupOverlay extends Overlay{
 
         //resizer
         this._resize_observer.disconnect();
+        this._resizer.classList.toggle('active', !!image);
         this._resizer.style.width = '';              //reset resizer size
         this._resizer.style.height = '';
         this._resizer_content.style.width = '';      //reset resizer-content size
         this._resizer_content.style.height = '';
+        if(image) this._resize_observer.observe(this._resizer);
 
         //image
         const {url, size} = image || {};
-        this._pt_image.style.backgroundImage = url? `url('${url}')`: '';
+        const {width, height} = size? scaleDown(size, 400): {width: undefined, height: undefined};
         this._pt_image.classList.toggle('active', !!image);
-        this._resizer.classList.toggle('active', !!image);
-        if(image) this._resize_observer.observe(this._resizer);
-        if(size){
-            const {width, height} = scaleDown(size, 400);
-            this._pt_image.style.width = width + 'px';
-            this._pt_image.style.height = height + 'px';
-        }
+        this._pt_image.style.backgroundImage = url? `url('${url}')`: '';
+        this._pt_image.style.width = width? `${width}px`: '';
+        this._pt_image.style.height = height? `${height}px`: '';
     }
 
     private initEvents(){
