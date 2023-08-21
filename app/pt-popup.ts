@@ -210,15 +210,17 @@ export default class PtPopupOverlay extends Overlay{
         this._resizer_content.style.height = '';
 
         //image
-        const {url, size} = image;
-        this._pt_image.style.backgroundImage = url? `url('${url}')`: '';
-        this._pt_image.classList.toggle('active', !!url);
-        this._resizer.classList.toggle('active', !!url);
-        if(url) this._resize_observer.observe(this._resizer);
-        if(size){
-            const {width, height} = scaleDown(size, 400);
-            this._pt_image.style.width = width + 'px';
-            this._pt_image.style.height = height + 'px';
+        this._pt_image.classList.toggle('active', !!image);
+        this._resizer.classList.toggle('active', !!image);
+        if(image){
+            const {url, size} = image;
+            this._pt_image.style.backgroundImage = url? `url('${url}')`: '';
+            if(url) this._resize_observer.observe(this._resizer);
+            if(size){
+                const {width, height} = scaleDown(size, 400);
+                this._pt_image.style.width = width + 'px';
+                this._pt_image.style.height = height + 'px';
+            }
         }
     }
 
@@ -289,10 +291,11 @@ export default class PtPopupOverlay extends Overlay{
         // change wpt name
         this._pt_name.onkeydown = enter_to_blur_listener;
         this._pt_name.onblur = e => {
-            if(!this.pt_name)
+            const name = this.pt_name.trim();
+            if(!name)
                 return this.setContent(this._data);  //reload the data to restore the erased value
-            if(this._data.name != this.pt_name){     //cache != ui
-                this._data.name = this.pt_name;
+            if(this._data.name != name){     //cache != ui
+                this._data.name = name;
                 this._data_name_changed();
             }
         }
