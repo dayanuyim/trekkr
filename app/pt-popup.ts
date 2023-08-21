@@ -210,17 +210,15 @@ export default class PtPopupOverlay extends Overlay{
         this._resizer_content.style.height = '';
 
         //image
+        const {url, size} = image || {};
+        this._pt_image.style.backgroundImage = url? `url('${url}')`: '';
         this._pt_image.classList.toggle('active', !!image);
         this._resizer.classList.toggle('active', !!image);
-        if(image){
-            const {url, size} = image;
-            this._pt_image.style.backgroundImage = url? `url('${url}')`: '';
-            if(url) this._resize_observer.observe(this._resizer);
-            if(size){
-                const {width, height} = scaleDown(size, 400);
-                this._pt_image.style.width = width + 'px';
-                this._pt_image.style.height = height + 'px';
-            }
+        if(image) this._resize_observer.observe(this._resizer);
+        if(size){
+            const {width, height} = scaleDown(size, 400);
+            this._pt_image.style.width = width + 'px';
+            this._pt_image.style.height = height + 'px';
         }
     }
 
