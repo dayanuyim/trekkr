@@ -1,7 +1,6 @@
 'use strict';
 import sortable from 'html5sortable/dist/html5sortable.es.js'
 import {tablink} from './lib/dom-utils';
-import Map from 'ol/Map';
 import * as templates from './templates';
 import Opt from './opt';
 
@@ -59,23 +58,38 @@ export class Settings{
     //static listenify = (fn) => { return (e) => fn(Settings.of(e.target.closest('.settings')), e.currentTarget, e); }
 
     _base: HTMLElement;
+    _toggle_btn: HTMLButtonElement;
+    _opt_wpt_fontsize: HTMLInputElement;
+    _opt_wpt_displays: HTMLInputElement[];
     _listeners = {};;
 
-    get _btn_toggle() { return this._base.querySelector<HTMLButtonElement>('button.btn-toggle'); }
-    get _layers(){ return Array.from(this._base.querySelectorAll('#layer-grp li')); }
-    get layers(){ return this._layers.map(Layer.of); }
+    get layers(){ return Array.from(this._base.querySelectorAll('#layer-grp li')).map(Layer.of); }
+    get opt_wpt_fontsize() { return Number(this._opt_wpt_fontsize.value); }
+    set opt_wpt_fontsize(size) { this._opt_wpt_fontsize.value = size.toString(); }
 
     constructor(el: HTMLElement){
-        this._base = el;
-        this._base.innerHTML = templates.settings({ layers: Opt.layers });
-        this.init();
+        el.innerHTML = templates.settings({ layers: Opt.layers });
+        this.initElements(el);
+        this.initLayers();
+        this.initOptions();
     }
 
-    private init(){
+    private initElements(el: HTMLElement){
+        this._base = el;
+        this._toggle_btn = this._base.querySelector<HTMLButtonElement>('button.btn-toggle');
+
+        const options = this._base.querySelector('#options');
+        this._opt_wpt_fontsize = options.querySelector<HTMLInputElement>('#wpt-fontsize');
+        this._opt_wpt_displays = Array.from(options.querySelectorAll<HTMLInputElement>('input[name="wpt-display"]'));
+    }
+
+    // ----------------------------------------------------------------
+
+    private initLayers(){
         tablink('.tablink', '.tabcontent', 0);
 
-        this._btn_toggle.onclick = () => this._base.classList.toggle('collapsed');
-        this._btn_toggle.title = Opt.tooltip.btn_settings;
+        this._toggle_btn.onclick = () => this._base.classList.toggle('collapsed');
+        this._toggle_btn.title = Opt.tooltip.btn_settings;
 
         //set layers sortable
         ['.layer-legend', '.layer-base'].forEach(selector =>{
@@ -124,6 +138,34 @@ export class Settings{
         this._listeners['spychanged']?.(id);  // map
     }
 
+    // ----------------------------------------------------------------
+
+    private initOptions(){
+        // wpt fontsize
+        this.opt_wpt_fontsize = Opt.waypoint.fontsize;
+        this._opt_wpt_fontsize.onchange = e => {
+            const fontsize = this.opt_wpt_fontsize;
+            if(!fontsize)
+                return this.opt_wpt_fontsize = Opt.waypoint.fontsize; //restore
+            Opt.update({fontsize}, 'waypoint');  // coockie
+            this._listeners['wptchanged']?.();   // map
+        };
+
+        // wpt display
+        this._opt_wpt_displays.forEach(disp => {
+            disp.checked = (disp.value == Opt.waypoint.display);
+            disp.onchange = () => {   //checked
+                const conf = {display: disp.value};
+                if(disp.value == 'auto')
+                    conf['display_auto_zoom'] = Opt.zoom;
+                Opt.update(conf, 'waypoint');            // coockie
+                this._listeners['wptchanged']?.();       // map
+            }
+        });
+    }
+
+    // ----------------------------------------------------------------
+
     public apply(){
         this.updateLayers(false);
         this.updateSpy(Opt.spy.layer, false);  // !! init spy after configurated layers
@@ -136,7 +178,7 @@ export class Settings{
     }
 
     public toggle(){
-        this._btn_toggle.click();
+        this._toggle_btn.click();
         return this;
     }
 }

@@ -58,6 +58,7 @@ function main(main_el: HTMLElement)
     .setListener('spychanged', (id) => map.setSpyLayer(id))
     .setListener('layerschanged', (layers_conf) => map.setLayers(layers_conf))
     .setListener('opacitychanged', (id, opacity) => map.setLayerOpacity(id, opacity))
+    .setListener('wptchanged', () => map.redrawText())
     .apply();
 
   //set hotkey

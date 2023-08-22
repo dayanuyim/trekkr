@@ -27,8 +27,13 @@ export const def_trk_color = 'DarkMagenta';
 //  'DarkGray', 'LightGray', 'DarkCyan', 'DarkMagenta', 'DarkBlue', 'DarkGreen', 'DarkRed', 'Black'
 //];
 
-function toTextStyle(text){
-  if(Opt.zoom < 13.5)
+function toTextStyle(text)
+{
+  let {fontsize, display, display_auto_zoom} = Opt.waypoint;
+  fontsize = fontsize || 16;
+
+  if(display == "none" ||
+    (display == "auto" && Opt.zoom <= display_auto_zoom))
     return null;
 
   return new Text({
@@ -36,7 +41,7 @@ function toTextStyle(text){
     textAlign: 'left',
     offsetX: 8,
     offsetY: -8,
-    font: 'normal 16px "Noto Sans TC", "Open Sans", "Arial Unicode MS", "sans-serif"',
+    font: `normal ${fontsize}px "Noto Sans TC", "Open Sans", "Arial Unicode MS", "sans-serif"`,
     placement: 'point',
     fill: new Fill({color: '#fff'}),
     stroke: new Stroke({color: '#000', width: 2}),
