@@ -208,7 +208,32 @@ export const settings = Handlebars.compile(`
         </div>
 
         <div id="options" class="tabcontent">
-            <span>Comming Soon...</span>
+            <fieldset class="opt-group">
+                <legend class="opt-header">Waypoint名稱</legend>
+                <!----------------------------- font size --------------------------------------->
+                <div class="opt-item">
+                    <label for="wpt-fontsize">字型大小</label>
+                    <input type="number" id="wpt-fontsize" name="wpt-fontsize" min="1" max="64" />
+                </div>
+                <!----------------------------- dispaly --------------------------------------->
+                <div class="opt-item">
+                    <label>顯示方式</lable>
+                    <div>
+                        <div>
+                            <input type="radio" id="wpt-display-need" name="wpt-display" value="need" />
+                            <label for="wpt-display-need">Always</label>
+                        </div>
+                        <div>
+                            <input type="radio" id="wpt-display-none" name="wpt-display" value="none" />
+                            <label for="wpt-display-none">None</label>
+                        </div>
+                        <div>
+                            <input type="radio" id="wpt-display-auto" name="wpt-display" value="auto" />
+                            <label for="wpt-display-auto">Auto (使用目前Zoom Level)</label>
+                        </div>
+                    </div>
+                </div>
+            </fieldset>
         </div>
     </div>
 `);

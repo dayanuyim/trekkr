@@ -232,6 +232,8 @@ function getQueryParameters()
 //relay functions
 
   public render() { this._map.render();}
+  public renderSync() { this._map.renderSync();}
+  public redrawText() { this._map.redrawText(); }
 
 ////////////////////////////////////////////////////////////////
 

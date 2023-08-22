@@ -11,7 +11,7 @@ class Opt{
     }
 
     //cookie options
-    version = 6;
+    _version = 7;
     xy = [13461784.981041275, 2699338.9447048027];    //xy = fromLonLat([120.929272, 23.555519]);
     zoom = 15;
     coordsys = 'twd67';
@@ -20,6 +20,11 @@ class Opt{
         enabled: false,
         radius: 75,
         layer: "NLSC_PHOTO_MIX",
+    };
+    waypoint = {
+        fontsize: 16,
+        display: "auto",
+        display_auto_zoom: 13.5
     };
 
     //runtime options
@@ -32,7 +37,7 @@ class Opt{
 
     private constructor(){
         const saved = this.load();
-        if(saved && saved.version && saved.version === this.version)
+        if(saved && saved._version && saved._version === this._version)
             Object.assign(this, this.recover(saved));
 
         //reset properties
