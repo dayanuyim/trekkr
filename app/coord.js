@@ -67,3 +67,173 @@ export const toTWD97 = (coordinate) => {
       transform(coordinate, WEB_MERCATOR, TWD97):
       transform(coordinate.slice(0, 2), WEB_MERCATOR, TWD97).concat(coordinate.slice(2));
 }
+
+
+
+// /^[A-HJ-Z]\d{4}[A-H][A-E]\d{2}(\d{2})?$/
+function taipowerCoordToTWD67(coord)
+{
+  // the base of each area of electic coord
+  const [EW, EH] = [80 * 1000, 50 * 1000];
+  const [X0, Y0] = [250 * 1000, 2500 * 1000];
+  const EBASE = {
+                             'A': [X0-EW, Y0+5*EH], 'B': [X0, Y0+5*EH], 'C': [X0+EW, Y0+5*EH],
+                             'D': [X0-EW, Y0+4*EH], 'E': [X0, Y0+4*EH], 'F': [X0+EW, Y0+4*EH],
+                             'G': [X0-EW, Y0+3*EH], 'H': [X0, Y0+3*EH],
+    'J': [X0-2*EW, Y0+2*EH], 'K': [X0-EW, Y0+2*EH], 'L': [X0, Y0+2*EH],
+    'M': [X0-2*EW, Y0+1*EH], 'N': [X0-EW, Y0+1*EH], 'O': [X0, Y0+1*EH],
+    'P': [X0-2*EW, Y0+0*EH], 'Q': [X0-EW, Y0+0*EH], 'R': [X0, Y0+0*EH],
+                             'T': [X0-EW, Y0-1*EH], 'U': [X0, Y0-1*EH],
+                             'V': [X0-EW, Y0-2*EH], 'W': [X0, Y0-2*EH],
+  };
+
+  // preprocess
+  if(coord.length != 9 && coord.length != 11){
+      console.error('invalide taipower coord: ' + coord)
+      return undefined;
+  }
+  if(coord.length == 9)
+      coord += '00';  // 10x10 -> 1x1
+  coord = coord.toUpperCase();
+
+  const diffA = idx => coord[idx].charCodeAt(0) - 'A'.charCodeAt(0);
+  const toint = (begin, end=undefined) => Number(end? coord.slice(begin, end): coord[begin]);
+
+  // sum xy at each level
+  let [x, y] = EBASE[coord[0]];
+  x += 800*toint(1,3) + 100*diffA(5) + 10*toint(7) + toint(9);
+  y += 500*toint(3,5) + 100*diffA(6) + 10*toint(8) + toint(10);
+  return [x, y];
+}
+
+function getTaipowerCoordBase(xcoeff, ycoeff)
+{
+    switch (ycoeff) {
+        case 5: switch (xcoeff) {
+            case -1: return 'A'
+            case  0: return 'B'
+            case  1: return 'C'
+        };
+        case 4: switch (xcoeff) {
+            case -1: return 'D'
+            case  0: return 'E'
+            case  1: return 'F'
+        };
+        case 3: switch (xcoeff) {
+            case -1: return 'G'
+            case  0: return 'H'
+        };
+        case 2: switch (xcoeff) {
+            case -2: return 'J'
+            case -1: return 'K'
+            case  0: return 'L'
+        };
+        case 1: switch (xcoeff) {
+            case -2: return 'M'
+            case -1: return 'N'
+            case  0: return 'O'
+        };
+        case 0: switch (xcoeff) {
+            case -2: return 'P'
+            case -1: return 'Q'
+            case  0: return 'R'
+        };
+        case -1: switch (xcoeff) {
+            case -1: return 'T'
+            case  0: return 'U'
+        };
+        case -2: switch (xcoeff) {
+            case -1: return 'V'
+            case  0: return 'W'
+        };
+    }
+    return undefined;
+}
+
+function TWD67ToTaipowerCoord(coord)
+{
+  if(!coord || coord.length < 2) return undefined;
+  if(!coord[0] || !coord[1]) return undefined;
+  const [x, y] = coord;
+  coord = [Math.round(x), Math.round(y)];   //align to the closest 1m x 1m point
+
+  const extract_base = () => {
+    const [x, y] = coord;
+    const xcoeff = Math.floor((x -  250000) / 80000);
+    const ycoeff = Math.floor((y - 2500000) / 50000);
+    const base = getTaipowerCoordBase(xcoeff, ycoeff);
+    if(!base) return undefined;
+    coord = [
+        x -  (250000 + (xcoeff * 80000)),
+        y - (2500000 + (ycoeff * 50000)),
+    ];
+    return base;
+  }
+
+  const extract_num1 = () => {
+    const [x, y] = coord;
+    const xcoeff = Math.floor(x / 800);  //0~99
+    const ycoeff = Math.floor(y / 500);  //0~99
+    coord = [
+        x - (xcoeff * 800),
+        y - (ycoeff * 500),
+    ];
+    return [
+        xcoeff.toString().padStart(2, '0'),
+        ycoeff.toString().padStart(2, '0'),
+    ];
+  }
+
+  const extract_lttr = () => {
+    const [x, y] = coord;
+    const xcoeff = Math.floor(x / 100);  //0~7
+    const ycoeff = Math.floor(y / 100);  //0~4
+    coord = [
+        x - (xcoeff * 100),
+        y - (ycoeff * 100),
+    ];
+    return [
+        String.fromCharCode(65 + xcoeff),  // 'A'.charCodeAt(0) == 65
+        String.fromCharCode(65 + ycoeff),
+    ];
+  }
+
+  const extract_num2 = () => {
+    const [x, y] = coord;
+    const xcoeff = Math.floor(x / 10);  //0~9
+    const ycoeff = Math.floor(y / 10);  //0~9
+    coord = [
+        x - (xcoeff * 10),
+        y - (ycoeff * 10),
+    ];
+    return [
+        xcoeff.toString(),
+        ycoeff.toString(),
+    ];
+  }
+
+  const extract_num3 = () => {
+    const [x, y] = coord;  // [0~9, 0~9]
+    return [
+        x.toString(),
+        y.toString(),
+    ];
+  }
+
+  const base = extract_base();  if(!base) return undefined;
+  const num1 = extract_num1();
+  const lttr = extract_lttr();
+  const num2 = extract_num2();
+  const num3 = extract_num3();
+
+  const print = ([x,y]) => x + y;
+  return base + print(num1) + print(lttr) + print(num2) + print(num3);
+}
+
+export function fromTaipowerCoord(coord){
+  return fromTWD67(taipowerCoordToTWD67(coord));   //taipower -> twd67 -> webmercator
+}
+
+export function toTaipowerCoord(coord){
+  return TWD67ToTaipowerCoord(toTWD67(coord));
+}

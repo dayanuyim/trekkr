@@ -4,7 +4,7 @@ import { Point } from 'ol/geom';
 import Overlay from 'ol/Overlay';
 import {toStringXY} from 'ol/coordinate';
 import {toLonLat} from 'ol/proj';
-import {toTWD97, toTWD67} from './coord';
+import {toTWD97, toTWD67, toTaipowerCoord} from './coord';
 
 import * as moment from 'moment-timezone';
 import { getSymbol, matchRules, symbol_inv } from './sym'
@@ -14,9 +14,10 @@ import Opt from './opt';
 import * as templates from './templates';
 
 const toXY = {
-    twd67: (coord) => toStringXY(toTWD67(coord)),
-    twd97: (coord) => toStringXY(toTWD97(coord)),
-    wgs84: (coord) => toStringXY(toLonLat(coord), 7),
+    twd67:    (coord) => toStringXY(toTWD67(coord)),
+    twd97:    (coord) => toStringXY(toTWD97(coord)),
+    wgs84:    (coord) => toStringXY(toLonLat(coord), 7),
+    taipower: (coord) => toTaipowerCoord(coord),
 };
 
 function fmtEle(ele){

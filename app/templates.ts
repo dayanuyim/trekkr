@@ -68,10 +68,11 @@ export const ptPopup = Handlebars.compile(`
 
     <div class="pt-coord" data-pt-coord="{{coordinate}}">
         <select class="pt-coord-title" dir="rtl">
-            {{selop ""      coordsys "-"  "disabled hidden"}}
-            {{selop "twd67" coordsys "TWD67"}}
-            {{selop "twd97" coordsys "TWD97"}}
-            {{selop "wgs84" coordsys "WGS84"}}
+            {{selop ""         coordsys "-"  "disabled hidden"}}
+            {{selop "wgs84"    coordsys "WGS84"}}
+            {{selop "twd97"    coordsys "TWD97"}}
+            {{selop "twd67"    coordsys "TWD67"}}
+            {{selop "taipower" coordsys "電力座標"}}
         </select>
         <span class="pt-coord-value">N/A</span>
         <a class="pt-gmap" href="{{gmap coordinate}}" target="_blank">
