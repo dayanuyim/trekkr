@@ -238,16 +238,46 @@ html, body {
     cursor: pointer;
 }
 
-/*============ Side Settings ==================*/
-.settings-side {
-    z-index: 9;   /* why need this to prvent being covered by maps? */
+/*============ Bar Settings ==================*/
+.settings-bar {
+    z-index: 9;   /* prvent being covered by the map */
+}
+
+.settings-bar button:not(.active){
+    /*background: rgba(64, 64, 64, .5);*/
+    color: lightgray;
+}
+
+/*------------ Sidebar Settings ------------------*/
+
+.settings-bar.side {
     left: .5em;
     top: 18em;
 }
 
-.settings-side button:not(.active){
-    /*background: rgba(64, 64, 64, .5);*/
-    color: lightgray;
+/*------------ Topbar Settings ------------------*/
+.settings-bar.top {
+    left: 3em;
+    top: .5em;
+}
+.settings-bar.top button{
+    display: inline-block;
+}
+
+.settings-bar.top .goto-panel input{
+    font-size: 16px;
+    border: none;
+    vertical-align: 1px;
+    text-align: right;
+    width: 8em;
+}
+
+.settings-bar.top .goto-coord *{
+    margin: 1px 2px;
+}
+
+.settings-bar.top /*.goto-panel:not(:hover)*/ .goto-btn:not(.active) + .goto-coord{
+    display: none;
 }
 /*============= Map ======================*/
 

@@ -14,7 +14,7 @@ import './coord';
 import * as templates from './templates';
 import { AppMap } from './map';
 import { Settings } from './settings';
-import { Sidebar } from './sidebar';
+import { Sidebar, Topbar } from './sidebar';
 
 (async () => {
   main(document.body);
@@ -51,8 +51,10 @@ function main(main_el: HTMLElement)
   const map = new AppMap('map');
   map.setCtxMenu(document.getElementById('ctx-menu'));
 
-  const sidebar = new Sidebar(main_el.querySelector('.settings-side'))
+  const sidebar = new Sidebar(main_el.querySelector('.settings-bar.side'))
     .setListener('click', () => map.render());
+
+  const topbar = new Topbar(main_el.querySelector('.settings-bar.top'))
 
   const settings = new Settings(main_el.querySelector('.settings'))
     .setListener('spychanged', (id) => map.setSpyLayer(id))

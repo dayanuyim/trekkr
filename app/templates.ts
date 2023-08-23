@@ -246,10 +246,25 @@ export const settings = Handlebars.compile(`
 `);
 
 export const settingsSidebar = Handlebars.compile(`
-    <button class="btn-spy" title="Spy Mode"><i class="fas fa-crosshairs"></i></button>
+    <button class="spy-btn" title="Spy Mode"><i class="fas fa-crosshairs"></i></button>
 `);
 Handlebars.registerHelper("settingsSidebar", ()=>{
     return new Handlebars.SafeString(settingsSidebar());
+});
+
+export const settingsTopbar = Handlebars.compile(`
+    <span class="goto-panel">
+        <button class="goto-btn" title="Goto..."><i class="fas fa-person-walking-arrow-right"></i></button><!--
+     --><span class="goto-coord"><!--
+         --><span class="goto-coordsys">TWD67</span><!--
+         --><input type="text" class="goto-coord-x" placeholder="x"/><!--
+         --><input type="text" class="goto-coord-y" placeholder="y"/><!--
+         --><button>Go</button>
+        </span>
+    <span>
+`);
+Handlebars.registerHelper("settingsTopbar", ()=>{
+    return new Handlebars.SafeString(settingsTopbar());
 });
 
 export const main = Handlebars.compile(`
@@ -265,7 +280,8 @@ export const main = Handlebars.compile(`
     </div>
 
     <div class="settings collapsed"></div>
-    <div class="settings-side ol-control">{{settingsSidebar}}</div>
+    <div class="settings-bar side ol-control">{{settingsSidebar}}</div>
+    <div class="settings-bar top  ol-control">{{settingsTopbar}}</div>
 
     <div id="ctx-menu">{{ctxMenuItems}}</div>
 
