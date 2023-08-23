@@ -61,6 +61,7 @@ export class Settings{
     _toggle_btn: HTMLButtonElement;
     _opt_wpt_fontsize: HTMLInputElement;
     _opt_wpt_displays: HTMLInputElement[];
+    _opt_wpt_display_auto_zoom: HTMLButtonElement;
     _listeners = {};;
 
     get layers(){ return Array.from(this._base.querySelectorAll('#layer-grp li')).map(Layer.of); }
@@ -81,6 +82,7 @@ export class Settings{
         const options = this._base.querySelector('#options');
         this._opt_wpt_fontsize = options.querySelector<HTMLInputElement>('#wpt-fontsize');
         this._opt_wpt_displays = Array.from(options.querySelectorAll<HTMLInputElement>('input[name="wpt-display"]'));
+        this._opt_wpt_display_auto_zoom = options.querySelector<HTMLButtonElement>('#wpt-display-auto-zoom');
     }
 
     // ----------------------------------------------------------------
@@ -155,13 +157,16 @@ export class Settings{
         this._opt_wpt_displays.forEach(disp => {
             disp.checked = (disp.value == Opt.waypoint.display);
             disp.onchange = () => {   //checked
-                const conf = {display: disp.value};
-                if(disp.value == 'auto')
-                    conf['display_auto_zoom'] = Opt.zoom;
-                Opt.update(conf, 'waypoint');            // coockie
-                this._listeners['wptchanged']?.();       // map
+                this._opt_wpt_display_auto_zoom.disabled = disp.value != 'auto';
+                Opt.update({display: disp.value}, 'waypoint');            // coockie
+                this._listeners['wptchanged']?.();                        // map
             }
         });
+        this._opt_wpt_display_auto_zoom.disabled = !this._opt_wpt_displays.find(disp => disp.value == 'auto').checked;
+        this._opt_wpt_display_auto_zoom.onclick = e => {
+                Opt.update({display_auto_zoom: Opt.zoom}, 'waypoint');    // coockie
+                this._listeners['wptchanged']?.();                        // map
+        };
     }
 
     // ----------------------------------------------------------------

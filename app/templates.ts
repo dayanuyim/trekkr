@@ -215,7 +215,7 @@ export const settings = Handlebars.compile(`
                     <label for="wpt-fontsize">字型大小</label>
                     <input type="number" id="wpt-fontsize" name="wpt-fontsize" min="1" max="64" />
                 </div>
-                <!----------------------------- dispaly --------------------------------------->
+                <!----------------------------- display --------------------------------------->
                 <div class="opt-item">
                     <label>顯示方式</lable>
                     <div>
@@ -229,7 +229,8 @@ export const settings = Handlebars.compile(`
                         </div>
                         <div>
                             <input type="radio" id="wpt-display-auto" name="wpt-display" value="auto" />
-                            <label for="wpt-display-auto">Auto (使用目前Zoom Level)</label>
+                            <label for="wpt-display-auto">Auto</label>
+                            <button id="wpt-display-auto-zoom">使用目前縮放值</button>
                         </div>
                     </div>
                 </div>
