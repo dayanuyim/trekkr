@@ -64,7 +64,7 @@ export class Settings{
     _opt_wpt_display_auto_zoom: HTMLButtonElement;
     _listeners = {};;
 
-    get layers(){ return Array.from(this._base.querySelectorAll('#layer-grp li')).map(Layer.of); }
+    get layers(){ return Array.from(this._base.querySelectorAll('#setting-layers li')).map(Layer.of); }
     get opt_wpt_fontsize() { return Number(this._opt_wpt_fontsize.value); }
     set opt_wpt_fontsize(size) { this._opt_wpt_fontsize.value = size.toString(); }
 
@@ -72,17 +72,17 @@ export class Settings{
         el.innerHTML = templates.settings({ layers: Opt.layers });
         this.initElements(el);
         this.initLayers();
-        this.initOptions();
+        this.initOpts();
     }
 
     private initElements(el: HTMLElement){
         this._base = el;
         this._toggle_btn = this._base.querySelector<HTMLButtonElement>('button.btn-toggle');
 
-        const options = this._base.querySelector('#options');
-        this._opt_wpt_fontsize = options.querySelector<HTMLInputElement>('#wpt-fontsize');
-        this._opt_wpt_displays = Array.from(options.querySelectorAll<HTMLInputElement>('input[name="wpt-display"]'));
-        this._opt_wpt_display_auto_zoom = options.querySelector<HTMLButtonElement>('#wpt-display-auto-zoom');
+        const opts = this._base.querySelector('#setting-opts');
+        this._opt_wpt_fontsize = opts.querySelector<HTMLInputElement>('#wpt-fontsize');
+        this._opt_wpt_displays = Array.from(opts.querySelectorAll<HTMLInputElement>('input[name="wpt-display"]'));
+        this._opt_wpt_display_auto_zoom = opts.querySelector<HTMLButtonElement>('#wpt-display-auto-zoom');
     }
 
     // ----------------------------------------------------------------
@@ -142,7 +142,7 @@ export class Settings{
 
     // ----------------------------------------------------------------
 
-    private initOptions(){
+    private initOpts(){
         // wpt fontsize
         this.opt_wpt_fontsize = Opt.waypoint.fontsize;
         this._opt_wpt_fontsize.onchange = e => {

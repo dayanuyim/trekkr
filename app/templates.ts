@@ -186,11 +186,12 @@ export const settings = Handlebars.compile(`
     </div>
     <div class="settings-main">
         <div class="tab">
-            <button class="tablink" data-content="layer-grp">圖層</button>
-            <button class="tablink" data-content="options">設定</button>
+            <button class="tablink" data-content="setting-layers">圖層</button>
+            <button class="tablink" data-content="setting-opts">設定</button>
+            <button class="tablink" data-content="setting-about">說明</button>
         </div>
 
-        <div id="layer-grp" class="tabcontent">
+        <div class="tabcontent" id="setting-layers">
             <ul class="layer-legend">
                 {{#each layers}}
                     {{#if legend}}
@@ -207,7 +208,7 @@ export const settings = Handlebars.compile(`
             </ul>
         </div>
 
-        <div id="options" class="tabcontent">
+        <div class="tabcontent" id="setting-opts">
             <fieldset class="opt-group">
                 <legend class="opt-header">Waypoint名稱</legend>
                 <!----------------------------- font size --------------------------------------->
@@ -236,8 +237,20 @@ export const settings = Handlebars.compile(`
                 </div>
             </fieldset>
         </div>
+
+        <div class="tabcontent" id="setting-about">
+            <span>使用手冊</span> <a href="javascript:void(0)">建構中...</a>
+        </div>
+
     </div>
 `);
+
+export const settingsSidebar = Handlebars.compile(`
+    <button class="btn-spy" title="Spy Mode"><i class="fas fa-crosshairs"></i></button>
+`);
+Handlebars.registerHelper("settingsSidebar", ()=>{
+    return new Handlebars.SafeString(settingsSidebar());
+});
 
 export const main = Handlebars.compile(`
     <div id="pt-popup" class="ol-popup">
@@ -252,13 +265,9 @@ export const main = Handlebars.compile(`
     </div>
 
     <div class="settings collapsed"></div>
-    <div class="settings-side ol-control">
-        <button class="btn-spy" title="Spy Mode"><i class="fas fa-crosshairs"></i></button>
-    </div>
+    <div class="settings-side ol-control">{{settingsSidebar}}</div>
 
-    <div id="ctx-menu">
-        {{ctxMenuItems}}
-    </div>
+    <div id="ctx-menu">{{ctxMenuItems}}</div>
 
     <div id="map" class="ol-map-container"></div>
 `);
