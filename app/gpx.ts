@@ -179,39 +179,54 @@ export function mkWptFeature(coords, options?){
   }, options));
 }
 
+export function mkCrosshairWpt(coords, options?){
+  return mkWptFeature(coords, Object.assign({
+    name: '',
+    sym: getSymbol('crosshair').name,
+  }, options));
+}
+
+export function isCrosshairWpt(feature){
+  return !feature.get('name') && feature.get('sym') == getSymbol('crosshair').name;
+}
+
+function isWptFeature(feature){
+  return feature.getGeometry().getType() == 'Point' &&
+          !isCrosshairWpt(feature); //!! filter out the Crosshair wpt !!
+}
+
+function isTrkFeature(feature){
+  return feature.getGeometry().getType() == 'MultiLineString';
+}
+
+export function getGpxWpts(layer){
+  return layer.getSource().getFeatures().filter(isWptFeature);
+}
+
+export function getGpxTrks(layer){
+  return layer.getSource().getFeatures().filter(isTrkFeature);
+}
+
+export function getGpxWptsTrks(layer){
+  return layer.getSource().getFeatures().reduce((result,feature) => {
+    const idx = isWptFeature(feature)? 0:
+                isTrkFeature(feature)? 1: -1;
+    if(idx >= 0)
+      result[idx].push(feature);
+    return result;
+  }, [[],[]]);
+}
+
 export function findWptFeature(layer, time){
   const time_of = (coords) => coords[coords.length - 1];
-  return layer.getSource().getFeatures()
-          .filter(feature => feature.getGeometry().getType() == 'Point')              // is wpt
+  return getGpxWpts(layer)
           .filter(feature => feature.getGeometry().getLayout().endsWith('M'))         // has time element
           .find(feature => time_of(feature.getGeometry().getCoordinates()) == time);  // exactly match
 }
 
-export function getGpxWpts(layers){
-  return layers.flatMap(layer => layer.getSource().getFeatures())
-        .filter(feature => feature.getGeometry().getType() == 'Point');
-}
-
-export function getGpxTrks(layers){
-  return layers.flatMap(layer => layer.getSource().getFeatures())
-        .filter(feature => feature.getGeometry().getType() == 'MultiLineString');
-}
-
-export function getGpxWptsTrks(layers){
-  const wpts = [];
-  const trks = [];
-  layers.flatMap(layer => layer.getSource().getFeatures()).forEach(feature => {
-      switch (feature.getGeometry().getType()) {
-        case 'Point':           wpts.push(feature); break;
-        case 'MultiLineString': trks.push(feature); break;
-      }
-  });
-  return [wpts, trks];
-}
-
-export function genGpxText(layers){
+export function genGpxText(layer){
   // get wpts and trks features
-  const [wpts, trks ] = getGpxWptsTrks(layers);
+  const [wpts, trks ] = getGpxWptsTrks(layer);
 
   // create gpx by wpts and trks
   let node = createXML({ version: '1.0', encoding: "UTF-8" })
