@@ -243,7 +243,7 @@ html, body {
     z-index: 9;   /* prvent being covered by the map */
 }
 
-.settings-bar button:not(.active){
+.settings-bar .ctrl-btn:not(.active){
     /*background: rgba(64, 64, 64, .5);*/
     color: lightgray;
 }
@@ -264,21 +264,48 @@ html, body {
     display: inline-block;
 }
 
-.settings-bar.top .goto-panel input{
-    font-size: 16px;
-    border: none;
-    vertical-align: 1px;
-    text-align: right;
-    width: 8em;
-}
-
-.settings-bar.top .goto-coord *{
-    margin: 1px 2px;
-}
-
 .settings-bar.top /*.goto-panel:not(:hover)*/ .goto-btn:not(.active) + .goto-coord{
     display: none;
 }
+
+.settings-bar.top .goto-coord .goto-coordsys {
+    font-size: 95%;
+    outline: 0;
+    border: 0px;
+    color: gray;
+    background: rgba(255,255,255,.7);
+    padding: 3px 4px 2px 4px;;
+    vertical-align: 0px;
+    margin: 0 -3px;
+}
+.settings-bar.top .goto-coord .goto-coordsys:hover {
+    cursor: pointer;
+}
+
+.settings-bar.top .goto-coord input{
+    text-align: right;
+    font-size: 16px;
+    border: none;
+    border-radius: 2px;
+    outline: 0;
+    vertical-align: 0px;
+    padding: 3px 3px 1px 3px;
+    margin-right: 2px;
+    width: 7em;
+}
+.settings-bar.top .goto-coord input.short{
+    width: 5em;
+}
+
+.settings-bar.top .goto-coord input::placeholder{
+    color: #b0b0b0;
+    font-size: smaller;
+}
+
+.settings-bar.top .goto-coord-go {
+    /*vertical-align: -5px;*/
+}
+
 /*============= Map ======================*/
 
 .ol-map-container {

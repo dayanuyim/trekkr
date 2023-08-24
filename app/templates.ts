@@ -50,6 +50,19 @@ Handlebars.registerHelper("colorboardItems", (options)=>{
     }));
 });
 
+const coordsysMenu = Handlebars.compile(`
+    <select class="{{cls}}" dir="rtl">
+        {{selop ""         coordsys "-"       "disabled hidden"}}
+        {{selop "wgs84"    coordsys "WGS84"}}
+        {{selop "twd97"    coordsys "TWD97"}}
+        {{selop "twd67"    coordsys "TWD67"}}
+        {{selop "taipower" coordsys "電力座標"}}
+    </select>
+`);
+Handlebars.registerHelper("coordsysMenu", (cls, options)=>{
+    return new Handlebars.SafeString(coordsysMenu({cls}));
+});
+
 export const ptPopup = Handlebars.compile(`
     <div class="pt-trk-header">
         <div class="pt-trk-color color-item"></div><!--
@@ -67,13 +80,7 @@ export const ptPopup = Handlebars.compile(`
     <div class="pt-symboard glassmophism hidden"></div>
 
     <div class="pt-coord" data-pt-coord="{{coordinate}}">
-        <select class="pt-coord-title" dir="rtl">
-            {{selop ""         coordsys "-"  "disabled hidden"}}
-            {{selop "wgs84"    coordsys "WGS84"}}
-            {{selop "twd97"    coordsys "TWD97"}}
-            {{selop "twd67"    coordsys "TWD67"}}
-            {{selop "taipower" coordsys "電力座標"}}
-        </select>
+        {{coordsysMenu "pt-coord-title"}}
         <span class="pt-coord-value">N/A</span>
         <a class="pt-gmap" href="{{gmap coordinate}}" target="_blank">
             <img src="./images/googleg.png" alt="Google G">
@@ -247,7 +254,7 @@ export const settings = Handlebars.compile(`
 `);
 
 export const settingsSidebar = Handlebars.compile(`
-    <button class="spy-btn" title="Spy Mode"><i class="fas fa-crosshairs"></i></button>
+    <button class="ctrl-btn spy-btn" title="Spy Mode"><i class="fas fa-crosshairs"></i></button>
 `);
 Handlebars.registerHelper("settingsSidebar", ()=>{
     return new Handlebars.SafeString(settingsSidebar());
@@ -255,12 +262,12 @@ Handlebars.registerHelper("settingsSidebar", ()=>{
 
 export const settingsTopbar = Handlebars.compile(`
     <span class="goto-panel">
-        <button class="goto-btn" title="Goto..."><i class="fas fa-person-walking-arrow-right"></i></button><!--
+        <button class="ctrl-btn goto-btn" title="Goto..."><i class="fas fa-person-walking"></i></button><!--
      --><span class="goto-coord"><!--
-         --><span class="goto-coordsys">TWD67</span><!--
+         -->{{coordsysMenu "goto-coordsys"}}<!--
          --><input type="text" class="goto-coord-x" placeholder="x"/><!--
          --><input type="text" class="goto-coord-y" placeholder="y"/><!--
-         --><button>Go</button>
+         --><button class="goto-coord-go"><i class="fas fa-person-walking-arrow-right"></i></button>
         </span>
     <span>
 `);

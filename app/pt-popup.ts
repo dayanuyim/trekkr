@@ -14,9 +14,9 @@ import Opt from './opt';
 import * as templates from './templates';
 
 const toXY = {
-    twd67:    (coord) => toStringXY(toTWD67(coord)),
-    twd97:    (coord) => toStringXY(toTWD97(coord)),
     wgs84:    (coord) => toStringXY(toLonLat(coord), 7),
+    twd97:    (coord) => toStringXY(toTWD97(coord)),
+    twd67:    (coord) => toStringXY(toTWD67(coord)),
     taipower: (coord) => toTaipowerCoord(coord),
 };
 

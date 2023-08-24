@@ -87,7 +87,10 @@ function taipowerCoordToTWD67(coord)
                              'V': [X0-EW, Y0-2*EH], 'W': [X0, Y0-2*EH],
   };
 
-  // preprocess
+  // preprocess, coord should be a string or a one-dimensional array
+  if(Array.isArray(coord) && coord.length >= 1)
+    coord = coord[0];
+
   if(coord.length != 9 && coord.length != 11){
       console.error('invalide taipower coord: ' + coord)
       return undefined;
