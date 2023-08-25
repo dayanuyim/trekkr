@@ -1,5 +1,4 @@
 import Opt from './opt';
-import { Point } from 'ol/geom';
 import { fromLonLat } from 'ol/proj';
 import { fromTWD67, fromTWD97, fromTaipowerCoord, toTWD67, toTWD97, fromTWD67Sixcodes, fromTWD97Sixcodes,} from './coord';
 
@@ -53,15 +52,16 @@ export class Sidebar{
 //  TWD67_6  664880
 ///////////////////////////////////////////
 
-const parse_deg_or_decimal = s => {
-    const nums = s.split(/[^+-.0-9]/);
+const parse_deg_or_decimal = str => {
+    const nums = str.split(/[^+-.0-9]/);
     switch(nums.length) {
-        case 1: return Number(nums[0]);
+        case 1:
+            return Number(nums[0]);
         case 3:
             const [d, m, s] = nums;
             return Number(d) + m / 60.0 + s / 3600.0;
         default:
-            console.error(`invalid latlon format '${s}`)
+            console.error(`invalid latlon format '${str}'`)
             return undefined;
     }
 }
@@ -186,7 +186,7 @@ export class Topbar{
             this.goto_coordsys = Opt.goto.coordsys;
             set_coord_panel(this.goto_coordsys)
         }
-        this._goto_coordsys.onclick = e =>{
+        this._goto_coordsys.onchange = e =>{
             Opt.update({coordsys: this.goto_coordsys}, 'goto');
             set_coord_panel(this.goto_coordsys);
         }
