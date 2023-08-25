@@ -398,7 +398,8 @@ function getQueryParameters()
     //add the new
     this._crosshair_wpt = mkCrosshairWpt(coord);
     gpxsrc.addFeature(this._crosshair_wpt);
-    return this._crosshair_wpt;
+    //set ui
+    this._map.getView().fit(this._crosshair_wpt.getGeometry(), {maxZoom: 16});
   }
 
 /////////////////////// Context Menu ///////////////////////////

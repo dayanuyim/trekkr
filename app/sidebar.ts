@@ -120,7 +120,7 @@ export class Topbar{
             const coord = this.parseCoords(coordsys, this.goto_coord_x, this.goto_coord_y);
             if(coord){
                 const webcoord = coordsys_info[coordsys].from(coord);
-                this._listeners['goto']?.(new Point(webcoord));
+                this._listeners['goto']?.(webcoord);
             }
         }
     }
