@@ -163,8 +163,10 @@ export class Topbar{
     }
 
     private init(){
+        this._goto_btn.classList.toggle('active', Opt.goto.active);  //init
         this._goto_btn.onclick = e =>{
-            this._goto_btn.classList.toggle('active');
+            const active = this._goto_btn.classList.toggle('active');
+            Opt.update({active}, 'goto');
         };
 
         const set_coord_panel = (coordsys) => {
@@ -180,8 +182,14 @@ export class Topbar{
             this._goto_coord_y.classList.toggle('hidden', profile.field.num == 1);
         };
 
-        this._goto_coordsys.onclick = e => set_coord_panel(this.goto_coordsys);
-        set_coord_panel('wgs84');  //init;
+        if(Opt.goto.coordsys){   //init
+            this.goto_coordsys = Opt.goto.coordsys;
+            set_coord_panel(this.goto_coordsys)
+        }
+        this._goto_coordsys.onclick = e =>{
+            Opt.update({coordsys: this.goto_coordsys}, 'goto');
+            set_coord_panel(this.goto_coordsys);
+        }
 
         this._goto_coord_x.onkeyup =
         this._goto_coord_y.onkeyup = e => {if(e.key == 'Enter') this._goto_coord_go.click()};

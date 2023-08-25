@@ -21,6 +21,10 @@ class Opt{
         radius: 75,
         layer: "NLSC_PHOTO_MIX",
     };
+    goto = {
+        active: false,
+        coordsys: 'wgs84',
+    };
     waypoint = {
         fontsize: 16,
         display: "auto",
