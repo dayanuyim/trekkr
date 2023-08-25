@@ -11,7 +11,8 @@ import { platformModifierKeyOnly } from 'ol/events/condition';
 import { GeoJSON, IGC, KML, TopoJSON } from 'ol/format';
 import PhotoFormat from './format/Photo';
 
-import { GPXFormat, mkGpxLayer, genGpxText, mkWptFeature, findWptFeature, getGpxWpts, setSymByRules, estimateCoords } from './gpx';
+import { GPXFormat, mkGpxLayer, genGpxText,setSymByRules, estimateCoords,
+  getGpxWpts, mkWptFeature, findWptFeature, mkCrosshairWpt, isCrosshairWpt } from './gpx';
 import PtPopupOverlay from './pt-popup';
 import Opt from './opt';
 import * as LayerRepo from './layer-repo';
@@ -40,6 +41,7 @@ function findLayerByFeature(map, feature){
 export class AppMap{
   _map: Map
   _ctxmenu_coord;
+  _crosshair_wpt;
 
   public constructor(target){
     this.init(target);
@@ -386,6 +388,19 @@ function getQueryParameters()
     });
   }
 
+//----------------------------------------------------------------//
+
+  public setCrosshairWpt(coord){
+    const gpxsrc = this.getGpxLayer().getSource();
+    //remove the old
+    if(this._crosshair_wpt && isCrosshairWpt(this._crosshair_wpt))
+      gpxsrc.removeFeature(this._crosshair_wpt);
+    //add the new
+    this._crosshair_wpt = mkCrosshairWpt(coord);
+    gpxsrc.addFeature(this._crosshair_wpt);
+    return this._crosshair_wpt;
+  }
+
 /////////////////////// Context Menu ///////////////////////////
 
   public setCtxMenu(menu: HTMLElement) {
@@ -414,10 +429,10 @@ function getQueryParameters()
     });
 
     ctx.setItem(".item-save-gpx", (el) => {
-      genGpxText([this.getGpxLayer()]);
+      genGpxText(this.getGpxLayer());
     });
     ctx.setItem(".item-apply-sym", (el) => {
-      getGpxWpts([this.getGpxLayer()]).forEach(setSymByRules);
+      getGpxWpts(this.getGpxLayer()).forEach(setSymByRules);
     });
   }
 
