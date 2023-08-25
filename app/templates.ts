@@ -267,8 +267,7 @@ export const settingsTopbar = Handlebars.compile(`
         <button class="ctrl-btn goto-btn" title="Goto..."><i class="fas fa-person-walking"></i></button><!--
      --><span class="goto-coord"><!--
          -->{{coordsysMenu "goto-coordsys"}}<!--
-         --><input type="text" class="goto-coord-x" placeholder="x"/><!--
-         --><input type="text" class="goto-coord-y" placeholder="y"/><!--
+         --><input type="text" class="goto-coord" placeholder="X, Y"/><!--
          --><button class="goto-coord-go"><i class="fas fa-person-walking-arrow-right"></i></button>
         </span>
     <span>
