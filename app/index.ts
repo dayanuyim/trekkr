@@ -55,6 +55,7 @@ function main(main_el: HTMLElement)
     .setListener('click', () => map.render());
 
   const topbar = new Topbar(main_el.querySelector('.settings-bar.top'))
+    .setListener('getcenter', () => map.getView().getCenter())
     .setListener('goto', (coord) => map.setCrosshairWpt(coord));
 
   const settings = new Settings(main_el.querySelector('.settings'))

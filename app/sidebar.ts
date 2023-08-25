@@ -1,7 +1,7 @@
 import Opt from './opt';
 import { Point } from 'ol/geom';
 import { fromLonLat } from 'ol/proj';
-import { fromTWD67, fromTWD97, fromTaipowerCoord } from './coord';
+import { fromTWD67, fromTWD97, fromTaipowerCoord, toTWD67, toTWD97, fromTWD67Sixcodes, fromTWD97Sixcodes,} from './coord';
 
 export class Sidebar{
 
@@ -44,22 +44,89 @@ export class Sidebar{
     }
 }
 
-const coordsys_info = {
-    "wgs84": {
-        placeholder: ['(經度)120.926126', '(緯度)23 33 32.45'],
+///////////////////////////////////////////
+//  WGS84    121.1699175, 24.2955986
+//  TWD97    267248, 2687771
+//  TWD67    266419, 2687977
+//  TAIPOWER H2075EE1797
+//  TWD97_6  672878
+//  TWD67_6  664880
+///////////////////////////////////////////
+
+const parse_deg_or_decimal = s => {
+    const nums = s.split(/[^+-.0-9]/);
+    switch(nums.length) {
+        case 1: return Number(nums[0]);
+        case 3:
+            const [d, m, s] = nums;
+            return Number(d) + m / 60.0 + s / 3600.0;
+        default:
+            console.error(`invalid latlon format '${s}`)
+            return undefined;
+    }
+}
+const coordsys_profiles = {
+    wgs84: {
+        placeholder: ['經度 120.926126', '緯度 23 33 32.45'],
+        field: {
+            num: 2,
+            width: '7em',
+        },
+        parse: (x, y) => {
+            x = parse_deg_or_decimal(x);
+            y = parse_deg_or_decimal(y);
+            return (x && y)? [x, y]: undefined;
+        },
         from: fromLonLat,
     },
-    "twd97": {
-        placeholder: ['(X)242459', '(Y)2606189'],
+    twd97: {
+        placeholder: ['X 242459', 'Y 2606189'],
+        field: {
+            num: 2,
+            width: '5em',
+        },
+        parse: (x, y) => [Number(x), Number(y)],
         from: fromTWD97,
+        to: toTWD97,
     },
-    "twd67": {
-        placeholder: ['(X)241630', '(Y)2606394'],
+    twd67: {
+        placeholder: ['X 241630', 'Y 2606394'],
+        field: {
+            num: 2,
+            width: '5em',
+        },
+        parse: (x, y) => [Number(x), Number(y)],
         from: fromTWD67,
+        to: toTWD67,
     },
-    "taipower": {
+    taipower: {
         placeholder: ['K8912ED3904'],
+        field: {
+            num: 1,
+            width: '7em',
+        },
+        parse: x => x,
         from: fromTaipowerCoord,
+    },
+    twd97_6: {
+        base_coordsys: 'twd97',
+        placeholder: ['六碼 424061'],
+        field: {
+            num: 1,
+            width: '5em',
+        },
+        parse: x => x,
+        from: fromTWD97Sixcodes,
+    },
+    twd67_6: {
+        base_coordsys: 'twd67',
+        placeholder: ['六碼 416063'],
+        field: {
+            num: 1,
+            width: '5em',
+        },
+        parse: x => x,
+        from: fromTWD67Sixcodes,
     },
 }
 
@@ -101,62 +168,46 @@ export class Topbar{
         };
 
         const set_coord_panel = (coordsys) => {
-            this._goto_coord_y.classList.toggle('hidden', coordsys == 'taipower');
+            const profile = coordsys_profiles[coordsys];
 
-            const [xtext, ytext] = coordsys_info[coordsys].placeholder;
+            const [xtext, ytext] = profile.placeholder;
             this._goto_coord_x.placeholder = xtext;
             this._goto_coord_y.placeholder = ytext;
 
-            const is_tm2 = ['twd67', 'twd97'].includes(coordsys);
-            this._goto_coord_x.classList.toggle('short', is_tm2);
-            this._goto_coord_y.classList.toggle('short', is_tm2);
+            this._goto_coord_x.style.width =
+            this._goto_coord_y.style.width = profile.field.width;
+
+            this._goto_coord_y.classList.toggle('hidden', profile.field.num == 1);
         };
 
         this._goto_coordsys.onclick = e => set_coord_panel(this.goto_coordsys);
         set_coord_panel('wgs84');  //init;
 
+        this._goto_coord_x.onkeyup =
+        this._goto_coord_y.onkeyup = e => {if(e.key == 'Enter') this._goto_coord_go.click()};
+
         this._goto_coord_go.onclick = e => {
             const coordsys = this.goto_coordsys;
-            const coord = this.parseCoords(coordsys, this.goto_coord_x, this.goto_coord_y);
-            if(coord){
-                const webcoord = coordsys_info[coordsys].from(coord);
-                this._listeners['goto']?.(webcoord);
+            const x = this.goto_coord_x.trim();
+            const y = this.goto_coord_y.trim();
+            const xy = coordsys_profiles[coordsys].parse(x, y);
+            if(xy){
+                const webcoord = this.fromXY(coordsys, xy);
+                if(webcoord)
+                    this._listeners['goto']?.(webcoord);
             }
         }
     }
 
-    private parseCoords(coordsys, x, y){
-        x = x.trim();
-        y = y.trim();
-        if(!x || !y) return undefined;
-
-        const to_num = s => {
-            const nums = s.split(/[^+-.0-9]/);
-            switch(nums.length) {
-                case 1: return Number(nums[0]);
-                case 3:
-                    const [d, m, s] = nums;
-                    return Number(d) + m / 60.0 + s / 3600.0;
-                default:
-                    console.error(`invalid latlon format '${s}`)
-                    return undefined;
-            }
+    private fromXY(coordsys, xy){
+        const profile = coordsys_profiles[coordsys];
+        if(profile.base_coordsys){
+            const center = this._listeners['getcenter']?.();                  // webcoord center
+            if(!center) return undefined;
+            const ref = coordsys_profiles[profile.base_coordsys].to(center);  // to base coordsys, as ref
+            return profile.from(ref, xy)
         }
-
-        switch(coordsys){
-            case 'wgs84':
-                [x, y] = [to_num(x), to_num(y)];
-                if(!x || !y) return undefined;
-                return [x, y];
-            case 'twd97':
-            case 'twd67':
-                return [Number(x), Number(y)];
-            case 'taipower':
-                return [x, undefined];   //only one string
-            default:
-                console.error(`unknown coordsys ${coordsys} for coordinates (${x},${y})`);
-                return [x, y];
-        }
+        return profile.from(xy);
     }
 
     public setListener(event, listener){

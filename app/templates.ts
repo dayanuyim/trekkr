@@ -57,6 +57,8 @@ const coordsysMenu = Handlebars.compile(`
         {{selop "twd97"    coordsys "TWD97"}}
         {{selop "twd67"    coordsys "TWD67"}}
         {{selop "taipower" coordsys "電力座標"}}
+        {{selop "twd97_6"  coordsys "&#x3285;TWD97"}}
+        {{selop "twd67_6"  coordsys "&#x3285;TWD67"}}
     </select>
 `);
 Handlebars.registerHelper("coordsysMenu", (cls, options)=>{
@@ -196,7 +198,7 @@ export const settings = Handlebars.compile(`
         <div class="tab">
             <button class="tablink" data-content="setting-layers">圖層</button>
             <button class="tablink" data-content="setting-opts">設定</button>
-            <button class="tablink" data-content="setting-about">說明</button>
+            <button class="tablink" data-content="setting-about">關於</button>
         </div>
 
         <div class="tabcontent" id="setting-layers">
