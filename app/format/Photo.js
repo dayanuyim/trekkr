@@ -6,7 +6,7 @@ import FeatureFormat from 'ol/format/Feature.js';
 import * as exif from 'exifreader'
 import { transform } from 'ol/proj';
 import { WGS84 } from '../coord';
-import { mkWptFeature } from '../gpx';
+import { olWptFeature } from '../gpx';
 import { epochseconds } from '../lib/utils';
 
 /**
@@ -111,7 +111,7 @@ class Photo extends FeatureFormat {
 
     //make feature from coords
     if(coords){
-      const feature = mkWptFeature(coords, {
+      const feature = olWptFeature(coords, {
         name: this._meta_name(meta) || 'WPT',
         image: image_obj(),
       });

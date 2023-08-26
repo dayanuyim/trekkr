@@ -11,13 +11,12 @@ import { Vector as VectorSource } from 'ol/source';
 import { Icon as IconStyle, Circle as CircleStyle, Fill, Stroke, Style, Text } from 'ol/style';
 import { GPX } from 'ol/format';
 import { Feature } from 'ol';
-import { Point } from 'ol/geom';
+import { Geometry, Point } from 'ol/geom';
 import { toLonLat } from 'ol/proj';
 import { create as createXML } from 'xmlbuilder2';
 
 import Opt from './opt';
 import { def_symbol, getSymbol, matchRules } from './sym'
-import { saveTextAsFile } from './lib/dom-utils';
 import { getEpochOfCoords, getXYZMOfCoords } from './common';
 import { epochseconds, binsearchIndex } from './lib/utils';
 
@@ -131,7 +130,7 @@ export class GPXFormat extends GPX {
     super(Object.assign({
       readExtensions: (feat, node) => {
         //set color for track if any
-        if(node && feat.getGeometry().getType() ==  'MultiLineString') {
+        if(node && isTrkFeature(feat)) {
           const color = this._getTrackColor(node);
           feat.set('color', color);
         }
@@ -159,7 +158,7 @@ export class GPXFormat extends GPX {
 
 // @source_props should contain 'features' or 'url' for local-drag-n-drop or remote gpx files.
 // no @source_props results an empty gpx layer.
-export function mkGpxLayer(source_props?, layer_props?){
+export function olGpxLayer(source_props?, layer_props?){
     return new VectorLayer(Object.assign({
       source: new VectorSource(Object.assign({
         format: new GPXFormat(),
@@ -169,7 +168,7 @@ export function mkGpxLayer(source_props?, layer_props?){
 }
 
 //@coords is openlayer coords [x, y, ele, time], ele and tiem is optional.
-export function mkWptFeature(coords, options?){
+export function olWptFeature(coords, options?){
   coords = getXYZMOfCoords(coords);
   if(!coords[3]) coords[3] = epochseconds(new Date());
   return new Feature(Object.assign({
@@ -179,14 +178,12 @@ export function mkWptFeature(coords, options?){
   }, options));
 }
 
-export function mkCrosshairWpt(coords, options?){
-  return mkWptFeature(coords, Object.assign({
-    name: '',
-    sym: getSymbol('crosshair').name,
-  }, options));
+export function setSymByRules(wpt: Feature<Point>) {
+  const symbol = matchRules(wpt.get('name'));
+  if (symbol) wpt.set('sym', symbol.name);
 }
 
-export function isCrosshairWpt(feature){
+function isCrosshairWpt(feature){
   return !feature.get('name') && feature.get('sym') == getSymbol('crosshair').name;
 }
 
@@ -199,59 +196,145 @@ function isTrkFeature(feature){
   return feature.getGeometry().getType() == 'MultiLineString';
 }
 
-export function getGpxWpts(layer){
-  return layer.getSource().getFeatures().filter(isWptFeature);
+export class GpxLayer {
+  static mkCrosshairWpt(coords, options?){
+    return olWptFeature(coords, Object.assign({
+      name: '',
+      sym: getSymbol('crosshair').name,
+    }, options));
+  }
+
+  _layer;
+  _crosshair_wpt;
+  get underlying() { return this._layer; }
+
+  public constructor(layer: VectorLayer<VectorSource<Geometry>>){
+    this._layer = layer;
+  }
+
+  //////////////////////////////////////
+  public getSource() { return this._layer.getSource(); }
+  //////////////////////////////////////
+
+  public addWaypoint(wpt)    { this.getSource().addFeature(wpt);}
+  public removeWaypoint(wpt) { this.getSource().removeFeature(wpt);}
+  public addTrack(trk)       { this.getSource().addFeature(trk);}
+  public removeTrack(trk)    { this.getSource().removeFeature(trk);}
+
+  public createWaypoint(coord, options?){
+    this.addWaypoint(olWptFeature(coord, options));
+  }
+
+  public getWaypoints() {
+    return this._layer.getSource().getFeatures().filter(isWptFeature);
+  }
+
+  public getTracks() {
+    return this._layer.getSource().getFeatures().filter(isTrkFeature);
+  }
+
+  private getWptsTrks(){
+    return this._layer.getSource().getFeatures().reduce((result,feature) => {
+      const idx = isWptFeature(feature)? 0:
+                  isTrkFeature(feature)? 1: -1;
+      if(idx >= 0)
+        result[idx].push(feature);
+      return result;
+    }, [[],[]]);
+  }
+
+  public setCrosshairWpt(coord){
+    //remove the old
+    if(this._crosshair_wpt && isCrosshairWpt(this._crosshair_wpt))
+      this.removeWaypoint(this._crosshair_wpt);
+    //add the new
+    this._crosshair_wpt = GpxLayer.mkCrosshairWpt(coord);
+    this.addWaypoint(this._crosshair_wpt);
+    return this._crosshair_wpt;
+  }
+
+  public findWaypoint(time){
+    const time_of = (coords) => coords[coords.length - 1];
+    return this.getWaypoints()
+            .filter(feature => feature.getGeometry().getLayout().endsWith('M'))         // has time element
+            .find(feature => time_of(feature.getGeometry().getCoordinates()) == time);  // exactly match
+  }
+
+  public estimateCoords(time) {
+    const time_of = (coords) => coords[coords.length - 1];
+
+    return this._layer.getSource().getFeatures()
+      .filter(isTrkFeature)                                 // is track
+      .map(feature => feature.getGeometry())                // get geom
+      .filter(geom => geom.getLayout().endsWith('M'))       // has time element
+      .flatMap(geom => geom.getCoordinates())               // cooordinates is the array of trekseg
+      .filter(trkseg => {                                   // time in range
+        const first = trkseg[0];
+        const last = trkseg[trkseg.length - 1];
+        return time_of(first) <= time && time <= time_of(last);
+      })
+      .map(trkseg => {                                      // interpolation
+        //const idx = trkseg.findIndex((coords) => time_of(coords) >= time);
+        const idx = binsearchIndex(trkseg, (coords, i, arr) => {
+          const t = time_of(coords);
+          return (time >= t) ? (time - t) :
+            (time > time_of(arr[i - 1])) ? 0 : -1; // i should be larger than 0 here
+        });
+        // time == time(idx), or time(idx-1) < time < time(idx)
+        const right = trkseg[idx];
+        if (time_of(right) == time)
+          return right;
+        const left = trkseg[idx - 1];
+        return interpCoords(left, right, time);
+      })
+      .find(coords => !!coords);       //return the first, otherwise undefined
+  }
+
+  public genText(){
+    // get wpts and trks features
+    const [wpts, trks ] = this.getWptsTrks();
+
+    // create gpx by wpts and trks
+    let node = createXML({ version: '1.0', encoding: "UTF-8" })
+      .ele('gpx', {
+        creator: "trekkr",
+        version: "1.1",
+        xmlns: "http://www.topografix.com/GPX/1/1",
+        'xmlns:xsi': "http://www.w3.org/2001/XMLSchema-instance",
+        'xsi:schemaLocation': "http://www.topografix.com/GPX/1/1 http://www.topografix.com/GPX/1/1/gpx.xsd",
+      });
+      addGpxMetadata(node, wpts.concat(trks));
+      addGpxWaypoints(node, wpts);
+      addGpxTracks(node, trks)
+    .up();
+
+    // convert the XML tree to string
+    return node.end({ prettyPrint: true, indent: '\t' });
+  }
+
+}//class end
+
+function interpCoords(c1, c2, time){
+  const t1 = c1[c1.length - 1];
+  const t2 = c2[c2.length - 1];
+  const ratio = (time - t1) / (t2 - t1)
+  const v = (v1, v2) => (v2 - v1) * ratio + v1;
+
+  const x = v(c1[0], c2[0]);
+  const y = v(c1[1], c2[1]);
+  if(Math.max(c1.length, c2.length) < 4)
+    return [x, y, null, time]
+
+  const ele = v(c1[2], c2[2]);
+  return [x, y, ele, time]
 }
 
-export function getGpxTrks(layer){
-  return layer.getSource().getFeatures().filter(isTrkFeature);
-}
-
-export function getGpxWptsTrks(layer){
-  return layer.getSource().getFeatures().reduce((result,feature) => {
-    const idx = isWptFeature(feature)? 0:
-                isTrkFeature(feature)? 1: -1;
-    if(idx >= 0)
-      result[idx].push(feature);
-    return result;
-  }, [[],[]]);
-}
-
-export function findWptFeature(layer, time){
-  const time_of = (coords) => coords[coords.length - 1];
-  return getGpxWpts(layer)
-          .filter(feature => feature.getGeometry().getLayout().endsWith('M'))         // has time element
-          .find(feature => time_of(feature.getGeometry().getCoordinates()) == time);  // exactly match
-}
-
-export function genGpxText(layer){
-  // get wpts and trks features
-  const [wpts, trks ] = getGpxWptsTrks(layer);
-
-  // create gpx by wpts and trks
-  let node = createXML({ version: '1.0', encoding: "UTF-8" })
-    .ele('gpx', {
-      creator: "trekkr",
-      version: "1.1",
-      xmlns: "http://www.topografix.com/GPX/1/1",
-      'xmlns:xsi': "http://www.w3.org/2001/XMLSchema-instance",
-      'xsi:schemaLocation': "http://www.topografix.com/GPX/1/1 http://www.topografix.com/GPX/1/1/gpx.xsd",
-    });
-    addGpxMetadata(node, wpts.concat(trks));
-    addGpxWaypoints(node, wpts);
-    addGpxTracks(node, trks)
-  .up();
-
-  // convert the XML tree to string
-  const xml = node.end({ prettyPrint: true, indent: '\t' });
-  saveTextAsFile(xml, 'your.gpx', 'application/gpx+xml');
-  //console.log(xml);
-}
+//----------------------- utils for Generating Gpx Text-----------------------------------------//
 
 // decimal degrees 6 ~= 0.1 metres precision, ref https://en.wikipedia.org/wiki/Decimal_degrees
 const fmt_coord = (n) => n.toFixed(6);
 const fmt_ele = (n) => n.toFixed(1);
-const fmt_time = (sec?) => (sec? new Date(sec*1000): new Date()).toISOString().split('.')[0]+'Z';
+const fmt_time = (sec?) => (sec? new Date(sec*1000): new Date()).toISOString().split('.')[0] + 'Z';
 const cmp_wpt_time = (w1, w2) => {
   const time = wpt => {
     const coords = wpt.getGeometry().getCoordinates();
@@ -279,7 +362,7 @@ function addGpxMetadata(node, features){
       .ele('text').txt("Trekkr").up()
     .up()
     .ele('time').txt(fmt_time()).up();
-    if(bounds) node.ele('bounds', bounds).up()
+    if (bounds) node.ele('bounds', bounds).up()
   return node.up();
 }
 
@@ -290,10 +373,10 @@ function getBounds(features){
   const [minx, miny, maxx, maxy] = features
     .map(f => f.getGeometry().getExtent())
     .reduce(([minx1, miny1, maxx1, maxy1], [minx2, miny2, maxx2, maxy2]) => [
-        Math.min(minx1, minx2),
-        Math.min(miny1, miny2),
-        Math.max(maxx1, maxx2),
-        Math.max(maxy1, maxy2),
+      Math.min(minx1, minx2),
+      Math.min(miny1, miny2),
+      Math.max(maxx1, maxx2),
+      Math.max(maxy1, maxy2),
     ], [Infinity, Infinity, -Infinity, -Infinity]);
   const [minlon, minlat] = toLonLat([minx, miny]).map(fmt_coord);
   const [maxlon, maxlat] = toLonLat([maxx, maxy]).map(fmt_coord);
@@ -301,23 +384,23 @@ function getBounds(features){
 }
 
 // @node is a gpx node
-function addGpxWaypoints(node, wpts){
+function addGpxWaypoints(node, wpts) {
   wpts.sort(cmp_wpt_time).forEach(wpt => {
     const geom = wpt.getGeometry();
-    const [x, y, ele, time ] = getXYZMOfCoords(geom.getCoordinates(), geom.getLayout());
+    const [x, y, ele, time] = getXYZMOfCoords(geom.getCoordinates(), geom.getLayout());
     const [lon, lat] = toLonLat([x, y]).map(fmt_coord);
     const name = wpt.get('name');
     const sym = wpt.get('sym');
     const cmt = wpt.get('cmt');
     const desc = wpt.get('desc');
 
-    node = node.ele('wpt', {lat, lon});
-    if(ele)  node.ele('ele').txt(fmt_ele(ele)).up();
-    if(time) node.ele('time').txt(fmt_time(time)).up();
-    if(name) node.ele('name').txt(name).up();
-    if(sym)  node.ele('sym').txt(sym).up();
-    if(cmt)  node.ele('cmt').txt(cmt).up();
-    if(desc) node.ele('desc').txt(desc).up();
+    node = node.ele('wpt', { lat, lon });
+    if (ele)  node.ele('ele').txt(fmt_ele(ele)).up();
+    if (time) node.ele('time').txt(fmt_time(time)).up();
+    if (name) node.ele('name').txt(name).up();
+    if (sym)  node.ele('sym').txt(sym).up();
+    if (cmt)  node.ele('cmt').txt(cmt).up();
+    if (desc) node.ele('desc').txt(desc).up();
     /*
     //@@! the extensions has any practical use?
     doc.ele('extensions')
@@ -332,13 +415,13 @@ function addGpxWaypoints(node, wpts){
 }
 
 // @node is a gpx node
-function addGpxTracks(node, trks){
+function addGpxTracks(node, trks) {
   trks.sort(cmp_trk_time).forEach(trk => {
     const name = trk.get('name');
     const color = trk.get('color');
     node = node.ele('trk');
-    if(name) node.ele('name').txt(name).up();
-    if(color)
+    if (name) node.ele('name').txt(name).up();
+    if (color)
       node.ele('extensions')
         .ele('gpxx:TrackExtension', { 'xmlns:gpxx': 'http://www.garmin.com/xmlschemas/GpxExtensions/v3' })
           .ele('gpxx:DisplayColor').txt(color).up()
@@ -349,11 +432,11 @@ function addGpxTracks(node, trks){
     trk.getGeometry().getCoordinates().forEach(trkseg => {
       node = node.ele('trkseg');
       trkseg.forEach(coords => {
-        const [x, y, ele, time ]= getXYZMOfCoords(coords, layout);
+        const [x, y, ele, time] = getXYZMOfCoords(coords, layout);
         const [lon, lat] = toLonLat([x, y]).map(fmt_coord);
-        node = node.ele('trkpt', {lat, lon});
-        if(ele)  node.ele('ele').txt(fmt_ele(ele)).up();
-        if(time) node.ele('time').txt(fmt_time(time)).up();
+        node = node.ele('trkpt', { lat, lon });
+        if (ele)  node.ele('ele').txt(fmt_ele(ele)).up();
+        if (time) node.ele('time').txt(fmt_time(time)).up();
         node = node.up();
       });
       node = node.up();
@@ -362,54 +445,4 @@ function addGpxTracks(node, trks){
     node = node.up(); //trk node
   });
   return node;
-}
-
-export function setSymByRules(wpt: Feature<Point>) {
-  const symbol = matchRules(wpt.get('name'));
-  if (symbol) wpt.set('sym', symbol.name);
-}
-
-export function estimateCoords(layer, time){
-  const time_of = (coords) => coords[coords.length - 1];
-
-  return layer.getSource().getFeatures()
-          .map(feature => feature.getGeometry())                // get geom
-          .filter(geom => geom.getType() == 'MultiLineString')  // is track
-          .filter(geom => geom.getLayout().endsWith('M'))       // has time element
-          .flatMap(geom => geom.getCoordinates())               // cooordinates is the array of trekseg
-          .filter(trkseg => {                                   // time in range
-            const first = trkseg[0];
-            const last = trkseg[trkseg.length - 1];
-            return time_of(first) <= time && time <= time_of(last);
-          })
-          .map(trkseg => {                                      // interpolation
-            //const idx = trkseg.findIndex((coords) => time_of(coords) >= time);
-            const idx = binsearchIndex(trkseg, (coords, i, arr) => {
-              const t = time_of(coords);
-              return (time >= t)? (time - t):
-                     (time > time_of(arr[i-1]))? 0: -1; // i should be larger than 0 here
-            });
-            // time == time(idx), or time(idx-1) < time < time(idx)
-            const right = trkseg[idx];
-            if(time_of(right) == time)
-              return right;
-            const left = trkseg[idx -1];
-            return interpCoords(left, right, time);
-          })
-          .find(coords => !!coords);       //return the first, otherwise undefined
-}
-
-function interpCoords(c1, c2, time){
-  const t1 = c1[c1.length - 1];
-  const t2 = c2[c2.length - 1];
-  const ratio = (time - t1) / (t2 - t1)
-  const v = (v1, v2) => (v2 - v1) * ratio + v1;
-
-  const x = v(c1[0], c2[0]);
-  const y = v(c1[1], c2[1]);
-  if(Math.min(c1.length, c2.length) == 3)
-    return [x, y, null, time]
-
-  const ele = v(c1[2], c2[2]);
-  return [x, y, ele, time]
 }

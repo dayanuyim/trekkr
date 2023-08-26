@@ -6,10 +6,10 @@ import {toStringXY} from 'ol/coordinate';
 import {toLonLat} from 'ol/proj';
 import {toTWD97, toTWD67, toTaipowerCoord} from './coord';
 
-import * as moment from 'moment-timezone';
+//import * as moment from 'moment-timezone';
 import { getSymbol, matchRules, symbol_inv } from './sym'
 import { getEleByCoords, getEleOfCoords, setEleOfCoords, getLocalTimeByCoords, gmapUrl } from './common'
-import { mkWptFeature, def_trk_color} from './gpx';
+import { olWptFeature, def_trk_color} from './gpx';
 import Opt from './opt';
 import * as templates from './templates';
 
@@ -339,7 +339,7 @@ export default class PtPopupOverlay extends Overlay{
                 sym: "City (Small)",
             });
             */
-            const wpt = mkWptFeature(this._data.coordinates, {sym: "City (Small)"});
+            const wpt = olWptFeature(this._data.coordinates, {sym: "City (Small)"});
             this.popContent(wpt);
             if(this._listener_mkwpt)
                 this._listener_mkwpt(wpt);

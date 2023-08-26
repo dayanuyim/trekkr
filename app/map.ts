@@ -7,18 +7,18 @@ import { Tile as TileLayer, Vector as VectorLayer } from 'ol/layer';
 import { Vector as VectorSource, TileJSON, XYZ, OSM } from 'ol/source';
 import { getRenderPixel } from 'ol/render';
 import { platformModifierKeyOnly } from 'ol/events/condition';
+import { Geometry } from 'ol/geom';
 
 import { GeoJSON, IGC, KML, TopoJSON } from 'ol/format';
 import PhotoFormat from './format/Photo';
 
-import { GPXFormat, mkGpxLayer, genGpxText,setSymByRules, estimateCoords,
-  getGpxWpts, mkWptFeature, findWptFeature, mkCrosshairWpt, isCrosshairWpt } from './gpx';
+import { olGpxLayer, GpxLayer, GPXFormat, setSymByRules} from './gpx';
 import PtPopupOverlay from './pt-popup';
 import Opt from './opt';
 import * as LayerRepo from './layer-repo';
 import { gmapUrl} from './common';
 import { CtxMenu } from './ctx-menu';
-import { Geometry } from 'ol/geom';
+import { saveTextAsFile } from './lib/dom-utils';
 
 /*
 //TODO: better way to do this?
@@ -40,8 +40,8 @@ function findLayerByFeature(map, feature){
 
 export class AppMap{
   _map: Map
+  _gpx_layer: GpxLayer;   //a gpx adapter for VectorLayer
   _ctxmenu_coord;
-  _crosshair_wpt;
 
   public constructor(target){
     this.init(target);
@@ -82,19 +82,20 @@ export class AppMap{
       ],
     });
 
-    photo_format.onlookupcoords = (time) => estimateCoords(this.getGpxLayer(), time);
-    photo_format.onfeatureexists = (time) => findWptFeature(this.getGpxLayer(), time);
+    photo_format.onlookupcoords = (time) => this._gpx_layer.estimateCoords(time);
+    photo_format.onfeatureexists = (time) => this._gpx_layer.findWaypoint(time);
 
     // pseudo gpx layer
-    this.addLayerWithInteraction(mkGpxLayer())
+    const layer = olGpxLayer();
+    this._gpx_layer = new GpxLayer(layer);
+    this.addLayerWithInteraction(layer)
 
     //create layer from features, and add it to the map
     drag_interaciton.on('addfeatures', (e) => {
       const features = e.features.filter(f => f instanceof Feature).map(f => f as Feature); //filter out RenderFeature, what is that?
-      const src = this.getGpxLayer().getSource();
-      src.addFeatures(features);
-      this._map.getView().fit(src.getExtent(), { maxZoom: 16 });
-      //const layer = mkGpxLayer({features: e.features});
+      this._gpx_layer.getSource().addFeatures(features);
+      this._map.getView().fit(this._gpx_layer.getSource().getExtent(), { maxZoom: 16 });
+      //const layer = olLayer({features: e.features});
       //addLayerWithInteraction(map, layer);
       //map.getView().fit(layer.getSource().getExtent(), { maxZoom: 16 });
     });
@@ -133,9 +134,9 @@ function getQueryParameters()
 
     // when pt-popup overlay make or remove a wpt feature
     const pt_popup = map.getOverlayById('pt-popup') as PtPopupOverlay;
-    pt_popup.onmkwpt = (wpt) => this.getGpxLayer().getSource().addFeature(wpt);
+    pt_popup.onmkwpt = (wpt) => this._gpx_layer.getSource().addFeature(wpt);
     pt_popup.onrmwpt = (wpt) => {
-      this.getGpxLayer().getSource().removeFeature(wpt);
+      this._gpx_layer.getSource().removeFeature(wpt);
       pt_popup.hide(); //close popup
     }
 
@@ -248,15 +249,15 @@ function getQueryParameters()
     return this.indexOfSpyLayer() + 1;  //after spy layer
   }
 
+  private getGpxLayer() {
+    return this._map.getLayers().item(this.indexOfPseudoGpxLayer()) as VectorLayer<VectorSource<Geometry>>;
+  }
+
   /*
   function getGpxLayers(map){
       return map.getLayers().getArray().slice(indexOfPseudoGpxLayer());
   }
   */
-
-  private getGpxLayer() {
-    return this._map.getLayers().item(this.indexOfPseudoGpxLayer()) as VectorLayer<VectorSource<Geometry>>;
-  }
 
   private addLayerWithInteraction(layer) {
     this._map.addLayer(layer);
@@ -391,15 +392,8 @@ function getQueryParameters()
 //----------------------------------------------------------------//
 
   public setCrosshairWpt(coord){
-    const gpxsrc = this.getGpxLayer().getSource();
-    //remove the old
-    if(this._crosshair_wpt && isCrosshairWpt(this._crosshair_wpt))
-      gpxsrc.removeFeature(this._crosshair_wpt);
-    //add the new
-    this._crosshair_wpt = mkCrosshairWpt(coord);
-    gpxsrc.addFeature(this._crosshair_wpt);
-    //set ui
-    this._map.getView().fit(this._crosshair_wpt.getGeometry(), {maxZoom: 16});
+    const wpt = this._gpx_layer.setCrosshairWpt(coord);
+    this._map.getView().fit(wpt.getGeometry(), {maxZoom: 16});
   }
 
 /////////////////////// Context Menu ///////////////////////////
@@ -426,14 +420,16 @@ function getQueryParameters()
     });
 
     ctx.setItem(".item-add-wpt", (el) => {
-      this.getGpxLayer().getSource().addFeature(mkWptFeature(this._ctxmenu_coord));
+      this._gpx_layer.createWaypoint(this._ctxmenu_coord);
     });
 
     ctx.setItem(".item-save-gpx", (el) => {
-      genGpxText(this.getGpxLayer());
+      const xml = this._gpx_layer.genText();
+      saveTextAsFile(xml, 'your.gpx', 'application/gpx+xml');
+      //console.log(xml);
     });
     ctx.setItem(".item-apply-sym", (el) => {
-      getGpxWpts(this.getGpxLayer()).forEach(setSymByRules);
+      this._gpx_layer.getWaypoints().forEach(setSymByRules);
     });
   }
 
