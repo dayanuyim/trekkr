@@ -18,8 +18,7 @@ import { epochseconds } from '../lib/utils';
  */
 class Photo extends FeatureFormat {
 
-  set onlookupcoords(listener){ this._lookupCoords = listener; }
-  set onfeatureexists(listener){ this._featureExists = listener; }
+  _listeners = {};
 
   /**
    * @param {Options} [options] Options.
@@ -33,6 +32,11 @@ class Photo extends FeatureFormat {
      * @type {import("../proj/Projection.js").default}
      */
     this.dataProjection = WGS84;
+  }
+
+  setListener(event, listener){
+      this._listeners[event] = listener;
+      return this;
   }
 
   /**
@@ -86,8 +90,8 @@ class Photo extends FeatureFormat {
     });
 
     // check if the feature exits
-    if(time && this._featureExists){
-      const feature = this._featureExists(time);
+    if(time){
+      const feature = this._listeners['featureexists']?.(time);
       if(feature){
         if(!feature.get('image')){
           feature.set('image', image_obj());
@@ -104,8 +108,8 @@ class Photo extends FeatureFormat {
       coords.push(time);
     }
     // check if the coords can be estimated
-    else if(time && this._lookupCoords){
-      coords = this._lookupCoords(time);
+    else if(time){
+      coords = this._listeners['lookupcoords']?.(time);
       if(!coords) console.log(`The photo time '${meta.DateTimeOriginal.description}' is not in the range.`);
     }
 

@@ -82,8 +82,9 @@ export class AppMap{
       ],
     });
 
-    photo_format.onlookupcoords = (time) => this._gpx_layer.estimateCoords(time);
-    photo_format.onfeatureexists = (time) => this._gpx_layer.findWaypoint(time);
+    photo_format
+      .setListener('featureexists', (time) => this._gpx_layer.findWaypoint(time))
+      .setListener('lookupcoords', (time) => this._gpx_layer.estimateCoords(time));
 
     // pseudo gpx layer
     const layer = olGpxLayer();
