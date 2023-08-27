@@ -144,10 +144,13 @@ function getQueryParameters()
         this._gpx_layer.removeTrack(trk);
         pt_popup.hide(); //close popup
       })
-      .setListener('splittrk', (trk, coords) => {
-        const trk2 = splitTrack(trk, coords);
+      .setListener('splittrk', (trk, coord) => {
+        const trk2 = splitTrack(trk, coord);
         if(trk2)
           this._gpx_layer.addTrack(trk2);
+      })
+      .setListener('jointrk', (trk, coord) => {
+        this._gpx_layer.joinTrackAt(trk, coord);
       });
 
     // record the pixel position with every move

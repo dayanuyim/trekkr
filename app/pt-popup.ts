@@ -356,12 +356,16 @@ export default class PtPopupOverlay extends Overlay{
         this._pt_rm_wpt.onclick = e => this._listeners['rmwpt']?.(this._feature);
         delayToEnable(this._pt_rm_wpt, 1000); // delay to enable button, prevent from click by mistake
 
-        this._pt_rm_trk.onclick = e => this._listeners['rmtrk']?.(this._track_feature_of(this._feature));
+        this._pt_rm_trk.onclick = e => this._listeners['rmtrk']?.(this._data.track);
         delayToEnable(this._pt_rm_trk, 1000); // delay to enable button, prevent from click by mistake
 
         this._pt_split_trk.onclick = e => {
-            this._listeners['splittrk']?.(this._track_feature_of(this._feature), this._data.coordinates);
+            this._listeners['splittrk']?.(this._data.track, this._data.coordinates);
         };
+
+        this._pt_join_trk.onclick = e => {
+            this._listeners['jointrk']?.(this._data.track, this._data.coordinates);
+        }
     }
 
     private initSymboard(){
@@ -407,11 +411,11 @@ export default class PtPopupOverlay extends Overlay{
     }
 
     private _data_trk_name_changed(){
-        this._track_feature_of(this._feature).set('name', this._data.trk.name);
+        this._data.track.set('name', this._data.trk.name);
     }
 
     private _data_trk_color_changed(){
-        this._track_feature_of(this._feature).set('color', this._data.trk.color);
+        this._data.track.set('color', this._data.trk.color);
         this.setContent(this._data);
     }
 
@@ -440,11 +444,6 @@ export default class PtPopupOverlay extends Overlay{
     async popContent(feature) {
         // get data
         const track = this._track_feature_of(feature);                // for trkpt
-        const trk = track? {
-            name: track.get('name'),
-            color: track.get('color'),
-        }: undefined;
-
         const name = feature.get('name') || feature.get('desc');     //maybe undefined
         const sym = feature.get('sym');                              //maybe undefined
         const coordinates = feature.getGeometry().getCoordinates();  //x, y, ele, time
@@ -452,7 +451,7 @@ export default class PtPopupOverlay extends Overlay{
 
         // chache for later to use
         this._feature = feature;                        //for removing
-        this._data = {trk, name, sym, coordinates};   //for creating/updating
+        this._data = {track, name, sym, coordinates};   //for creating/updating
 
         this.resetDisplay(image);
         await this.setContent(this._data);
@@ -466,10 +465,10 @@ export default class PtPopupOverlay extends Overlay{
         return undefined;
     }
 
-    private async setContent({trk, name, sym, coordinates})
+    private async setContent({track, name, sym, coordinates})
     {
         this._setContent({
-            trk,
+            track,
             name,
             coordsys: Opt.coordsys,
             coordinate: coordinates.slice(0, 2),
@@ -479,15 +478,15 @@ export default class PtPopupOverlay extends Overlay{
         });
     }
 
-    private _setContent({trk, name, coordsys, coordinate, time, ele, symbol})
+    private _setContent({track, name, coordsys, coordinate, time, ele, symbol})
     {
         const show = (el, en) => el.classList.toggle('hidden', !en)
         const is_wpt = !!(name || symbol);
 
         show(this._pt_trk_header, !is_wpt);   // header contains sym & name
-        if(trk){
-            this.pt_trk_name = trk.name || '';
-            this.pt_trk_color = trk.color || def_trk_color;
+        if(track){
+            this.pt_trk_name = track.get('name') || '';
+            this.pt_trk_color = track.get('color') || def_trk_color;
         }
 
         this.pt_coord = coordinate;

@@ -193,14 +193,16 @@ export function splitTrack(track, coord)
     console.error('cannot find the split point by coord', coord);
     return null;
   }
-
-  const [trkseg1, trkseg2] = splitTrksegs(trksegs, point);
-  if(trkseg1.length == 1 || trkseg2.length == 1)  //split in the end of the track
+  const [i, j] = point;
+  if(j == 0 || j == trksegs[i].length -1){
+    console.error('cannot split at the first or the last of a trkseg');
     return null;
+  }
 
-  track.getGeometry().setCoordinates(trkseg1); // reset the current track
+  const [trksegs1, trksegs2] = splitTrksegs(trksegs, point);
+  track.getGeometry().setCoordinates(trksegs1); // reset the current track
   return olTrackFeature({                      // create the split-out track
-    coordinates: trkseg2,
+    coordinates: trksegs2,
     layout,
   },{
     name: (track.get('name') || '') + '-2',
@@ -238,11 +240,46 @@ function getSplitTrkptByCoord(trksegs, coord)
 
 function splitTrksegs(trksegs, point){
   const [i, j] = point;
-  const trkseg1 = trksegs.slice(0, i);
-  const trkseg2 = trksegs.slice(i+1);
-  trkseg1.push(trksegs[i].slice(0, j+1));  //duplicate the coordinates at j
-  trkseg2.unshift(trksegs[i].slice(j))
-  return [trkseg1, trkseg2];
+  const trksegs1 = trksegs.slice(0, i);
+  const trksegs2 = trksegs.slice(i+1);
+  trksegs1.push(trksegs[i].slice(0, j+1));  //duplicate the coordinates at j
+  trksegs2.unshift(trksegs[i].slice(j))
+  return [trksegs1, trksegs2];
+}
+//----------------------------------------------------------------
+
+export function isFirstOfTrkseg(track, coord)
+{
+  const eq_coord = ([x1, y1], [x2, y2]) => (x1 === x2 && y1 === y2);
+  return track.getGeometry().getCoordinates()
+          .findIndex(trkseg => eq_coord(coord, trkseg[0]));
+}
+
+export function isLastOfTrkseg(track, coord)
+{
+  const eq_coord = ([x1, y1], [x2, y2]) => (x1 === x2 && y1 === y2);
+  return track.getGeometry().getCoordinates()
+          .findIndex(trkseg => eq_coord(coord, trkseg[trkseg.length - 1]));
+}
+
+// join the trkseg[i] and trkseg[i+1] of @trk
+export function joinTrksegs(trk, i){
+  console.log(`join trkseg ${i} and ${i+1}`);
+  const orig = trk.getGeometry().getCoordinates();
+  if(0 <= i && (i+1) < orig.length) {
+    const curr = orig.slice(0, i);
+    curr.push(orig[i].concat(orig[i+1]));
+    curr.concat(orig.slice(i+2));
+    trk.getGeometry().setCoordinates(curr);
+  }
+}
+
+function distance2(c1, c2){
+  const [x1, y1] = c1;
+  const [x2, y2] = c2;
+  const d1 = x2 - x1;
+  const d2 = y2 - y1;
+  return d1*d1 + d2*d2;
 }
 
 //----------------------------------------------------------------
@@ -394,6 +431,98 @@ export class GpxLayer {
       })
       .find(coords => !!coords);       //return the first, otherwise undefined
       //*/
+  }
+
+  public joinTrackAt(trk, coord)
+  {
+    const eq_coord = ([x1, y1], [x2, y2]) => (x1 === x2 && y1 === y2);
+    if (eq_coord(coord, trk.getGeometry().getFirstCoordinate())) {
+      console.log('find previous track to join');
+      const prev = this.findPreviousTrack(coord);
+      if(prev)
+        this.joinTracks(prev, trk);
+      return;
+    }
+    if (eq_coord(coord, trk.getGeometry().getLastCoordinate())) {
+      console.log('find next track to join');
+      const next = this.findNextTrack(coord);
+      if(next)
+        this.joinTracks(trk, next);
+      return;
+    }
+    let idx = isFirstOfTrkseg(trk, coord);
+    if (idx >= 1) {
+      console.log(`trk join trksegs [${idx-1}, ${idx}]`);
+      joinTrksegs(trk, idx - 1)
+      return;
+    }
+    idx = isLastOfTrkseg(trk, coord);
+    if (idx >= 0) {
+      console.log(`trk join trksegs [${idx}, ${idx+1}]`);
+      joinTrksegs(trk, idx)
+      return;
+    }
+  }
+
+  private findPreviousTrack(coord)
+  {
+    let prev = undefined;
+    let prev_dist = Infinity;
+    const time = getEpochOfCoords(coord);
+    for (const trk of this.getTracks()) {
+      const last = trk.getGeometry().getLastCoordinate();
+      //check the timing
+      const last_time = getEpochOfCoords(last);
+      if(time && last_time && time < last_time)
+        continue;
+      const dist = distance2(coord, last);
+      if(prev_dist > dist){   //condicate
+        prev_dist = dist;
+        prev = trk;
+      }
+    }
+    return prev;
+  }
+
+  private findNextTrack(coord)
+  {
+    let next = undefined;
+    let next_dist = Infinity;
+    const time = getEpochOfCoords(coord);
+    for (const trk of this.getTracks()) {
+      const first = trk.getGeometry().getFirstCoordinate();
+      //check the timing
+      const first_time = getEpochOfCoords(first);
+      if(time && first_time && time > first_time)
+        continue;
+      const dist = distance2(coord, first);
+      if(next_dist > dist){   //condicate
+        next_dist = dist;
+        next = trk;
+      }
+    }
+    return next;
+  }
+
+  joinTracks(trk1, trk2)
+  {
+    const eq_coord = ([x1, y1], [x2, y2]) => (x1 === x2 && y1 === y2);
+    const first_of = arr => arr[0];
+    const last_of = arr => arr[arr.length - 1];
+
+    const trksegs1 = trk1.getGeometry().getCoordinates();
+    const trksegs2 = trk2.getGeometry().getCoordinates();
+
+    const seg1 = trksegs1.pop();
+    const seg2 = trksegs2.shift();
+    if(eq_coord(last_of(seg1), first_of(seg2))) seg1.pop();    //drop the duplicated coord
+    trksegs1.push(seg1.concat(seg2));   //note: concat() is NOT in place
+
+    trk1.getGeometry().setCoordinates(trksegs1);
+    if(trksegs2.length > 0)
+      trk2.getGeometry().setCoordinates(trksegs2);
+    else
+      this.removeTrack(trk2);
   }
 
   public genText(){
