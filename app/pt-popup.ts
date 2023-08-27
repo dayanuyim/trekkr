@@ -358,6 +358,10 @@ export default class PtPopupOverlay extends Overlay{
 
         this._pt_rm_trk.onclick = e => this._listeners['rmtrk']?.(this._track_feature_of(this._feature));
         delayToEnable(this._pt_rm_trk, 1000); // delay to enable button, prevent from click by mistake
+
+        this._pt_split_trk.onclick = e => {
+            this._listeners['splittrk']?.(this._track_feature_of(this._feature), this._data.coordinates);
+        };
     }
 
     private initSymboard(){

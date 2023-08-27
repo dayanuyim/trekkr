@@ -11,7 +11,7 @@ import { Vector as VectorSource } from 'ol/source';
 import { Icon as IconStyle, Circle as CircleStyle, Fill, Stroke, Style, Text } from 'ol/style';
 import { GPX } from 'ol/format';
 import { Feature } from 'ol';
-import { Geometry, Point } from 'ol/geom';
+import { Geometry, MultiLineString, Point } from 'ol/geom';
 import { toLonLat } from 'ol/proj';
 import { create as createXML } from 'xmlbuilder2';
 
@@ -156,6 +156,97 @@ export class GPXFormat extends GPX {
   }
 }
 
+//----------------------------------------------------------------
+
+function companionColor(color){
+  switch(color){
+    case 'White':       return 'Black';
+    case 'LightGray':   return 'DarkGray';
+    case 'DarkGray':    return 'LightGray';
+    case 'Black':       return 'White';
+    case 'Yellow':      return 'Green';   //any others
+    case 'Magenta':     return 'DarkMagenta';
+    case 'DarkMagenta': return 'Magenta';
+    case 'Cyan':        return 'DarkCyan';
+    case 'DarkCyan':    return 'Cyan';
+    case 'Blue':        return 'DarkBlue';
+    case 'DarkBlue':    return 'Blue';
+    case 'Green':       return 'DarkGreen';
+    case 'DarkGreen':   return 'Green';
+    case 'Red':         return 'DarkRed';
+    case 'DarkRed':     return 'Red';
+    default:            return companionColor(def_trk_color);
+  }
+}
+//----------------------------------------------------------------
+// The fuction works only when @coord is a trkpt in the @track.
+export function splitTrack(track, coord)
+{
+  const time = getEpochOfCoords(coord);
+  const layout = track.getGeometry().getLayout();
+  const trksegs = track.getGeometry().getCoordinates();
+
+  const point = (time && layout.endsWith('M'))?
+      getSplitTrkptByTime(trksegs, time):
+      getSplitTrkptByCoord(trksegs, coord);
+  if(!point){
+    console.error('cannot find the split point by coord', coord);
+    return null;
+  }
+
+  const [trkseg1, trkseg2] = splitTrksegs(trksegs, point);
+  if(trkseg1.length == 1 || trkseg2.length == 1)  //split in the end of the track
+    return null;
+
+  track.getGeometry().setCoordinates(trkseg1); // reset the current track
+  return olTrackFeature({                      // create the split-out track
+    coordinates: trkseg2,
+    layout,
+  },{
+    name: (track.get('name') || '') + '-2',
+    color: companionColor(track.get('color')),
+  })
+}
+
+function getSplitTrkptByTime(trksegs, time)
+{
+  const time_of = (coords) => coords[coords.length - 1];
+
+  for(let i = 0; i < trksegs.length; ++i){
+    const trkseg = trksegs[i];
+    if(!(time_of(trkseg[0]) <= time && time <= time_of(trkseg[trkseg.length-1])))
+      continue;
+    const idx = binsearchIndex(trkseg, (coords, i, arr) => {
+      const t = time_of(coords);
+      return (time >= t) ? (time - t) :
+        (time > time_of(arr[i - 1])) ? 0 : -1; // i should be larger than 0 here
+    });
+    return [i, idx];
+  }
+  return null;
+}
+
+function getSplitTrkptByCoord(trksegs, coord)
+{
+  const [x0, y0] = coord;
+  for(let i = 0; i < trksegs.length; ++i){
+    const j = trksegs[i].findIndex(([x, y]) => (x0 === x && y0 === y));
+    if(j >= 0) return [i, j];
+  }
+  return null;
+}
+
+function splitTrksegs(trksegs, point){
+  const [i, j] = point;
+  const trkseg1 = trksegs.slice(0, i);
+  const trkseg2 = trksegs.slice(i+1);
+  trkseg1.push(trksegs[i].slice(0, j+1));  //duplicate the coordinates at j
+  trkseg2.unshift(trksegs[i].slice(j))
+  return [trkseg1, trkseg2];
+}
+
+//----------------------------------------------------------------
+
 // @source_props should contain 'features' or 'url' for local-drag-n-drop or remote gpx files.
 // no @source_props results an empty gpx layer.
 export function olGpxLayer(source_props?, layer_props?){
@@ -175,6 +266,14 @@ export function olWptFeature(coords, options?){
     geometry: new Point(coords),
     name: "WPT",
     sym: def_symbol.name,
+  }, options));
+}
+
+export function olTrackFeature({coordinates, layout}, {name, color}, options?){
+  return new Feature(Object.assign({
+    geometry: new MultiLineString(coordinates, layout),
+    name,
+    color,
   }, options));
 }
 
@@ -261,8 +360,14 @@ export class GpxLayer {
   }
 
   public estimateCoords(time) {
+    //*/
+    return this._layer.getSource().getFeatures()
+      .filter(isTrkFeature)
+      .map(feature => feature.getGeometry())                // get geom
+      .map(geom => geom.getCoordinateAtM(time))
+      .find(coords => !!coords);       //return the first, otherwise undefined
+    /*/
     const time_of = (coords) => coords[coords.length - 1];
-
     return this._layer.getSource().getFeatures()
       .filter(isTrkFeature)                                 // is track
       .map(feature => feature.getGeometry())                // get geom
@@ -288,27 +393,12 @@ export class GpxLayer {
         return interpCoords(left, right, time);
       })
       .find(coords => !!coords);       //return the first, otherwise undefined
+      //*/
   }
 
   public genText(){
-    // get wpts and trks features
     const [wpts, trks ] = this.getWptsTrks();
-
-    // create gpx by wpts and trks
-    let node = createXML({ version: '1.0', encoding: "UTF-8" })
-      .ele('gpx', {
-        creator: "trekkr",
-        version: "1.1",
-        xmlns: "http://www.topografix.com/GPX/1/1",
-        'xmlns:xsi': "http://www.w3.org/2001/XMLSchema-instance",
-        'xsi:schemaLocation': "http://www.topografix.com/GPX/1/1 http://www.topografix.com/GPX/1/1/gpx.xsd",
-      });
-      addGpxMetadata(node, wpts.concat(trks));
-      addGpxWaypoints(node, wpts);
-      addGpxTracks(node, trks)
-    .up();
-
-    // convert the XML tree to string
+    const node = createGpxNode(wpts, trks);
     return node.end({ prettyPrint: true, indent: '\t' });
   }
 
@@ -352,6 +442,23 @@ const cmp_trk_time = (t1, t2) => {
     return 0;
   }
   return time(t1) - time(t2);
+}
+
+// create gpx by wpts and trks
+function createGpxNode(wpts, trks){
+  let node = createXML({ version: '1.0', encoding: "UTF-8" })
+    .ele('gpx', {
+      creator: "trekkr",
+      version: "1.1",
+      xmlns: "http://www.topografix.com/GPX/1/1",
+      'xmlns:xsi': "http://www.w3.org/2001/XMLSchema-instance",
+      'xsi:schemaLocation': "http://www.topografix.com/GPX/1/1 http://www.topografix.com/GPX/1/1/gpx.xsd",
+    });
+    addGpxMetadata(node, wpts.concat(trks));
+    addGpxWaypoints(node, wpts);
+    addGpxTracks(node, trks)
+  .up();
+  return node;
 }
 
 // @node is a gpx node

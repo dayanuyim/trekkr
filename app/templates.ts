@@ -69,9 +69,9 @@ export const ptPopup = Handlebars.compile(`
     <div class="pt-trk-header">
         <fieldset class="pt-trk-tool">
             <!--<legend>track</legend>-->
+            <button class="pt-tool pt-tool-rm-trk" title="Remove Track"><i class="fa-solid fa-trash-can"></i></button>
             <button class="pt-tool pt-tool-split-trk" title="Split Track"><i class="fa-solid fa-scissors"></i></button>
             <button class="pt-tool pt-tool-join-trk" title="Join Track"><i class="fa-solid fa-link"></i></button>
-            <button class="pt-tool pt-tool-rm-trk" title="Remove Track"><i class="fa-solid fa-trash-can"></i></button>
         </fieldset>
         <div class="pt-trk-color color-item"></div><!--
      --><span class="pt-trk-name" contenteditable></span>

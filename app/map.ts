@@ -12,7 +12,7 @@ import { Geometry } from 'ol/geom';
 import { GeoJSON, IGC, KML, TopoJSON } from 'ol/format';
 import PhotoFormat from './format/Photo';
 
-import { olGpxLayer, GpxLayer, GPXFormat, setSymByRules} from './gpx';
+import { olGpxLayer, GpxLayer, GPXFormat, setSymByRules, splitTrack} from './gpx';
 import PtPopupOverlay from './pt-popup';
 import Opt from './opt';
 import * as LayerRepo from './layer-repo';
@@ -143,6 +143,11 @@ function getQueryParameters()
       .setListener('rmtrk', (trk) => {
         this._gpx_layer.removeTrack(trk);
         pt_popup.hide(); //close popup
+      })
+      .setListener('splittrk', (trk, coords) => {
+        const trk2 = splitTrack(trk, coords);
+        if(trk2)
+          this._gpx_layer.addTrack(trk2);
       });
 
     // record the pixel position with every move
