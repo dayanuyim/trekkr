@@ -445,11 +445,9 @@ select::-ms-expand {
 
 /*----------------------------------------------------------------*/
 
-/*
 .pt-trk-header:not(:hover) .pt-trk-tool {
     display: none;
 }
-*/
 
 .pt-trk-tool {
     margin: 0;

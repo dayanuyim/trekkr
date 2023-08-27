@@ -433,6 +433,7 @@ export class GpxLayer {
       //*/
   }
 
+  // return true if @trk is removed after joining
   public joinTrackAt(trk, coord)
   {
     const eq_coord = ([x1, y1], [x2, y2]) => (x1 === x2 && y1 === y2);
@@ -440,28 +441,28 @@ export class GpxLayer {
       console.log('find previous track to join');
       const prev = this.findPreviousTrack(coord);
       if(prev)
-        this.joinTracks(prev, trk);
-      return;
+        return this.joinTracks(prev, trk);
     }
     if (eq_coord(coord, trk.getGeometry().getLastCoordinate())) {
       console.log('find next track to join');
       const next = this.findNextTrack(coord);
       if(next)
         this.joinTracks(trk, next);
-      return;
+      return false;
     }
     let idx = isFirstOfTrkseg(trk, coord);
     if (idx >= 1) {
       console.log(`trk join trksegs [${idx-1}, ${idx}]`);
       joinTrksegs(trk, idx - 1)
-      return;
+      return false;
     }
     idx = isLastOfTrkseg(trk, coord);
     if (idx >= 0) {
       console.log(`trk join trksegs [${idx}, ${idx+1}]`);
       joinTrksegs(trk, idx)
-      return;
+      return false;
     }
+    return false;
   }
 
   private findPreviousTrack(coord)
@@ -521,8 +522,10 @@ export class GpxLayer {
     trk1.getGeometry().setCoordinates(trksegs1);
     if(trksegs2.length > 0)
       trk2.getGeometry().setCoordinates(trksegs2);
-    else
+    else{
       this.removeTrack(trk2);
+      return true;   //to indicate trk2 is removed
+    }
   }
 
   public genText(){

@@ -150,7 +150,8 @@ function getQueryParameters()
           this._gpx_layer.addTrack(trk2);
       })
       .setListener('jointrk', (trk, coord) => {
-        this._gpx_layer.joinTrackAt(trk, coord);
+        if(this._gpx_layer.joinTrackAt(trk, coord))
+          pt_popup.hide(); //close popup
       });
 
     // record the pixel position with every move
