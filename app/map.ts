@@ -134,12 +134,16 @@ function getQueryParameters()
     map.on('postrender', () => this.saveViewConf());
 
     // when pt-popup overlay make or remove a wpt feature
-    const pt_popup = map.getOverlayById('pt-popup') as PtPopupOverlay;
-    pt_popup.onmkwpt = (wpt) => this._gpx_layer.getSource().addFeature(wpt);
-    pt_popup.onrmwpt = (wpt) => {
-      this._gpx_layer.getSource().removeFeature(wpt);
-      pt_popup.hide(); //close popup
-    }
+    const pt_popup = (map.getOverlayById('pt-popup') as PtPopupOverlay)
+      .setListener('mkwpt', (wpt) => this._gpx_layer.getSource().addFeature(wpt))
+      .setListener('rmwpt', (wpt) => {
+        this._gpx_layer.removeWaypoint(wpt);
+        pt_popup.hide(); //close popup
+      })
+      .setListener('rmtrk', (trk) => {
+        this._gpx_layer.removeTrack(trk);
+        pt_popup.hide(); //close popup
+      });
 
     // record the pixel position with every move
     document.addEventListener('mousemove', (e) =>{

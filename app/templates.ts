@@ -67,6 +67,12 @@ Handlebars.registerHelper("coordsysMenu", (cls, options)=>{
 
 export const ptPopup = Handlebars.compile(`
     <div class="pt-trk-header">
+        <fieldset class="pt-trk-tool">
+            <!--<legend>track</legend>-->
+            <button class="pt-tool pt-tool-split-trk" title="Split Track"><i class="fa-solid fa-scissors"></i></button>
+            <button class="pt-tool pt-tool-join-trk" title="Join Track"><i class="fa-solid fa-link"></i></button>
+            <button class="pt-tool pt-tool-rm-trk" title="Remove Track"><i class="fa-solid fa-trash-can"></i></button>
+        </fieldset>
         <div class="pt-trk-color color-item"></div><!--
      --><span class="pt-trk-name" contenteditable></span>
     </div>
@@ -102,20 +108,17 @@ export const ptPopup = Handlebars.compile(`
         <span class="pt-time-value">{{fmtTime time}}</span>
     </div>
 
-    <div class="pt-tool pt-tool-mk-wpt" title="Make Wpt">
-        <button><i class="fas fa-map-pin"></i></button>
-    </div>
-
-    <div class="pt-tool pt-tool-rm-wpt" title="Delete Wpt">
-        <button><i class="fas fa-trash-can"></i></button>
-    </div>
-
     <footer class="sym-copyright">&copy; The icon made by
         <a class="sym-maker" href="{{symbol/maker/url}}" target="_blank">{{symbol/maker/title}}</a> from
         <a class="sym-provider" href="{{symbol/provider/url}}" target="_blank">{{symbol/provider/title}}</a> is licensed by
         <a class="sym-license" href="{{symbol/license/url}}" target="_blank">{{symbol/license/title}}</a>
     </footer>
 
+    <!--------------------- Tools --------------------->
+    <span class="pt-tool">
+        <button class="pt-tool-mk-wpt" title="Make Wpt"><i class="fas fa-map-pin"></i></button>
+        <button class="pt-tool-rm-wpt" title="Delete Wpt"><i class="fas fa-trash-can"></i></button>
+    </span>
 `);
 
 Handlebars.registerHelper("ptPopup", (data, options)=>{

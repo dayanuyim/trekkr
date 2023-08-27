@@ -10,6 +10,7 @@ import {toTWD97, toTWD67, toTaipowerCoord} from './coord';
 import { getSymbol, matchRules, symbol_inv } from './sym'
 import { getEleByCoords, getEleOfCoords, setEleOfCoords, getLocalTimeByCoords, gmapUrl } from './common'
 import { olWptFeature, def_trk_color} from './gpx';
+import { delayToEnable } from './lib/dom-utils';
 import Opt from './opt';
 import * as templates from './templates';
 
@@ -84,9 +85,9 @@ function scaleDown({width, height}, max){
         return {width: width/height*max, height: max};
 }
 
+
 //TODO: convert this to typescript
 export default class PtPopupOverlay extends Overlay{
-
     _closer: HTMLElement;
     _resizer: HTMLElement;
     _resizer_content: HTMLElement;
@@ -108,8 +109,11 @@ export default class PtPopupOverlay extends Overlay{
     _pt_ele: HTMLElement;
     _pt_ele_est: HTMLElement;
     _pt_time: HTMLElement;
-    _pt_mk_wpt: HTMLElement;
-    _pt_rm_wpt: HTMLElement;
+    _pt_mk_wpt: HTMLButtonElement;
+    _pt_rm_wpt: HTMLButtonElement;
+    _pt_split_trk: HTMLButtonElement;
+    _pt_join_trk: HTMLButtonElement;
+    _pt_rm_trk: HTMLButtonElement;
     _sym_copyright: HTMLElement;
     _sym_maker: HTMLAnchorElement;
     _sym_provider: HTMLAnchorElement;
@@ -118,8 +122,7 @@ export default class PtPopupOverlay extends Overlay{
     _feature;
     _data;
     _resize_observer;
-    _listener_mkwpt: CallableFunction;
-    _listener_rmwpt: CallableFunction;
+    _listeners = {};
 
     get pt_trk_name() { return this._pt_trk_name.textContent; }
     set pt_trk_name(value) { this._pt_trk_name.textContent = value; }
@@ -142,8 +145,10 @@ export default class PtPopupOverlay extends Overlay{
     get pt_time() { return this._pt_time.textContent; }
     set pt_time(value) { this._pt_time.textContent = value; }
 
-    set onmkwpt(listener) {this._listener_mkwpt = listener; }
-    set onrmwpt(listener) {this._listener_rmwpt = listener; }
+    public setListener(event, listener){
+        this._listeners[event] = listener;
+        return this;
+    }
 
     //_coord_title;
     constructor(el: HTMLElement){
@@ -184,8 +189,11 @@ export default class PtPopupOverlay extends Overlay{
         this._pt_ele =             el.querySelector<HTMLElement>('.pt-ele-value');
         this._pt_ele_est =         el.querySelector<HTMLElement>('.pt-ele-est');
         this._pt_time =            el.querySelector<HTMLElement>('.pt-time-value');
-        this._pt_mk_wpt =          el.querySelector<HTMLElement>('.pt-tool-mk-wpt');
-        this._pt_rm_wpt =          el.querySelector<HTMLElement>('.pt-tool-rm-wpt');
+        this._pt_mk_wpt =          el.querySelector<HTMLButtonElement>('.pt-tool-mk-wpt');
+        this._pt_rm_wpt =          el.querySelector<HTMLButtonElement>('.pt-tool-rm-wpt');
+        this._pt_split_trk =       el.querySelector<HTMLButtonElement>('.pt-tool-split-trk');
+        this._pt_join_trk =        el.querySelector<HTMLButtonElement>('.pt-tool-join-trk');
+        this._pt_rm_trk =          el.querySelector<HTMLButtonElement>('.pt-tool-rm-trk');
         this._sym_copyright =      el.querySelector<HTMLElement>('.sym-copyright');
         this._sym_maker =          this._sym_copyright.querySelector<HTMLAnchorElement>('.sym-maker');
         this._sym_provider =       this._sym_copyright.querySelector<HTMLAnchorElement>('.sym-provider');
@@ -197,6 +205,7 @@ export default class PtPopupOverlay extends Overlay{
     }
 
     private resetDisplay(image){
+        //colorboard
         this._pt_colorboard.classList.add('hidden');   //colorboard hidden, if any
 
         //symboard
@@ -341,14 +350,14 @@ export default class PtPopupOverlay extends Overlay{
             */
             const wpt = olWptFeature(this._data.coordinates, {sym: "City (Small)"});
             this.popContent(wpt);
-            if(this._listener_mkwpt)
-                this._listener_mkwpt(wpt);
+            this._listeners['mkwpt']?.(wpt);
         };
 
-        this._pt_rm_wpt.onclick = e => {
-            if(this._listener_rmwpt)
-                this._listener_rmwpt(this._feature);
-        }
+        this._pt_rm_wpt.onclick = e => this._listeners['rmwpt']?.(this._feature);
+        delayToEnable(this._pt_rm_wpt, 1000); // delay to enable button, prevent from click by mistake
+
+        this._pt_rm_trk.onclick = e => this._listeners['rmtrk']?.(this._track_feature_of(this._feature));
+        delayToEnable(this._pt_rm_trk, 1000); // delay to enable button, prevent from click by mistake
     }
 
     private initSymboard(){

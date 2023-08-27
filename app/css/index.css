@@ -436,7 +436,39 @@ select::-ms-expand {
 
 .pt-trk-header {
     white-space: nowrap;
+    border: solid 1px transparent;
+    border-radius: 8px;
 }
+.pt-trk-header:hover {
+    border-color: lightgray;
+}
+
+/*----------------------------------------------------------------*/
+
+/*
+.pt-trk-header:not(:hover) .pt-trk-tool {
+    display: none;
+}
+*/
+
+.pt-trk-tool {
+    margin: 0;
+    border: 0;
+    padding: 2px;
+    /*width: calc(100% - 18px);*/
+}
+
+.pt-trk-tool button{
+    border: none;
+    background-color: transparent;
+    color: gray;
+}
+.pt-trk-tool button:hover{
+    color: black;
+    cursor: pointer;
+}
+
+/*-----------------------------------------------*/
 
 .pt-trk-color:hover { cursor: pointer;}
 .pt-trk-color {
@@ -597,6 +629,14 @@ select::-ms-expand {
     border: 0;
 }
 
+.sym-copyright ,
+.sym-copyright a:link,
+.sym-copyright a:visited {
+    color: #b0b0b0;
+    font-size: x-small;
+    margin-top: 3px;
+}
+
 /*----------------------------------------------------------------*/
 .pt-tool button {
     border: none;
@@ -618,21 +658,13 @@ select::-ms-expand {
     top: .5em;
 }
 
-.pt-tool-mk-wpt button svg {
+.pt-tool-mk-wpt svg {
     color: royalblue;
     transform: rotate(25deg);
 }
 
-.pt-tool-rm-wpt button svg {
+.pt-tool-rm-wpt svg {
     color: #505050;
-}
-
-.sym-copyright ,
-.sym-copyright a:link,
-.sym-copyright a:visited {
-    color: #b0b0b0;
-    font-size: x-small;
-    margin-top: 3px;
 }
 
 /********************** PT-Image Active *****************/

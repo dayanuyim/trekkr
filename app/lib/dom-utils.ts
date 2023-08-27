@@ -210,3 +210,20 @@ export function saveTextAsFile(textToWrite, fileNameToSaveAs, fileType) {
 
     downloadLink.click();
 }
+
+// Delay to enable button
+// does it seem safe that elements share the same timer??
+let __delay_enable_timer = null;
+export function delayToEnable(el: HTMLButtonElement|HTMLInputElement, ms: number)
+{
+    el.addEventListener('mouseenter', e => {
+        el.disabled = true;
+        el.style.cursor = 'wait';
+        if(__delay_enable_timer) clearTimeout(__delay_enable_timer);
+        __delay_enable_timer = setTimeout(()=>{
+            __delay_enable_timer = null;
+            el.disabled = false;
+            el.style.cursor = 'pointer';
+        }, ms);
+    });
+}
