@@ -136,22 +136,13 @@ function getQueryParameters()
     // when pt-popup overlay make or remove a wpt feature
     const pt_popup = (map.getOverlayById('pt-popup') as PtPopupOverlay)
       .setListener('mkwpt', (wpt) => this._gpx_layer.getSource().addFeature(wpt))
-      .setListener('rmwpt', (wpt) => {
-        this._gpx_layer.removeWaypoint(wpt);
-        pt_popup.hide(); //close popup
-      })
-      .setListener('rmtrk', (trk) => {
-        this._gpx_layer.removeTrack(trk);
-        pt_popup.hide(); //close popup
-      })
+      .setListener('rmwpt', (wpt) => this._gpx_layer.removeWaypoint(wpt))
+      .setListener('rmtrk', (trk) => this._gpx_layer.removeTrack(trk))
+      .setListener('jointrk', (trk, coord) => this._gpx_layer.joinTrackAt(trk, coord))  //the return matters
       .setListener('splittrk', (trk, coord) => {
         const trk2 = splitTrack(trk, coord);
         if(trk2)
           this._gpx_layer.addTrack(trk2);
-      })
-      .setListener('jointrk', (trk, coord) => {
-        if(this._gpx_layer.joinTrackAt(trk, coord))
-          pt_popup.hide(); //close popup
       });
 
     // record the pixel position with every move

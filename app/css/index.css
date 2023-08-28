@@ -455,6 +455,7 @@ select::-ms-expand {
     border: none;
     background-color: transparent;
     color: gray;
+    width: 2em;
 }
 .pt-trk-tool button:hover{
     color: black;

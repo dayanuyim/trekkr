@@ -206,12 +206,21 @@ export default class PtPopupOverlay extends Overlay{
     }
 
     private resetDisplay(image){
+        const show = (el, en) => el.classList.toggle('hidden', !en)
+
+        //trk
+        show(this._pt_trk, this._feature_track);
+        const is_real_trkpt = this.isRealTrkpt();
+        const is_end_trkpt = this.isEndTrkpt();
+        show(this._pt_join_trk, is_end_trkpt);
+        show(this._pt_split_trk, is_real_trkpt && !is_end_trkpt);
+
         //colorboard
-        this._pt_colorboard.classList.add('hidden');   //colorboard hidden, if any
+        show(this._pt_colorboard, false);   //colorboard hidden, if any
 
         //symboard
-        this._pt_symboard.classList.add('hidden');   //symboard hidden, if any
-        this.resetSymboardFilter();                  //symboard filter reset
+        show(this._pt_symboard, false);     //symboard hidden, if any
+        this.resetSymboardFilter();         //symboard filter reset
 
         //resizer
         this._resize_observer.disconnect();
@@ -354,18 +363,28 @@ export default class PtPopupOverlay extends Overlay{
             this._listeners['mkwpt']?.(wpt);
         };
 
-        this._pt_rm_wpt.onclick = e => this._listeners['rmwpt']?.(this._feature);
         delayToEnable(this._pt_rm_wpt, 1000); // delay to enable button, prevent from click by mistake
+        this._pt_rm_wpt.onclick = e => {
+            this._listeners['rmwpt']?.(this._feature);
+            this.hide();
+        };
 
-        this._pt_rm_trk.onclick = e => this._listeners['rmtrk']?.(this._feature_track);
         delayToEnable(this._pt_rm_trk, 1000); // delay to enable button, prevent from click by mistake
+        this._pt_rm_trk.onclick = e => {
+            this._listeners['rmtrk']?.(this._feature_track);
+            this.hide();
+        };
 
         this._pt_split_trk.onclick = e => {
             this._listeners['splittrk']?.(this._feature_track, this._data.coord);
+            this.popContent(this._feature);  //ui change
         };
 
         this._pt_join_trk.onclick = e => {
-            this._listeners['jointrk']?.(this._feature_track, this._data.coord);
+            if(this._listeners['jointrk']?.(this._feature_track, this._data.coord))
+                this.hide();   // the trk is removed after the join
+            else
+                this.popContent(this._feature);  //ui change
         }
     }
 
@@ -489,12 +508,7 @@ export default class PtPopupOverlay extends Overlay{
         const show = (el, en) => el.classList.toggle('hidden', !en)
         const is_wpt = !!(name || symbol);
 
-        show(this._pt_trk, !is_wpt);   // header contains sym & name
         if(trk){
-            //trk tools
-            const is_endpt = this.isEndTrkpt();
-            show(this._pt_join_trk, is_endpt);
-            show(this._pt_split_trk, !is_endpt);
             this.pt_trk_name = trk.name || '';
             this.pt_trk_color = trk.color || def_trk_color;
         }
@@ -512,7 +526,6 @@ export default class PtPopupOverlay extends Overlay{
         show(this._pt_mk_wpt, !is_wpt);
         show(this._pt_rm_wpt, is_wpt);
 
-        //this._pt_sym.classList.toggle('hidden', is_trkpt);
         show(this._pt_wpt_header, is_wpt);   // header contains sym & name
         show(this._sym_copyright, is_wpt);
         if(symbol){
@@ -523,12 +536,15 @@ export default class PtPopupOverlay extends Overlay{
         }
     }
 
+    private isRealTrkpt(){
+        return this._feature_track &&
+               this._feature_track.getGeometry().getLayout().length == this._data.coord.length;  //qucik dirty test
+    }
     private isEndTrkpt(){
         const xy_equals = ([x1, y1], [x2, y2]) => (x1 === x2 && y1 === y2);
-        if(!this._feature_track)
-            return undefined;
-        return xy_equals(this._feature_track.getGeometry().getFirstCoordinate(), this._data.coord) ||
-               xy_equals(this._feature_track.getGeometry().getLastCoordinate(), this._data.coord);
+        return this._feature_track && (
+                xy_equals(this._feature_track.getGeometry().getFirstCoordinate(), this._data.coord) ||
+                xy_equals(this._feature_track.getGeometry().getLastCoordinate(), this._data.coord));
     }
 
     private setUrlContent(el: HTMLAnchorElement, link){
