@@ -93,7 +93,7 @@ export default class PtPopupOverlay extends Overlay{
     _resizer_content: HTMLElement;
     _content: HTMLElement;
     _pt_image: HTMLElement;
-    _pt_trk_header: HTMLElement;
+    _pt_trk: HTMLElement;
     _pt_trk_name: HTMLElement;
     _pt_trk_color: HTMLElement;
     _pt_colorboard: HTMLElement;
@@ -174,7 +174,7 @@ export default class PtPopupOverlay extends Overlay{
         this._resizer_content =    this._resizer.querySelector<HTMLElement>('.popup-resizer-content');
         this._content =            el.querySelector<HTMLElement>('.ol-popup-content');
         this._pt_image =           el.querySelector<HTMLElement>('.pt-image');
-        this._pt_trk_header =      el.querySelector<HTMLElement>('.pt-trk-header');
+        this._pt_trk =             el.querySelector<HTMLElement>('.pt-trk');
         this._pt_trk_name =        el.querySelector<HTMLElement>('.pt-trk-name');
         this._pt_trk_color =       el.querySelector<HTMLElement>('.pt-trk-color');
         this._pt_colorboard =      el.querySelector<HTMLElement>('.pt-colorboard');
@@ -325,8 +325,8 @@ export default class PtPopupOverlay extends Overlay{
                 return;
             }
             const ele = +this.pt_ele;
-            if(getEleOfCoords(this._data.coordinates) != ele){
-                setEleOfCoords(this._data.coordinates, ele);
+            if(getEleOfCoords(this._data.coord) != ele){
+                setEleOfCoords(this._data.coord, ele);
                 this._data_ele_changed();
             }
         };
@@ -349,7 +349,7 @@ export default class PtPopupOverlay extends Overlay{
                 sym: "City (Small)",
             });
             */
-            const wpt = olWptFeature(this._data.coordinates, {sym: "City (Small)"});
+            const wpt = olWptFeature(this._data.coord, {sym: "City (Small)"});
             this.popContent(wpt);
             this._listeners['mkwpt']?.(wpt);
         };
@@ -361,11 +361,11 @@ export default class PtPopupOverlay extends Overlay{
         delayToEnable(this._pt_rm_trk, 1000); // delay to enable button, prevent from click by mistake
 
         this._pt_split_trk.onclick = e => {
-            this._listeners['splittrk']?.(this._feature_track, this._data.coordinates);
+            this._listeners['splittrk']?.(this._feature_track, this._data.coord);
         };
 
         this._pt_join_trk.onclick = e => {
-            this._listeners['jointrk']?.(this._feature_track, this._data.coordinates);
+            this._listeners['jointrk']?.(this._feature_track, this._data.coord);
         }
     }
 
@@ -438,9 +438,8 @@ export default class PtPopupOverlay extends Overlay{
 
     private _data_ele_changed(){
         this._pt_ele_est.classList.add('hidden');
-        this._feature.getGeometry().setCoordinates(this._data.coordinates);
+        this._feature.getGeometry().setCoordinates(this._data.coord);
     }
-
 
     async popContent(feature) {
         // get data
@@ -452,17 +451,17 @@ export default class PtPopupOverlay extends Overlay{
 
         const name = feature.get('name') || feature.get('desc');     //maybe undefined
         const sym = feature.get('sym');                              //maybe undefined
-        const coordinates = feature.getGeometry().getCoordinates();  //x, y, ele, time
+        const coord = feature.getGeometry().getCoordinates();        //x, y, ele, time
         const image = feature.get('image');
 
         // chache for later to use
-        this._feature_track = track;                  //for track edit
-        this._feature = feature;                      //for wpt remove
-        this._data = {trk, name, sym, coordinates};   //for creating/updating
+        this._feature_track = track;            //for track edit
+        this._feature = feature;                //for wpt remove
+        this._data = {trk, name, sym, coord};   //for creating/updating
 
         this.resetDisplay(image);
         await this.setContent(this._data);
-        this.setPosition(coordinates);
+        this.setPosition(coord);
     }
 
     private _track_feature_of(trkpt: Feature<Point>){
@@ -472,34 +471,38 @@ export default class PtPopupOverlay extends Overlay{
         return undefined;
     }
 
-    private async setContent({trk, name, sym, coordinates})
+    private async setContent({trk, name, sym, coord})
     {
         this._setContent({
             trk,
             name,
             coordsys: Opt.coordsys,
-            coordinate: coordinates.slice(0, 2),
-            time: getLocalTimeByCoords(coordinates),
-            ele: await getEleByCoords(coordinates),
+            coordxy: coord.slice(0, 2),
+            time: getLocalTimeByCoords(coord),
+            ele: await getEleByCoords(coord),
             symbol: getSymbol(sym),
         });
     }
 
-    private _setContent({trk, name, coordsys, coordinate, time, ele, symbol})
+    private _setContent({trk, name, coordsys, coordxy, time, ele, symbol})
     {
         const show = (el, en) => el.classList.toggle('hidden', !en)
         const is_wpt = !!(name || symbol);
 
-        show(this._pt_trk_header, !is_wpt);   // header contains sym & name
+        show(this._pt_trk, !is_wpt);   // header contains sym & name
         if(trk){
+            //trk tools
+            const is_endpt = this.isEndTrkpt();
+            show(this._pt_join_trk, is_endpt);
+            show(this._pt_split_trk, !is_endpt);
             this.pt_trk_name = trk.name || '';
             this.pt_trk_color = trk.color || def_trk_color;
         }
 
-        this.pt_coord = coordinate;
+        this.pt_coord = coordxy;
         this.pt_coord_title = coordsys;
-        this.pt_coord_value = toXY[coordsys](coordinate)
-        this.pt_gmap = gmapUrl(coordinate);
+        this.pt_coord_value = toXY[coordsys](coordxy);  //to web xy
+        this.pt_gmap = gmapUrl(coordxy);
 
         this.pt_name = name;
         this.pt_ele = ele? fmtEle(ele.value): '-';
@@ -518,6 +521,14 @@ export default class PtPopupOverlay extends Overlay{
             this.setUrlContent(this._sym_provider, symbol.provider);
             this.setUrlContent(this._sym_license,  symbol.license);
         }
+    }
+
+    private isEndTrkpt(){
+        const xy_equals = ([x1, y1], [x2, y2]) => (x1 === x2 && y1 === y2);
+        if(!this._feature_track)
+            return undefined;
+        return xy_equals(this._feature_track.getGeometry().getFirstCoordinate(), this._data.coord) ||
+               xy_equals(this._feature_track.getGeometry().getLastCoordinate(), this._data.coord);
     }
 
     private setUrlContent(el: HTMLAnchorElement, link){

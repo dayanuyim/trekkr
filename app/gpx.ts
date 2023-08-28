@@ -250,16 +250,14 @@ function splitTrksegs(trksegs, point){
 
 export function isFirstOfTrkseg(track, coord)
 {
-  const eq_coord = ([x1, y1], [x2, y2]) => (x1 === x2 && y1 === y2);
   return track.getGeometry().getCoordinates()
-          .findIndex(trkseg => eq_coord(coord, trkseg[0]));
+          .findIndex(trkseg => xy_equals(coord, trkseg[0]));
 }
 
 export function isLastOfTrkseg(track, coord)
 {
-  const eq_coord = ([x1, y1], [x2, y2]) => (x1 === x2 && y1 === y2);
   return track.getGeometry().getCoordinates()
-          .findIndex(trkseg => eq_coord(coord, trkseg[trkseg.length - 1]));
+          .findIndex(trkseg => xy_equals(coord, trkseg[trkseg.length - 1]));
 }
 
 // join the trkseg[i] and trkseg[i+1] of @trk
@@ -282,6 +280,7 @@ function distance2(c1, c2){
   return d1*d1 + d2*d2;
 }
 
+const xy_equals = ([x1, y1], [x2, y2]) => (x1 === x2 && y1 === y2);
 //----------------------------------------------------------------
 
 // @source_props should contain 'features' or 'url' for local-drag-n-drop or remote gpx files.
@@ -436,14 +435,13 @@ export class GpxLayer {
   // return true if @trk is removed after joining
   public joinTrackAt(trk, coord)
   {
-    const eq_coord = ([x1, y1], [x2, y2]) => (x1 === x2 && y1 === y2);
-    if (eq_coord(coord, trk.getGeometry().getFirstCoordinate())) {
+    if (xy_equals(coord, trk.getGeometry().getFirstCoordinate())) {
       console.log('find previous track to join');
       const prev = this.findPreviousTrack(coord);
       if(prev)
         return this.joinTracks(prev, trk);
     }
-    if (eq_coord(coord, trk.getGeometry().getLastCoordinate())) {
+    if (xy_equals(coord, trk.getGeometry().getLastCoordinate())) {
       console.log('find next track to join');
       const next = this.findNextTrack(coord);
       if(next)
@@ -452,13 +450,13 @@ export class GpxLayer {
     }
     let idx = isFirstOfTrkseg(trk, coord);
     if (idx >= 1) {
-      console.log(`trk join trksegs [${idx-1}, ${idx}]`);
+      console.log(`trk join trksegs [${idx-1}, ${idx}]`);  //assert: idx >= 1
       joinTrksegs(trk, idx - 1)
       return false;
     }
     idx = isLastOfTrkseg(trk, coord);
     if (idx >= 0) {
-      console.log(`trk join trksegs [${idx}, ${idx+1}]`);
+      console.log(`trk join trksegs [${idx}, ${idx+1}]`);  //assert: idx < (trksegs.length - 1)
       joinTrksegs(trk, idx)
       return false;
     }
@@ -507,7 +505,6 @@ export class GpxLayer {
 
   joinTracks(trk1, trk2)
   {
-    const eq_coord = ([x1, y1], [x2, y2]) => (x1 === x2 && y1 === y2);
     const first_of = arr => arr[0];
     const last_of = arr => arr[arr.length - 1];
 
@@ -516,7 +513,7 @@ export class GpxLayer {
 
     const seg1 = trksegs1.pop();
     const seg2 = trksegs2.shift();
-    if(eq_coord(last_of(seg1), first_of(seg2))) seg1.pop();    //drop the duplicated coord
+    if(xy_equals(last_of(seg1), first_of(seg2))) seg1.pop();    //drop the duplicated coord
     trksegs1.push(seg1.concat(seg2));   //note: concat() is NOT in place
 
     trk1.getGeometry().setCoordinates(trksegs1);

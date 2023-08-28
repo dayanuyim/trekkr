@@ -66,12 +66,14 @@ Handlebars.registerHelper("coordsysMenu", (cls, options)=>{
 });
 
 export const ptPopup = Handlebars.compile(`
-    <div class="pt-trk-header">
+    <div class="pt-trk">
         <fieldset class="pt-trk-tool">
             <!--<legend>track</legend>-->
-            <button class="pt-tool pt-tool-rm-trk" title="Remove Track"><i class="fa-solid fa-trash-can"></i></button>
-            <button class="pt-tool pt-tool-split-trk" title="Split Track"><i class="fa-solid fa-scissors"></i></button>
-            <button class="pt-tool pt-tool-join-trk" title="Join Track"><i class="fa-solid fa-link"></i></button>
+            <legend>
+            <button class="pt-tool-rm-trk" title="Remove Track"><i class="fa-solid fa-trash-can"></i></button>
+            <button class="pt-tool-split-trk" title="Split Track"><i class="fa-solid fa-scissors"></i></button>
+            <button class="pt-tool-join-trk" title="Join Track"><i class="fa-solid fa-link"></i></button>
+            </legend>
         </fieldset>
         <div class="pt-trk-color color-item"></div><!--
      --><span class="pt-trk-name" contenteditable></span>
@@ -80,45 +82,46 @@ export const ptPopup = Handlebars.compile(`
         {{colorboardItems}}
     </div>
 
-    <div class="pt-wpt-header">
-        <img class="pt-sym" width="24" heigh="24" src="{{sym}}"><!--
-     --><span class="pt-name" contenteditable>{{name}}</span>
-        <!--<input type="text" class="pt-name" value="{{name}}">-->
+    <div class="pt-wpt">
+        <fieldset class="pt-wpt-tool">
+            <button class="pt-tool-mk-wpt" title="Make Wpt"><i class="fas fa-map-pin"></i></button>
+            <button class="pt-tool-rm-wpt" title="Delete Wpt"><i class="fas fa-trash-can"></i></button>
+        </fieldset>
+
+        <div class="pt-wpt-header">
+            <img class="pt-sym" width="24" heigh="24" src="{{sym}}"><!--
+        --><span class="pt-name" contenteditable>{{name}}</span>
+            <!--<input type="text" class="pt-name" value="{{name}}">-->
+        </div>
+        <div class="pt-symboard glassmophism hidden"></div>
+
+        <div class="pt-coord" data-pt-coord="{{coordinate}}">
+            {{coordsysMenu "pt-coord-title"}}
+            <span class="pt-coord-value">N/A</span>
+            <a class="pt-gmap" href="{{gmap coordinate}}" target="_blank">
+                <img src="./images/googleg.png" alt="Google G">
+                <!--<i class="fab fa-google"></i>-->
+            </a>
+        </div>
+
+        <div class="pt-ele">
+            <span class="pt-ele-title">ELE.</span>
+            <span class="pt-ele-value" contenteditable>{{fmtEle ele.value}}</span> m
+            <!--<input type="text" class="pt-ele-value" pattern="[0-9]+([\.][0-9]+)?" value="{{fmtEle ele.value}}"> m-->
+            <span class="pt-ele-est">(est.)</span>
+        </div>
+
+        <div class="pt-time">
+            <span class="pt-time-title">TIME</span>
+            <span class="pt-time-value">{{fmtTime time}}</span>
+        </div>
+
+        <footer class="sym-copyright">&copy; The icon made by
+            <a class="sym-maker" href="{{symbol/maker/url}}" target="_blank">{{symbol/maker/title}}</a> from
+            <a class="sym-provider" href="{{symbol/provider/url}}" target="_blank">{{symbol/provider/title}}</a> is licensed by
+            <a class="sym-license" href="{{symbol/license/url}}" target="_blank">{{symbol/license/title}}</a>
+        </footer>
     </div>
-    <div class="pt-symboard glassmophism hidden"></div>
-
-    <div class="pt-coord" data-pt-coord="{{coordinate}}">
-        {{coordsysMenu "pt-coord-title"}}
-        <span class="pt-coord-value">N/A</span>
-        <a class="pt-gmap" href="{{gmap coordinate}}" target="_blank">
-            <img src="./images/googleg.png" alt="Google G">
-            <!--<i class="fab fa-google"></i>-->
-        </a>
-    </div>
-
-    <div class="pt-ele">
-        <span class="pt-ele-title">ELE.</span>
-        <span class="pt-ele-value" contenteditable>{{fmtEle ele.value}}</span> m
-        <!--<input type="text" class="pt-ele-value" pattern="[0-9]+([\.][0-9]+)?" value="{{fmtEle ele.value}}"> m-->
-        <span class="pt-ele-est">(est.)</span>
-    </div>
-
-    <div class="pt-time">
-        <span class="pt-time-title">TIME</span>
-        <span class="pt-time-value">{{fmtTime time}}</span>
-    </div>
-
-    <footer class="sym-copyright">&copy; The icon made by
-        <a class="sym-maker" href="{{symbol/maker/url}}" target="_blank">{{symbol/maker/title}}</a> from
-        <a class="sym-provider" href="{{symbol/provider/url}}" target="_blank">{{symbol/provider/title}}</a> is licensed by
-        <a class="sym-license" href="{{symbol/license/url}}" target="_blank">{{symbol/license/title}}</a>
-    </footer>
-
-    <!--------------------- Tools --------------------->
-    <span class="pt-tool">
-        <button class="pt-tool-mk-wpt" title="Make Wpt"><i class="fas fa-map-pin"></i></button>
-        <button class="pt-tool-rm-wpt" title="Delete Wpt"><i class="fas fa-trash-can"></i></button>
-    </span>
 `);
 
 Handlebars.registerHelper("ptPopup", (data, options)=>{
