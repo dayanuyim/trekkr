@@ -8,7 +8,7 @@
 
 import { Vector as VectorLayer } from 'ol/layer';
 import { Vector as VectorSource } from 'ol/source';
-import { Icon as IconStyle, Circle as CircleStyle, Fill, Stroke, Style, Text } from 'ol/style';
+import { Icon as IconStyle, Circle as CircleStyle, RegularShape, Fill, Stroke, Style, Text } from 'ol/style';
 import { GPX } from 'ol/format';
 import { Feature } from 'ol';
 import { Geometry, MultiLineString, Point } from 'ol/geom';
@@ -114,15 +114,56 @@ export const gpxStyle = (feature) => {
       });
     }
     case 'MultiLineString': {
-      return new Style({
-        stroke: new Stroke({
-          color: feature.get('color') || def_trk_color,
-          width: 3
-        })
+      const color = (feature.get('color') || def_trk_color).toLowerCase();
+      const styles = [
+        new Style({
+          stroke: new Stroke({
+            color,
+            width: 3
+          })
+        }),
+      ];
+      // arrow-head for each trkpt
+      feature.getGeometry().getLineStrings().forEach(linestr => {
+        linestr.forEachSegment((start, end) => {
+          styles.push(
+            new Style({
+              geometry: new Point(end),
+              image: new RegularShape({    // regular triangle, like ▲
+                points: 3,
+                radius: 5,
+                fill: new Fill({ color }),
+                stroke: new Stroke({
+                  color: outline_color(color),
+                  width: 1,
+                  lineDash: [5*1.732],   // only for lateral sides, no buttom line, like /▲\
+                }),
+                rotateWithView: true,
+                rotation: arrow_head_rad(start, end),
+              }),
+            })
+          );
+        });
       });
+      return styles;
     }
   }
 };
+
+function outline_color(color){
+  switch(color){
+    case 'lightgray': return '#ededed';
+    default: return 'lightgray';
+  }
+}
+
+// the math from: https://openlayers.org/en/latest/examples/line-arrows.html
+function arrow_head_rad(start, end){
+  const dx = end[0] - start[0];
+  const dy = end[1] - start[1];
+  const rotation = Math.atan2(dy, dx);
+  return Math.PI/2 - rotation;
+}
 
 // GPX format which reads extensions node
 export class GPXFormat extends GPX {
