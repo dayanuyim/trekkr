@@ -258,13 +258,17 @@ export const settings = Handlebars.compile(`
                 <ul class="opt-item">航線箭號
                     <li>
                         <label for="trk-arrow-max-num">最大數量</label>
-                        <input type="number" id="trk-arrow-max-num" name="trk-arrow-max-num" min="0" max="999" />
+                        <input type="number" id="trk-arrow-max-num" min="0" max="999" />
                         <label for="trk-arrow-max-num">(0: disable)</label>
                     </li>
                     <li>
                         <label for="trk-arrow-interval">每</label>
-                        <input type="number" id="trk-arrow-interval" name="trk-arrow-interval" min="1" max="100"/>
+                        <input type="number" id="trk-arrow-interval" min="1" max="999"/>
                         <label for="trk-arrow-interval">個航跡點標識</label>
+                    </li>
+                    <li>
+                        <label for="trk-arrow-radius">箭頭大小</label>
+                        <input type="number" id="trk-arrow-radius" min="1" max="99"/>
                     </li>
                 </ul>
             </fieldset>

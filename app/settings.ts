@@ -64,6 +64,7 @@ export class Settings{
     _opt_wpt_display_auto_zoom: HTMLButtonElement;
     _opt_trk_arrow_max_num: HTMLInputElement;
     _opt_trk_arrow_interval: HTMLInputElement;
+    _opt_trk_arrow_radius: HTMLInputElement;
     _listeners = {};;
 
     get layers(){ return Array.from(this._base.querySelectorAll('#setting-layers li')).map(Layer.of); }
@@ -85,6 +86,7 @@ export class Settings{
         this._opt_wpt_display_auto_zoom = opts.querySelector<HTMLButtonElement>('#wpt-display-auto-zoom');
         this._opt_trk_arrow_max_num = opts.querySelector<HTMLInputElement>('#trk-arrow-max-num');
         this._opt_trk_arrow_interval = opts.querySelector<HTMLInputElement>('#trk-arrow-interval');
+        this._opt_trk_arrow_radius = opts.querySelector<HTMLInputElement>('#trk-arrow-radius');
     }
 
     // ----------------------------------------------------------------
@@ -197,6 +199,10 @@ export class Settings{
             if(!empty_check(e.target, Opt.track.arrow.max_num))
                 return;
             const max_num = nonneg_int_check(e.target);
+
+            this._opt_trk_arrow_interval.disabled = !max_num;
+            this._opt_trk_arrow_radius.disabled = !max_num;
+
             Opt.update({ max_num }, 'track', 'arrow');
             this._listeners['trkchanged']?.();   // map
         };
@@ -207,6 +213,15 @@ export class Settings{
                 return;
             const interval = pos_int_check(e.target);
             Opt.update({ interval}, 'track', 'arrow');
+            this._listeners['trkchanged']?.();   // map
+        };
+
+        this._opt_trk_arrow_radius.value = Opt.track.arrow.radius;
+        this._opt_trk_arrow_radius.onchange = e => {
+            if(!empty_check(e.target, Opt.track.arrow.radius))
+                return;
+            const radius = pos_int_check(e.target);
+            Opt.update({radius}, 'track', 'arrow');
             this._listeners['trkchanged']?.();   // map
         };
     }

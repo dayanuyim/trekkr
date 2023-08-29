@@ -34,8 +34,9 @@ class Opt{
     };
     track = {
         arrow: {
-            max_num: 36,
-            interval: 20,
+            max_num: 20,
+            interval: 100,
+            radius: 8,
         }
     }
 

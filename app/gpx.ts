@@ -125,7 +125,7 @@ const arrow_head_rad = (start, end) => {
 }
 
 const arrow_head_style = (start, end, color) => {
-  const radius = 6;
+  const radius = Opt.track.arrow.radius;
   return new Style({
     geometry: new Point(end),
     image: new RegularShape({    // regular triangle, like ▲
