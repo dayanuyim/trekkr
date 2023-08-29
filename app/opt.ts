@@ -68,9 +68,12 @@ class Opt{
         return undefined;
     }
 
-    public update(modified?, target?) {
+    public update(modified?, sub?) {
         if(modified){
-            target = target? this[target]: this;
+            let target = this;
+            for(let i = 1; i < arguments.length; ++i)
+                target = target[arguments[i]];
+            console.log(target);
             Object.assign(target, modified)
         }
 

@@ -225,32 +225,48 @@ export const settings = Handlebars.compile(`
         </div>
 
         <div class="tabcontent" id="setting-opts">
+            <!----------------------------- Waypoint --------------------------------------->
             <fieldset class="opt-group">
-                <legend class="opt-header">Waypoint名稱</legend>
+                <legend class="opt-header">Waypoint</legend>
                 <!----------------------------- font size --------------------------------------->
-                <div class="opt-item">
-                    <label for="wpt-fontsize">字型大小</label>
-                    <input type="number" id="wpt-fontsize" name="wpt-fontsize" min="1" max="64" />
-                </div>
+                <ul class="opt-item">航點名稱
+                    <li>
+                        <label for="wpt-fontsize">字型大小</label>
+                        <input type="number" id="wpt-fontsize" name="wpt-fontsize" min="1" max="64" />
+                    </li>
+                </ul>
                 <!----------------------------- display --------------------------------------->
-                <div class="opt-item">
-                    <label>顯示方式</lable>
-                    <div>
-                        <div>
-                            <input type="radio" id="wpt-display-need" name="wpt-display" value="need" />
-                            <label for="wpt-display-need">Always</label>
-                        </div>
-                        <div>
-                            <input type="radio" id="wpt-display-none" name="wpt-display" value="none" />
-                            <label for="wpt-display-none">None</label>
-                        </div>
-                        <div>
-                            <input type="radio" id="wpt-display-auto" name="wpt-display" value="auto" />
-                            <label for="wpt-display-auto">Auto</label>
-                            <button id="wpt-display-auto-zoom">使用目前縮放值</button>
-                        </div>
-                    </div>
-                </div>
+                <ul class="opt-item">顯示方式
+                    <li>
+                        <input type="radio" id="wpt-display-need" name="wpt-display" value="need" />
+                        <label for="wpt-display-need">Always</label>
+                    </li>
+                    <li>
+                        <input type="radio" id="wpt-display-none" name="wpt-display" value="none" />
+                        <label for="wpt-display-none">None</label>
+                    </li>
+                    <li>
+                        <input type="radio" id="wpt-display-auto" name="wpt-display" value="auto" />
+                        <label for="wpt-display-auto">Auto</label>
+                        <button id="wpt-display-auto-zoom">使用目前縮放值</button>
+                    </li>
+                </ul>
+            </fieldset>
+            <!----------------------------- Track --------------------------------------->
+            <fieldset class="opt-group">
+                <legend class="opt-header">Track</legend>
+                <ul class="opt-item">航線箭號
+                    <li>
+                        <label for="trk-arrow-max-num">最大數量</label>
+                        <input type="number" id="trk-arrow-max-num" name="trk-arrow-max-num" min="0" max="999" />
+                        <label for="trk-arrow-max-num">(0: disable)</label>
+                    </li>
+                    <li>
+                        <label for="trk-arrow-interval">每</label>
+                        <input type="number" id="trk-arrow-interval" name="trk-arrow-interval" min="1" max="100"/>
+                        <label for="trk-arrow-interval">個航跡點標識</label>
+                    </li>
+                </ul>
             </fieldset>
         </div>
 

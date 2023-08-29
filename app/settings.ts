@@ -62,11 +62,11 @@ export class Settings{
     _opt_wpt_fontsize: HTMLInputElement;
     _opt_wpt_displays: HTMLInputElement[];
     _opt_wpt_display_auto_zoom: HTMLButtonElement;
+    _opt_trk_arrow_max_num: HTMLInputElement;
+    _opt_trk_arrow_interval: HTMLInputElement;
     _listeners = {};;
 
     get layers(){ return Array.from(this._base.querySelectorAll('#setting-layers li')).map(Layer.of); }
-    get opt_wpt_fontsize() { return Number(this._opt_wpt_fontsize.value); }
-    set opt_wpt_fontsize(size) { this._opt_wpt_fontsize.value = size.toString(); }
 
     constructor(el: HTMLElement){
         el.innerHTML = templates.settings({ layers: Opt.layers });
@@ -83,6 +83,8 @@ export class Settings{
         this._opt_wpt_fontsize = opts.querySelector<HTMLInputElement>('#wpt-fontsize');
         this._opt_wpt_displays = Array.from(opts.querySelectorAll<HTMLInputElement>('input[name="wpt-display"]'));
         this._opt_wpt_display_auto_zoom = opts.querySelector<HTMLButtonElement>('#wpt-display-auto-zoom');
+        this._opt_trk_arrow_max_num = opts.querySelector<HTMLInputElement>('#trk-arrow-max-num');
+        this._opt_trk_arrow_interval = opts.querySelector<HTMLInputElement>('#trk-arrow-interval');
     }
 
     // ----------------------------------------------------------------
@@ -142,14 +144,34 @@ export class Settings{
 
     // ----------------------------------------------------------------
 
+
     private initOpts(){
+        const empty_check = (el, orig_val) =>{
+            if(!el.value){
+                el.value = orig_val.toString();
+                return false;
+            }
+            return true;;
+        };
+        const pos_int_check = el => {
+            const value = Math.max(1, Math.round(el.value));
+            el.value = value.toString();
+            return value;
+        }
+
+        const nonneg_int_check = el => {
+            const value = Math.max(0, Math.round(el.value));
+            el.value = value.toString();;
+            return value;
+        }
+
         // wpt fontsize
-        this.opt_wpt_fontsize = Opt.waypoint.fontsize;
+        this._opt_wpt_fontsize.value = Opt.waypoint.fontsize;
         this._opt_wpt_fontsize.onchange = e => {
-            const fontsize = this.opt_wpt_fontsize;
-            if(!fontsize)
-                return this.opt_wpt_fontsize = Opt.waypoint.fontsize; //restore
-            Opt.update({fontsize}, 'waypoint');  // coockie
+            if(!empty_check(e.target, Opt.waypoint.fontsize))
+                return;
+            const fontsize = pos_int_check(e.target);
+            Opt.update({ fontsize }, 'waypoint');  // coockie
             this._listeners['wptchanged']?.();   // map
         };
 
@@ -162,10 +184,30 @@ export class Settings{
                 this._listeners['wptchanged']?.();                        // map
             }
         });
+
         this._opt_wpt_display_auto_zoom.disabled = !this._opt_wpt_displays.find(disp => disp.value == 'auto').checked;
         this._opt_wpt_display_auto_zoom.onclick = e => {
                 Opt.update({display_auto_zoom: Opt.zoom}, 'waypoint');    // coockie
                 this._listeners['wptchanged']?.();                        // map
+        };
+
+        // trk arrow
+        this._opt_trk_arrow_max_num.value  = Opt.track.arrow.max_num;
+        this._opt_trk_arrow_max_num.onchange = e => {
+            if(!empty_check(e.target, Opt.track.arrow.max_num))
+                return;
+            const max_num = nonneg_int_check(e.target);
+            Opt.update({ max_num }, 'track', 'arrow');
+            this._listeners['trkchanged']?.();   // map
+        };
+
+        this._opt_trk_arrow_interval.value = Opt.track.arrow.interval;
+        this._opt_trk_arrow_interval.onchange = e => {
+            if(!empty_check(e.target, Opt.track.arrow.interval))
+                return;
+            const interval = pos_int_check(e.target);
+            Opt.update({ interval}, 'track', 'arrow');
+            this._listeners['trkchanged']?.();   // map
         };
     }
 
