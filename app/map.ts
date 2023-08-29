@@ -131,7 +131,10 @@ function getQueryParameters()
     });
 
     //map.on('moveend', (e) => {   //invoked only when view is locked down
-    map.on('postrender', () => this.saveViewConf());
+
+    const view = map.getView();
+    view.on('change:center',     () => Opt.update({xy: view.getCenter()}));
+    view.on('change:resolution', () => Opt.update({zoom: view.getZoom()}));
 
     // when pt-popup overlay make or remove a wpt feature
     const pt_popup = (map.getOverlayById('pt-popup') as PtPopupOverlay)
@@ -172,15 +175,6 @@ function getQueryParameters()
         this._map.render();  //trigger prerender
         e.preventDefault();
       }
-  }
-
-  private saveViewConf()
-  {
-    const view = this._map.getView();
-    Opt.update({
-      xy: view.getCenter(),
-      zoom: view.getZoom(),
-    });
   }
 
   private hoverFeatures(e) {

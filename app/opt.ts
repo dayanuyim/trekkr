@@ -68,13 +68,13 @@ class Opt{
         return undefined;
     }
 
-    public update(modified?, sub?) {
-        if(modified){
+    public update(conf?, sub?) {
+        if(conf){
             let target = this;
             for(let i = 1; i < arguments.length; ++i)
                 target = target[arguments[i]];
-            console.log(target);
-            Object.assign(target, modified)
+            Object.assign(target, conf)
+            //console.log('update', target, 'by', conf);
         }
 
         const value = JSON.stringify(this.strip());
