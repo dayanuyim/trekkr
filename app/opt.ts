@@ -2,6 +2,8 @@
 import layer_conf from './data/layer-conf';
 import Cookies from 'js-cookie';
 
+let _cookies_save_timer = null;
+
 class Opt{
     static instance = undefined;
     static get() {
@@ -77,10 +79,14 @@ class Opt{
             //console.log('update', target, 'by', conf);
         }
 
-        const value = JSON.stringify(this.strip());
-        if(value.length >= 4096)
-            console.warn(`The cookie size is larger 4096: ${value.length}`)
-        Cookies.set("maps", value, {sameSite: 'strict'});
+        if(_cookies_save_timer) clearTimeout(_cookies_save_timer);
+        _cookies_save_timer = setTimeout(() => {
+            _cookies_save_timer = null;
+            const value = JSON.stringify(this.strip());
+            if(value.length >= 4096)
+                console.warn(`The cookie size is larger 4096: ${value.length}`)
+            Cookies.set("maps", value, {sameSite: 'strict'});
+        }, 500);
     }
 
     public strip(){
