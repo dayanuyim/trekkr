@@ -26,7 +26,9 @@ export const def_trk_color = 'DarkMagenta';
 //  'DarkGray', 'LightGray', 'DarkCyan', 'DarkMagenta', 'DarkBlue', 'DarkGreen', 'DarkRed', 'Black'
 //];
 
-function toTextStyle(text)
+// Waypoint Style ----------------------------------------------------------------
+
+function wpt_name_style(text)
 {
   let {fontsize, display, display_auto_zoom} = Opt.waypoint;
   fontsize = fontsize || 16;
@@ -60,7 +62,8 @@ const white_circle_style = new Style({
   }),
 });
 
-function toWptStyle(name, sym, bg?)
+
+function _wpt_style(name, sym, bg?)
 {
   if(!sym){
     return new Style({
@@ -74,7 +77,7 @@ function toWptStyle(name, sym, bg?)
           width: 1
         })
       }),
-      text: toTextStyle(name),
+      text: wpt_name_style(name),
     });
   }
 
@@ -87,70 +90,26 @@ function toWptStyle(name, sym, bg?)
       //anchor: sym.anchor,
       scale: 0.25,
     }),
-    text: toTextStyle(name),
+    text: wpt_name_style(name),
   });
 
   return bg? [white_circle_style, sym_style]: sym_style;
 }
 
-export const gpxStyle = (feature) => {
-  switch (feature.getGeometry().getType()) {
-    case 'Point': {
-      const has_bg = !!feature.get('image');
-      const name = feature.get('name');
-      let sym = feature.get('sym');
-      if(!sym){ // set default symbol name (although 'sym' is not a mandatory field for wpt, specifiy one helps wpt edit)
-        sym = def_symbol.name;
-        feature.set('sym', sym);
-      }
-      return toWptStyle(name, sym, has_bg);
-    }
-    case 'LineString': {
-      return new Style({
-        stroke: new Stroke({
-          color: '#f00',
-          width: 3
-        })
-      });
-    }
-    case 'MultiLineString': {
-      const color = (feature.get('color') || def_trk_color).toLowerCase();
-      const styles = [
-        new Style({
-          stroke: new Stroke({
-            color,
-            width: 3
-          })
-        }),
-      ];
-      // arrow-head for each trkpt
-      feature.getGeometry().getLineStrings().forEach(linestr => {
-        linestr.forEachSegment((start, end) => {
-          styles.push(
-            new Style({
-              geometry: new Point(end),
-              image: new RegularShape({    // regular triangle, like ▲
-                points: 3,
-                radius: 5,
-                fill: new Fill({ color }),
-                stroke: new Stroke({
-                  color: outline_color(color),
-                  width: 1,
-                  lineDash: [5*1.732],   // only for lateral sides, no buttom line, like /▲\
-                }),
-                rotateWithView: true,
-                rotation: arrow_head_rad(start, end),
-              }),
-            })
-          );
-        });
-      });
-      return styles;
-    }
+const wpt_style = feature => {
+  const has_bg = !!feature.get('image');
+  const name = feature.get('name');
+  let sym = feature.get('sym');
+  // set default symbol name if none. Although 'sym' is not a mandatory node for wpt, having one helps ui display for edit.
+  if (!sym) {
+    sym = def_symbol.name;
+    feature.set('sym', sym);
   }
-};
+  return _wpt_style(name, sym, has_bg);
+}
 
-function outline_color(color){
+// Track Style ----------------------------------------------------------------
+const outline_color = (color) => {
   switch(color){
     case 'lightgray': return '#ededed';
     default: return 'lightgray';
@@ -158,12 +117,86 @@ function outline_color(color){
 }
 
 // the math from: https://openlayers.org/en/latest/examples/line-arrows.html
-function arrow_head_rad(start, end){
+const arrow_head_rad = (start, end) => {
   const dx = end[0] - start[0];
   const dy = end[1] - start[1];
   const rotation = Math.atan2(dy, dx);
   return Math.PI/2 - rotation;
 }
+
+const arrow_head_style = (start, end, color) => {
+  const radius = 6;
+  return new Style({
+    geometry: new Point(end),
+    image: new RegularShape({    // regular triangle, like ▲
+      points: 3,
+      radius,
+      fill: new Fill({ color }),
+      stroke: new Stroke({
+        color: outline_color(color),
+        width: 1,
+        lineDash: [radius * 1.732],   // only for lateral sides, no buttom line, like /▲\
+      }),
+      rotateWithView: true,
+      rotation: arrow_head_rad(start, end),
+    }),
+  });
+}
+
+const track_line_style = color => {
+    return new Style({
+      stroke: new Stroke({
+        color,
+        width: 3
+      })
+    });
+}
+
+const track_styles = feature => {
+    const color = (feature.get('color') || def_trk_color).toLowerCase();
+    const styles = [track_line_style(color)];
+
+    let { interval, max_num } = Opt.track.arrow;
+    if(max_num > 0){
+      feature.getGeometry().getLineStrings().forEach(linestr => {   //for each trkpt
+        const seg_num = linestr.getCoordinates().length - 1;
+        interval = Math.max(interval, Math.round(seg_num / max_num));
+        let idx = 0;
+        linestr.forEachSegment((start, end) => {
+          if(idx % interval == 0 || idx == seg_num -1)
+            styles.push(arrow_head_style(start, end, color));
+          ++idx;
+        });
+      });
+    }
+    return styles;
+}
+
+
+// ----------------------------------------------------------------------------
+// @not really use, just for in case
+const route_style = (feature) => {
+  return new Style({
+    stroke: new Stroke({
+      color: '#f00',
+      width: 3
+    })
+  });
+}
+
+// ----------------------------------------------------------------------------
+const empty_style = new Style();
+
+export const gpx_style = (feature) => {
+  switch (feature.getGeometry().getType()) {
+    case 'Point':           return wpt_style(feature);
+    case 'MultiLineString': return track_styles(feature);
+    case 'LineString':      return route_style(feature);
+    default:                return empty_style;  //for fallback
+  }
+};
+
+// ============================================================================
 
 // GPX format which reads extensions node
 export class GPXFormat extends GPX {
@@ -181,7 +214,6 @@ export class GPXFormat extends GPX {
 
   _getTrackColor(extensions) {
     let color = null;
-
     if (extensions) {
       extensions.childNodes.forEach((ext) => {
         if (ext.nodeName == "gpxx:TrackExtension") {
@@ -331,7 +363,7 @@ export function olGpxLayer(source_props?, layer_props?){
       source: new VectorSource(Object.assign({
         format: new GPXFormat(),
       }, source_props)),
-      style: gpxStyle,
+      style: gpx_style,
     }, layer_props));
 }
 

@@ -30,6 +30,12 @@ class Opt{
         display: "auto",
         display_auto_zoom: 13.5
     };
+    track = {
+        arrow: {
+            max_num: 36,
+            interval: 20,
+        }
+    }
 
     //runtime options
     googleMapKey = 'AIzaSyDoRAou_pmXgeqexPAUlX3Xkg0eKJ_FMhg';
