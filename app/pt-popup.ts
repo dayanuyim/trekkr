@@ -209,10 +209,12 @@ export default class PtPopupOverlay extends Overlay{
 
         //trk
         show(this._pt_trk, this._data.trk);
-        const is_real_trkpt = this.isRealTrkpt();
-        const is_end_trkpt = this.isEndTrkpt();
-        show(this._pt_join_trk, is_end_trkpt);
-        show(this._pt_split_trk, is_real_trkpt && !is_end_trkpt);
+        if(this._data.trk){
+            const is_real_trkpt = this.isRealTrkpt();
+            const is_end_trkpt = this.isEndTrkpt();
+            show(this._pt_join_trk, is_end_trkpt);
+            show(this._pt_split_trk, is_real_trkpt && !is_end_trkpt);
+        }
 
         //colorboard
         show(this._pt_colorboard, false);   //colorboard hidden, if any
@@ -535,9 +537,8 @@ export default class PtPopupOverlay extends Overlay{
                this._feature.getGeometry().getLayout() == getLayoutOfCoord(this._data.coord);  // a heuristic way to check
     }
     private isEndTrkpt(){
-        const trksegs = this._feature.getGeometry().getLineStrings();
         return this._data.trk &&
-               findIndexIfIsEndPoint(trksegs, this._data.coord).idx >= 0;
+               findIndexIfIsEndPoint(this._feature.getGeometry().getLineStrings(), this._data.coord).idx >= 0;
     }
 
     private setUrlContent(el: HTMLAnchorElement, link){

@@ -60,6 +60,7 @@ const white_circle_style = new Style({
       width: 1
     })
   }),
+  zIndex: 8,
 });
 
 
@@ -78,6 +79,7 @@ function _wpt_style(name, sym, bg?)
         })
       }),
       text: wpt_name_style(name),
+      zIndex: 9,
     });
   }
 
@@ -91,6 +93,7 @@ function _wpt_style(name, sym, bg?)
       scale: 0.25,
     }),
     text: wpt_name_style(name),
+    zIndex: 9,
   });
 
   return bg? [white_circle_style, sym_style]: sym_style;
@@ -140,6 +143,7 @@ const arrow_head_style = (start, end, color) => {
       rotateWithView: true,
       rotation: arrow_head_rad(start, end),
     }),
+    zIndex: 4,
   });
 }
 
@@ -148,7 +152,8 @@ const track_line_style = color => {
       stroke: new Stroke({
         color,
         width: 3
-      })
+      }),
+      zIndex: 3,
     });
 }
 
@@ -180,7 +185,8 @@ const route_style = (feature) => {
     stroke: new Stroke({
       color: '#f00',
       width: 3
-    })
+    }),
+    zIndex: 5,
   });
 }
 
@@ -523,7 +529,7 @@ export class GpxLayer {
         console.log('track join the previous');
         const prev = this.findPreviousTrack(coord);
         if(prev)
-          return this.joinTracks(prev, trk);    // !! return to indicate whetehr @trk is removed !!
+          return this.joinTracks(prev, trk);    // !! return to indicate whether @trk is removed !!
       }
       else{
         console.log(`track join trksegs [${idx-1}, ${idx}]`);
