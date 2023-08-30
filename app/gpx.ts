@@ -128,7 +128,8 @@ const arrow_head_rad = (start, end) => {
 }
 
 const arrow_head_style = (start, end, color) => {
-  const radius = Opt.track.arrow.radius;
+  //const radius = Opt.track.arrow.radius;
+  const radius = Math.max(1, Math.round(Opt.zoom/2));  //enlarge when zoom in
   return new Style({
     geometry: new Point(end),
     image: new RegularShape({    // regular triangle, like ▲
@@ -158,23 +159,25 @@ const track_line_style = color => {
 }
 
 const track_styles = feature => {
-    const color = (feature.get('color') || def_trk_color).toLowerCase();
-    const styles = [track_line_style(color)];
+  const color = (feature.get('color') || def_trk_color).toLowerCase();
+  const styles = [track_line_style(color)];
 
-    let { interval, max_num: arrow_num } = Opt.track.arrow;
-    if(arrow_num > 0){
-      feature.getGeometry().getLineStrings().forEach(linestr => {   //for each trkpt
-        const seg_num = linestr.getCoordinates().length - 1;
-        interval = Math.max(interval, Math.round(seg_num / arrow_num));
-        let idx = 0;
-        linestr.forEachSegment((start, end) => {
-          if(idx % interval == 0 || idx == seg_num -1)
-            styles.push(arrow_head_style(start, end, color));
-          ++idx;
-        });
-      });
-    }
-    return styles;
+  //let { interval, max_num: arrow_num } = Opt.track.arrow;
+  const arrow_num = Opt.track.arrow.max_num;
+  if(arrow_num > 0){
+    feature.getGeometry().getLineStrings().forEach(trkseg => {
+      const coords = trkseg.getCoordinates();
+      const skip = 15;   // show arrows in the very ends seems useless, so skip it.
+      const interval = Math.max(20, (coords.length - 2*skip) / arrow_num);  // ensure that interval >= 1
+      //interval = Math.max(1, Math.max(interval, (coords.length - 2*skip) / arrow_num));  // ensure that interval >= 1
+
+      for(let i = skip; i < coords.length; i += interval){
+        const j = Math.floor(i);
+        styles.push(arrow_head_style(coords[j-1], coords[j], color));
+      }
+    });
+  }
+  return styles;
 }
 
 

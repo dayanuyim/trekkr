@@ -261,12 +261,12 @@ export const settings = Handlebars.compile(`
                         <input type="number" id="trk-arrow-max-num" min="0" max="999" />
                         <label for="trk-arrow-max-num">(0: disable)</label>
                     </li>
-                    <li>
+                    <li class="hidden">
                         <label for="trk-arrow-interval">每</label>
                         <input type="number" id="trk-arrow-interval" min="1" max="999"/>
                         <label for="trk-arrow-interval">個航跡點標識</label>
                     </li>
-                    <li>
+                    <li class="hidden">
                         <label for="trk-arrow-radius">箭頭大小</label>
                         <input type="number" id="trk-arrow-radius" min="1" max="99"/>
                     </li>
