@@ -8,6 +8,7 @@ import { Vector as VectorSource, TileJSON, XYZ, OSM } from 'ol/source';
 import { getRenderPixel } from 'ol/render';
 import { platformModifierKeyOnly } from 'ol/events/condition';
 import { Geometry } from 'ol/geom';
+import * as Extent from 'ol/extent';
 
 import { GeoJSON, IGC, KML, TopoJSON } from 'ol/format';
 import PhotoFormat from './format/Photo';
@@ -29,12 +30,17 @@ function findLayerByFeature(map, feature){
   const layers = map.getLayers();
   for(let i = layers.getLength() -1; i >= 0; --i){
     const layer = layers.item(i);
-    if(layer.getSource().getFeatures().includes(feature))
+    if(layer.getSource().hasFeature(feature))
       return layer;
   }
   return undefined;
 }
 */
+
+function unionExtents(extents){
+  const empty = Extent.createEmpty();
+  return extents.reduce((res, ext) => Extent.extend(res, ext), empty);
+}
 
 ////////////////////////////////////////////////////////////////
 
@@ -84,7 +90,7 @@ export class AppMap{
 
     photo_format
       .setListener('featureexists', (time) => this._gpx_layer.findWaypoint(time))
-      .setListener('lookupcoords', (time) => this._gpx_layer.estimateCoords(time));
+      .setListener('lookupcoords', (time) => this._gpx_layer.estimateCoord(time));
 
     // pseudo gpx layer
     const layer = olGpxLayer();
@@ -93,12 +99,19 @@ export class AppMap{
 
     //create layer from features, and add it to the map
     drag_interaciton.on('addfeatures', (e) => {
-      const features = e.features.filter(f => f instanceof Feature).map(f => f as Feature); //filter out RenderFeature, what is that?
-      this._gpx_layer.getSource().addFeatures(features);
-      this._map.getView().fit(this._gpx_layer.getSource().getExtent(), { maxZoom: 16 });
-      //const layer = olLayer({features: e.features});
-      //addLayerWithInteraction(map, layer);
-      //map.getView().fit(layer.getSource().getExtent(), { maxZoom: 16 });
+      const features = e.features.filter(f => f instanceof Feature)  // filter out RenderFeature
+                                 .map(f => f as Feature);
+      //*
+      // add to the gpx layer
+      this._gpx_layer.getSource().addFeatures(features);                              // add only 'filtered' features
+      const extent = unionExtents(e.features.map(f => f.getGeometry().getExtent()));  // extent of 'original' features
+      this._map.getView().fit(extent, { maxZoom: 16 });
+      /*/
+      // create new layer
+      const layer = olLayer({features});
+      this.addLayerWithInteraction(layer);
+      this._map.getView().fit(layer.getSource().getExtent(), { maxZoom: 16 });
+      //*/
     });
   };
 

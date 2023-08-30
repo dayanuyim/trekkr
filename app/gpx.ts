@@ -479,18 +479,15 @@ export class GpxLayer {
             .find(feature => time_of(feature.getGeometry().getCoordinates()) == time);  // exactly match
   }
 
-  public estimateCoords(time) {
+  public estimateCoord(time) {
     //*/
-    return this._layer.getSource().getFeatures()
-      .filter(isTrkFeature)
-      .map(feature => feature.getGeometry())                // get geom
-      .map(geom => geom.getCoordinateAtM(time))
+    return this.getTracks()
+      .map(trk => trk.getGeometry().getCoordinateAtM(time))
       .find(coords => !!coords);       //return the first, otherwise undefined
     /*/
     const time_of = (coords) => coords[coords.length - 1];
-    return this._layer.getSource().getFeatures()
-      .filter(isTrkFeature)                                 // is track
-      .map(feature => feature.getGeometry())                // get geom
+    return this.getTracks()
+      .map(trk => trk.getGeometry())                        // get geom
       .filter(geom => geom.getLayout().endsWith('M'))       // has time element
       .flatMap(geom => geom.getCoordinates())               // cooordinates is the array of trekseg
       .filter(trkseg => {                                   // time in range

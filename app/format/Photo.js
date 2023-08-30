@@ -2,12 +2,23 @@
  * @module ./format/PhotoFeature
  */
 import FeatureFormat from 'ol/format/Feature.js';
+import RenderFeature from 'ol/render/Feature';
 
 import * as exif from 'exifreader'
 import { transform } from 'ol/proj';
 import { WGS84 } from '../coord';
 import { olWptFeature } from '../gpx';
 import { epochseconds } from '../lib/utils';
+
+function toRenderFeature(feature){
+  return new RenderFeature(
+    feature.getGeometry().getType(),
+    feature.getGeometry().getCoordinates(),
+    [],   // what is the parameter 'ends'??
+    feature.getProperties(),
+    feature.getId()
+  );
+}
 
 /**
  * @classdesc
@@ -96,7 +107,7 @@ class Photo extends FeatureFormat {
         if(!feature.get('image')){
           feature.set('image', image_obj());
         }
-        return null;
+        return [ toRenderFeature(feature) ]; //return for map view to fit it.
       }
     }
 
