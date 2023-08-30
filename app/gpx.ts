@@ -327,16 +327,18 @@ function splitTrksegs(trksegs, point){
 }
 //----------------------------------------------------------------
 
-// return: where: 0 means HEAD, - measn TAIL
+// return
+//    idx: the index of trksegs
+//    head: true if the coord is the first coord, false if the coord is the last.
 export function findIndexIfIsEndPoint(trksegs, coord)
 {
   let idx = trksegs.findIndex(trkseg => xy_equals(coord, trkseg.getFirstCoordinate()));
-  if(idx >= 0) return {idx, where: 0}
+  if(idx >= 0) return {idx, head: true}
 
   idx = trksegs.findIndex(trkseg => xy_equals(coord, trkseg.getLastCoordinate()));
-  if(idx >= 0) return {idx, where: -1};
+  if(idx >= 0) return {idx, head: false};
 
-  return { idx: -1, where: null}
+  return { idx: -1, head: undefined}
 }
 
 // join the trksegs [begin, end) of @trk
@@ -517,39 +519,31 @@ export class GpxLayer {
   public joinTrackAt(trk, coord)
   {
     const trksegs = trk.getGeometry().getLineStrings();
-    const {idx, where} = findIndexIfIsEndPoint(trksegs, coord);
+    let {idx, head} = findIndexIfIsEndPoint(trksegs, coord);
     if(idx < 0) return false;
 
-    // head end
-    if(where == 0) {
-      if(idx == 0){
+    // track head
+    if(idx == 0 && head) {
         console.log('track join the previous');
         const prev = this.findPreviousTrack(coord);
         if(prev)
           return this.joinTracks(prev, trk);    // !! return to indicate whether @trk is removed !!
-      }
-      else{
-        console.log(`track join trksegs [${idx-1}, ${idx}]`);
-        joinTrksegs(trk, idx-1, idx+1)
-      }
     }
-    //tail end
-    else {
-      if(idx == trksegs.length - 1){
+    // track tail
+    else if(idx == trksegs.length - 1 && !head){
         console.log('track join the next');
         const next = this.findNextTrack(coord);
         if(next)
           this.joinTracks(trk, next);
-      }
-      else{
-        console.log(`track join trksegs [${idx}, ${idx+1}]`);
-        joinTrksegs(trk, idx, idx+2)
-      }
+    }
+    // in the middle
+    else{
+      if(head) --idx;  // this head is the last tail
+      console.log(`track join trksegs [${idx}, ${idx+2})`);
+      joinTrksegs(trk, idx, idx+2)
     }
     return false;
   }
-
-  //function inTrksegHead
 
   private findPreviousTrack(coord)
   {
