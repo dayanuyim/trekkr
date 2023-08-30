@@ -15,6 +15,17 @@ export function gmapUrl(coord){
     return fmtCoordinate(toLonLat(coord), `https://www.google.com.tw/maps/@{y},{x},${Opt.zoom}z?hl=zh-TW`, 7);
 }
 
+export function getLayoutOfCoord(coord){
+  switch(coord.length){
+    case 2: return 'XY';
+    case 3: return (coord[2] < 10000.0)? 'XYZ': 'XYM';
+    case 4: return 'XYZM';
+    default:
+      console.error('cannot determine the layout of coord', coord);
+      return undefined;
+  }
+}
+
 export function getXYZMOfCoords(coords, layout?){
   switch(layout){
     case 'XY':   return coords.concat([undefined, undefined]);

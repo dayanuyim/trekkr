@@ -8,8 +8,8 @@ import {toTWD97, toTWD67, toTaipowerCoord} from './coord';
 
 //import * as moment from 'moment-timezone';
 import { getSymbol, matchRules, symbol_inv } from './sym'
-import { getEleByCoords, getEleOfCoords, setEleOfCoords, getLocalTimeByCoords, gmapUrl } from './common'
-import { olWptFeature, def_trk_color} from './gpx';
+import { getEleByCoords, getEleOfCoords, setEleOfCoords, getLocalTimeByCoords, getLayoutOfCoord, gmapUrl } from './common'
+import { olWptFeature, def_trk_color, findIndexIfIsEndPoint, isTrkFeature} from './gpx';
 import { delayToEnable } from './lib/dom-utils';
 import Opt from './opt';
 import * as templates from './templates';
@@ -481,9 +481,7 @@ export default class PtPopupOverlay extends Overlay{
 
     private _track_feature_of(trkpt: Feature<Point>){
         const features = trkpt.get('features');
-        if(features)
-            return features.find(f => f.getGeometry().getType() == 'MultiLineString')
-        return undefined;
+        return features ? features.find(isTrkFeature) : undefined;
     }
 
     private async setContent({trk, name, sym, coord})
@@ -534,13 +532,12 @@ export default class PtPopupOverlay extends Overlay{
 
     private isRealTrkpt(){
         return this._data.trk &&
-               this._feature.getGeometry().getLayout().length == this._data.coord.length;  //qucik dirty test
+               this._feature.getGeometry().getLayout() == getLayoutOfCoord(this._data.coord);  // a heuristic way to check
     }
     private isEndTrkpt(){
-        const xy_equals = ([x1, y1], [x2, y2]) => (x1 === x2 && y1 === y2);
-        return this._data.trk && (
-                xy_equals(this._feature.getGeometry().getFirstCoordinate(), this._data.coord) ||
-                xy_equals(this._feature.getGeometry().getLastCoordinate(), this._data.coord));
+        const trksegs = this._feature.getGeometry().getLineStrings();
+        return this._data.trk &&
+               findIndexIfIsEndPoint(trksegs, this._data.coord).idx >= 0;
     }
 
     private setUrlContent(el: HTMLAnchorElement, link){

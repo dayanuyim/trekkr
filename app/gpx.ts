@@ -156,11 +156,11 @@ const track_styles = feature => {
     const color = (feature.get('color') || def_trk_color).toLowerCase();
     const styles = [track_line_style(color)];
 
-    let { interval, max_num } = Opt.track.arrow;
-    if(max_num > 0){
+    let { interval, max_num: arrow_num } = Opt.track.arrow;
+    if(arrow_num > 0){
       feature.getGeometry().getLineStrings().forEach(linestr => {   //for each trkpt
         const seg_num = linestr.getCoordinates().length - 1;
-        interval = Math.max(interval, Math.round(seg_num / max_num));
+        interval = Math.max(interval, Math.round(seg_num / arrow_num));
         let idx = 0;
         linestr.forEachSegment((start, end) => {
           if(idx % interval == 0 || idx == seg_num -1)
@@ -321,27 +321,32 @@ function splitTrksegs(trksegs, point){
 }
 //----------------------------------------------------------------
 
-export function isFirstOfTrkseg(track, coord)
+// return: where: 0 means HEAD, - measn TAIL
+export function findIndexIfIsEndPoint(trksegs, coord)
 {
-  return track.getGeometry().getCoordinates()
-          .findIndex(trkseg => xy_equals(coord, trkseg[0]));
+  let idx = trksegs.findIndex(trkseg => xy_equals(coord, trkseg.getFirstCoordinate()));
+  if(idx >= 0) return {idx, where: 0}
+
+  idx = trksegs.findIndex(trkseg => xy_equals(coord, trkseg.getLastCoordinate()));
+  if(idx >= 0) return {idx, where: -1};
+
+  return { idx: -1, where: null}
 }
 
-export function isLastOfTrkseg(track, coord)
-{
-  return track.getGeometry().getCoordinates()
-          .findIndex(trkseg => xy_equals(coord, trkseg[trkseg.length - 1]));
-}
+// join the trksegs [begin, end) of @trk
+export function joinTrksegs(trk, begin, end){
+  const trksegs = trk.getGeometry().getCoordinates();
+  if(0 <= begin && begin < end && end <= trksegs.length) {
+    //join [begin, end) to a new trkseg
+    const seg = trksegs.slice(begin, end).reduce((result, s) => result.concat(s), []);
 
-// join the trkseg[i] and trkseg[i+1] of @trk
-export function joinTrksegs(trk, i){
-  console.log(`join trkseg ${i} and ${i+1}`);
-  const orig = trk.getGeometry().getCoordinates();
-  if(0 <= i && (i+1) < orig.length) {
-    const curr = orig.slice(0, i);
-    curr.push(orig[i].concat(orig[i+1]));
-    curr.concat(orig.slice(i+2));
-    trk.getGeometry().setCoordinates(curr);
+    //new trksegs
+    let segs = trksegs.slice(0, begin);
+    segs.push(seg);
+    segs = segs.concat(trksegs.slice(end));
+
+    //reset
+    trk.getGeometry().setCoordinates(segs);
   }
 }
 
@@ -395,12 +400,12 @@ function isCrosshairWpt(feature){
   return !feature.get('name') && feature.get('sym') == getSymbol('crosshair').name;
 }
 
-function isWptFeature(feature){
+export function isWptFeature(feature){
   return feature.getGeometry().getType() == 'Point' &&
           !isCrosshairWpt(feature); //!! filter out the Crosshair wpt !!
 }
 
-function isTrkFeature(feature){
+export function isTrkFeature(feature){
   return feature.getGeometry().getType() == 'MultiLineString';
 }
 
@@ -505,36 +510,43 @@ export class GpxLayer {
       //*/
   }
 
-  // return true if @trk is removed after joining
+  // return true if @trk is removed after joining, which happends only when @trk is joined to the 'previous' track.
   public joinTrackAt(trk, coord)
   {
-    if (xy_equals(coord, trk.getGeometry().getFirstCoordinate())) {
-      console.log('find previous track to join');
-      const prev = this.findPreviousTrack(coord);
-      if(prev)
-        return this.joinTracks(prev, trk);
+    const trksegs = trk.getGeometry().getLineStrings();
+    const {idx, where} = findIndexIfIsEndPoint(trksegs, coord);
+    if(idx < 0) return false;
+
+    // head end
+    if(where == 0) {
+      if(idx == 0){
+        console.log('track join the previous');
+        const prev = this.findPreviousTrack(coord);
+        if(prev)
+          return this.joinTracks(prev, trk);    // !! return to indicate whetehr @trk is removed !!
+      }
+      else{
+        console.log(`track join trksegs [${idx-1}, ${idx}]`);
+        joinTrksegs(trk, idx-1, idx+1)
+      }
     }
-    if (xy_equals(coord, trk.getGeometry().getLastCoordinate())) {
-      console.log('find next track to join');
-      const next = this.findNextTrack(coord);
-      if(next)
-        this.joinTracks(trk, next);
-      return false;
-    }
-    let idx = isFirstOfTrkseg(trk, coord);
-    if (idx >= 1) {
-      console.log(`trk join trksegs [${idx-1}, ${idx}]`);  //assert: idx >= 1
-      joinTrksegs(trk, idx - 1)
-      return false;
-    }
-    idx = isLastOfTrkseg(trk, coord);
-    if (idx >= 0) {
-      console.log(`trk join trksegs [${idx}, ${idx+1}]`);  //assert: idx < (trksegs.length - 1)
-      joinTrksegs(trk, idx)
-      return false;
+    //tail end
+    else {
+      if(idx == trksegs.length - 1){
+        console.log('track join the next');
+        const next = this.findNextTrack(coord);
+        if(next)
+          this.joinTracks(trk, next);
+      }
+      else{
+        console.log(`track join trksegs [${idx}, ${idx+1}]`);
+        joinTrksegs(trk, idx, idx+2)
+      }
     }
     return false;
   }
+
+  //function inTrksegHead
 
   private findPreviousTrack(coord)
   {
@@ -545,7 +557,7 @@ export class GpxLayer {
       const last = trk.getGeometry().getLastCoordinate();
       //check the timing
       const last_time = getEpochOfCoords(last);
-      if(time && last_time && time < last_time)
+      if(time && last_time && time < last_time)  //check time if avaialble
         continue;
       const dist = distance2(coord, last);
       if(prev_dist > dist){   //condicate
@@ -565,7 +577,7 @@ export class GpxLayer {
       const first = trk.getGeometry().getFirstCoordinate();
       //check the timing
       const first_time = getEpochOfCoords(first);
-      if(time && first_time && time > first_time)
+      if(time && first_time && time > first_time)  //check time if avaialble
         continue;
       const dist = distance2(coord, first);
       if(next_dist > dist){   //condicate
