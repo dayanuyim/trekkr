@@ -85,6 +85,8 @@ function scaleDown({width, height}, max){
         return {width: width/height*max, height: max};
 }
 
+const xy_equals = ([x1, y1], [x2, y2]) => (x1 === x2 && y1 === y2);
+const xy_approximate = ([x1, y1], [x2, y2]) => Math.abs(x2-x1) < 0.000001 && Math.abs(y2-y1) < 0.000001;
 
 //TODO: convert this to typescript
 export default class PtPopupOverlay extends Overlay{
@@ -120,6 +122,7 @@ export default class PtPopupOverlay extends Overlay{
     _sym_provider: HTMLAnchorElement;
     _sym_license: HTMLAnchorElement;
 
+    _profile;
     _feature;
     _data;
     _resize_observer;
@@ -215,10 +218,18 @@ export default class PtPopupOverlay extends Overlay{
         show(this._pt_trk, this._data.trk);
         if(this._data.trk){
             const is_end_trkpt = this.isEndTrkpt();
+            const is_real_trkpt = this.isRealTrkpt();
             show(this._pt_join_trk, is_end_trkpt);
-            show(this._pt_split_trk, !is_end_trkpt && this.isRealTrkpt());
-            const [sn, len] = this.getTrksegSn();
-            this.pt_trk_seg_sn = (len > 1)? `${sn}/${len}`: '';
+            show(this._pt_split_trk, !is_end_trkpt && is_real_trkpt);
+
+            this.pt_trk_seg_sn = (() => {
+                if(is_real_trkpt){
+                    const [sn, total] = this.getTrksegSn();
+                    if(sn > 0 && total > 1)
+                        return `${sn}/${total}`;
+                }
+                return '';
+            })();
         }
 
         //colorboard
@@ -465,6 +476,8 @@ export default class PtPopupOverlay extends Overlay{
     }
 
     async popContent(feature) {
+        const profile = this.profileFeature(feature);
+
         // get data
         const track = this._track_feature_of(feature);                // for trkpt
         const trk = track ? {
@@ -474,16 +487,56 @@ export default class PtPopupOverlay extends Overlay{
 
         const name = feature.get('name') || feature.get('desc');     //maybe undefined
         const sym = feature.get('sym');                              //maybe undefined
-        const coord = feature.getGeometry().getCoordinates();        //x, y, ele, time
         const image = feature.get('image');
+        let coord = feature.getGeometry().getCoordinates();          //x, y, [ele, [time]]
+        if(profile.is_trkpt && !profile.is_real)
+            coord = this.extendCoord(coord, track.getGeometry().getClosestPoint(coord));
 
         // cache for later to use
+        this._profile = profile;
         this._feature = track? track: feature;  // trk(for rm/split/join) or wpt (for rm)
         this._data = {trk, name, sym, coord};   // for creating/updating
 
         this.resetDisplay(image);
         await this.setContent(this._data);
         this.setPosition(coord);
+    }
+
+    private profileFeature(feature){
+        const profile = {
+            is_wpt: undefined,
+            is_trkpt: undefined,
+            is_real: undefined,
+            is_end: undefined,
+            trkseg_idx: undefined,
+            trkseg_num: undefined,
+        };
+
+        const track = this._track_feature_of(feature);
+        profile.is_trkpt = !!track;
+        profile.is_wpt = !track;
+        if(track){
+            const trksegs = track.getGeometry().getCoordinates();
+            const coord = feature.getGeometry().getCoordinates();
+            const indices = getTrkptIndicesByCoord(trksegs, coord);
+
+            profile.trkseg_num = trksegs.length;
+            profile.is_real = !!indices;
+            if(indices){
+                const [i, j] = indices;
+                profile.is_end = (j == 0 || j == trksegs[i].length - 1);
+                profile.trkseg_idx = i;
+            }
+            else{
+                profile.is_end = false;
+            }
+        }
+
+        return profile;
+    }
+
+    private extendCoord(coord, ext){
+        return (ext.length > coord.length && xy_approximate(ext, coord))? ext: coord;
     }
 
     private _track_feature_of(trkpt: Feature<Point>){
