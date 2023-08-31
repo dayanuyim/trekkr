@@ -9,7 +9,7 @@ import {toTWD97, toTWD67, toTaipowerCoord} from './coord';
 //import * as moment from 'moment-timezone';
 import { getSymbol, matchRules, symbol_inv } from './sym'
 import { getEleByCoords, getEleOfCoords, setEleOfCoords, getLocalTimeByCoords, getLayoutOfCoord, gmapUrl } from './common'
-import { olWptFeature, def_trk_color, findIndexIfIsEndPoint, isTrkFeature} from './gpx';
+import { olWptFeature, def_trk_color, getTrkptIndicesAtEnds, getTrkptIndicesByCoord, isTrkFeature} from './gpx';
 import { delayToEnable } from './lib/dom-utils';
 import Opt from './opt';
 import * as templates from './templates';
@@ -95,6 +95,7 @@ export default class PtPopupOverlay extends Overlay{
     _pt_image: HTMLElement;
     _pt_trk: HTMLElement;
     _pt_trk_name: HTMLElement;
+    _pt_trk_seg_sn: HTMLElement;
     _pt_trk_color: HTMLElement;
     _pt_colorboard: HTMLElement;
     _pt_wpt_header: HTMLElement;
@@ -126,6 +127,8 @@ export default class PtPopupOverlay extends Overlay{
 
     get pt_trk_name() { return this._pt_trk_name.textContent; }
     set pt_trk_name(value) { this._pt_trk_name.textContent = value; }
+    get pt_trk_seg_sn() { return this._pt_trk_seg_sn.textContent; }
+    set pt_trk_seg_sn(value) { this._pt_trk_seg_sn.textContent = value; }
     get pt_trk_color() { return this._pt_trk_color.style.backgroundColor; }
     set pt_trk_color(value) { this._pt_trk_color.style.backgroundColor = value; }
     get pt_sym() { return this._pt_sym.src; }
@@ -175,6 +178,7 @@ export default class PtPopupOverlay extends Overlay{
         this._pt_image =           el.querySelector<HTMLElement>('.pt-image');
         this._pt_trk =             el.querySelector<HTMLElement>('.pt-trk');
         this._pt_trk_name =        el.querySelector<HTMLElement>('.pt-trk-name');
+        this._pt_trk_seg_sn =      el.querySelector<HTMLElement>('.pt-trk-seg-sn');
         this._pt_trk_color =       el.querySelector<HTMLElement>('.pt-trk-color');
         this._pt_colorboard =      el.querySelector<HTMLElement>('.pt-colorboard');
         this._pt_wpt_header =      el.querySelector<HTMLElement>('.pt-wpt-header');
@@ -210,10 +214,11 @@ export default class PtPopupOverlay extends Overlay{
         //trk
         show(this._pt_trk, this._data.trk);
         if(this._data.trk){
-            const is_real_trkpt = this.isRealTrkpt();
             const is_end_trkpt = this.isEndTrkpt();
             show(this._pt_join_trk, is_end_trkpt);
-            show(this._pt_split_trk, is_real_trkpt && !is_end_trkpt);
+            show(this._pt_split_trk, !is_end_trkpt && this.isRealTrkpt());
+            const [sn, len] = this.getTrksegSn();
+            this.pt_trk_seg_sn = (len > 1)? `${sn}/${len}`: '';
         }
 
         //colorboard
@@ -273,6 +278,17 @@ export default class PtPopupOverlay extends Overlay{
                 }
             });
 
+        // change trk name
+        this._pt_trk_name.onkeydown = enter_to_blur_listener;
+        this._pt_trk_name.onblur = e => {
+            if(!this.pt_trk_name)
+                return this.setContent(this._data);  //reload the data to restore the erased value
+            if(this._data.trk.name != this.pt_trk_name){
+                this._data.trk.name = this.pt_trk_name;
+                this._data_trk_name_changed();
+            }
+        }
+
         // set resizer-conetnt as the same size as the resizer
         this._resize_observer = new ResizeObserver((entries)=>{
             const {width, height} = entries[0].contentRect;
@@ -293,17 +309,6 @@ export default class PtPopupOverlay extends Overlay{
             console.log('init symboard');
             this.initSymboard();
         }, {once: true});
-
-        // change trk name
-        this._pt_trk_name.onkeydown = enter_to_blur_listener;
-        this._pt_trk_name.onblur = e => {
-            if(!this.pt_trk_name)
-                return this.setContent(this._data);  //reload the data to restore the erased value
-            if(this._data.trk.name != this.pt_trk_name){
-                this._data.trk.name = this.pt_trk_name;
-                this._data_trk_name_changed();
-            }
-        }
 
         // change wpt name
         this._pt_name.onkeydown = enter_to_blur_listener;
@@ -538,7 +543,22 @@ export default class PtPopupOverlay extends Overlay{
     }
     private isEndTrkpt(){
         return this._data.trk &&
-               findIndexIfIsEndPoint(this._feature.getGeometry().getLineStrings(), this._data.coord).idx >= 0;
+               getTrkptIndicesAtEnds(this._feature.getGeometry().getCoordinates(), this._data.coord);
+    }
+
+    private getTrksegSn(){
+        const trksegs = this._feature.getGeometry().getCoordinates();
+        const len = trksegs.length;
+        if(len <= 1)
+            return [len, len];  // no search, just assume
+
+        const idxs = getTrkptIndicesByCoord(trksegs, this._data.coord);
+        if(!idxs){
+            console.error("cannot find the index of the coord in the track", this._data.coord, this._feature);
+            return [0, len];
+        }
+
+        return [idxs[0]+1, len];
     }
 
     private setUrlContent(el: HTMLAnchorElement, link){

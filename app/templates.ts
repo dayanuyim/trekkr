@@ -77,6 +77,7 @@ export const ptPopup = Handlebars.compile(`
         </fieldset>
         <div class="pt-trk-color color-item"></div><!--
      --><span class="pt-trk-name" contenteditable></span>
+        <span class="pt-trk-seg-sn"></span>
     </div>
     <div class="pt-colorboard glassmophism hidden">
         {{colorboardItems}}

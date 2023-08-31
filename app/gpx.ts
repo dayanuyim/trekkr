@@ -164,20 +164,42 @@ const track_styles = feature => {
 
   //let { interval, max_num: arrow_num } = Opt.track.arrow;
   const arrow_num = Opt.track.arrow.max_num;
+  const begin = 15;   // show arrows in the very ends seems useless, so skip it.
+  const min_step = 20;
   if(arrow_num > 0){
     feature.getGeometry().getLineStrings().forEach(trkseg => {
       const coords = trkseg.getCoordinates();
-      const skip = 15;   // show arrows in the very ends seems useless, so skip it.
-      const interval = Math.max(20, (coords.length - 2*skip) / arrow_num);  // ensure that interval >= 1
-      //interval = Math.max(1, Math.max(interval, (coords.length - 2*skip) / arrow_num));  // ensure that interval >= 1
-
-      for(let i = skip; i < coords.length; i += interval){
-        const j = Math.floor(i);
-        styles.push(arrow_head_style(coords[j-1], coords[j], color));
-      }
+      for(let i of genSequence(begin, coords.length, arrow_num, min_step))
+        styles.push(arrow_head_style(coords[i-1], coords[i], color));
     });
   }
   return styles;
+}
+
+// generate integer sequence from [first, end)
+// if possible, pick the ends at first.
+// @first, @end, @num should be integer
+function genSequence(first, end, num, min_step)
+{
+  const last = end - 1;
+  if(num <= 0) return [];
+  if(num == 1) return [last];
+  if(last < first) return [last];   // !! special case
+
+  const seq = [];
+  const step = Math.max(1, Math.max(min_step, (last - first) / (num - 1)));  // step >= 1
+  for(let i = first; i < end; i += step)   // !! may have float number round-off error, use '< end', not '<= last'
+    seq.push(Math.floor(i));
+
+  // correct the last, may be caused by float number round-off error
+  const diff = last - seq[seq.length - 1];
+  if(diff > 0){
+    if(diff <= 1 || seq.length >= num)
+      seq[seq.length - 1] = last;
+    else
+      seq.push(last);
+  }
+  return seq;
 }
 
 
@@ -269,8 +291,8 @@ export function splitTrack(track, coord)
   const trksegs = track.getGeometry().getCoordinates();
 
   const point = (time && layout.endsWith('M'))?
-      getSplitTrkptByTime(trksegs, time):
-      getSplitTrkptByCoord(trksegs, coord);
+      getTrkptIndicesByTime(trksegs, time):
+      getTrkptIndicesByCoord(trksegs, coord);
   if(!point){
     console.error('cannot find the split point by coord', coord);
     return null;
@@ -292,7 +314,7 @@ export function splitTrack(track, coord)
   })
 }
 
-function getSplitTrkptByTime(trksegs, time)
+export function getTrkptIndicesByTime(trksegs, time)
 {
   const time_of = (coords) => coords[coords.length - 1];
 
@@ -310,39 +332,37 @@ function getSplitTrkptByTime(trksegs, time)
   return null;
 }
 
-function getSplitTrkptByCoord(trksegs, coord)
+export function getTrkptIndicesByCoord(trksegs, coord)
 {
-  const [x0, y0] = coord;
   for(let i = 0; i < trksegs.length; ++i){
-    const j = trksegs[i].findIndex(([x, y]) => (x0 === x && y0 === y));
-    if(j >= 0) return [i, j];
+    const j = trksegs[i].findIndex(c => xy_equals(c, coord));
+    if(j >= 0)
+      return [i, j];
   }
   return null;
+}
+
+// only check the ends of the trkseg
+export function getTrkptIndicesAtEnds(trksegs, coord)
+{
+    for(let i = 0; i < trksegs.length; i++){
+      const trkseg = trksegs[i];
+      if(xy_equals(trkseg[0], coord)) return [i, 0];
+      const j = trkseg.length -1;
+      if(xy_equals(trkseg[j], coord)) return [i, j];
+    }
+    return null;
 }
 
 function splitTrksegs(trksegs, point){
   const [i, j] = point;
   const trksegs1 = trksegs.slice(0, i);
   const trksegs2 = trksegs.slice(i+1);
-  trksegs1.push(trksegs[i].slice(0, j+1));  //duplicate the coordinates at j
-  trksegs2.unshift(trksegs[i].slice(j))
+  trksegs1.push(trksegs[i].slice(0, j+1));
+  trksegs2.unshift(trksegs[i].slice(j));   // duplicate the trkpt
   return [trksegs1, trksegs2];
 }
 //----------------------------------------------------------------
-
-// return
-//    idx: the index of trksegs
-//    head: true if the coord is the first coord, false if the coord is the last.
-export function findIndexIfIsEndPoint(trksegs, coord)
-{
-  let idx = trksegs.findIndex(trkseg => xy_equals(coord, trkseg.getFirstCoordinate()));
-  if(idx >= 0) return {idx, head: true}
-
-  idx = trksegs.findIndex(trkseg => xy_equals(coord, trkseg.getLastCoordinate()));
-  if(idx >= 0) return {idx, head: false};
-
-  return { idx: -1, head: undefined}
-}
 
 // join the trksegs [begin, end) of @trk
 export function joinTrksegs(trk, begin, end){
@@ -521,19 +541,20 @@ export class GpxLayer {
   // return true if @trk is removed after joining, which happends only when @trk is joined to the 'previous' track.
   public joinTrackAt(trk, coord)
   {
-    const trksegs = trk.getGeometry().getLineStrings();
-    let {idx, head} = findIndexIfIsEndPoint(trksegs, coord);
-    if(idx < 0) return false;
+    const trksegs = trk.getGeometry().getCoordinates();
+    const idx = getTrkptIndicesAtEnds(trksegs, coord);
+    if(!idx) return false;
 
+    let [i, j] = idx;
     // track head
-    if(idx == 0 && head) {
+    if(i == 0 && j == 0) {
         console.log('track join the previous');
         const prev = this.findPreviousTrack(coord);
         if(prev)
           return this.joinTracks(prev, trk);    // !! return to indicate whether @trk is removed !!
     }
     // track tail
-    else if(idx == trksegs.length - 1 && !head){
+    else if(i == trksegs.length - 1 && j > 0){    // assert j == trksegs[i].length - 1
         console.log('track join the next');
         const next = this.findNextTrack(coord);
         if(next)
@@ -541,9 +562,9 @@ export class GpxLayer {
     }
     // in the middle
     else{
-      if(head) --idx;  // this head is the last tail
-      console.log(`track join trksegs [${idx}, ${idx+2})`);
-      joinTrksegs(trk, idx, idx+2)
+      if(j == 0) --i;  // this head is the last tail
+      console.log(`track join trksegs [${i}, ${i+2})`);
+      joinTrksegs(trk, i, i+2)
     }
     return false;
   }
