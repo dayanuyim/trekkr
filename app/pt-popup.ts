@@ -8,7 +8,7 @@ import {toTWD97, toTWD67, toTaipowerCoord} from './coord';
 
 //import * as moment from 'moment-timezone';
 import { getSymbol, matchRules, symbol_inv } from './sym'
-import { getEleByCoords, getEleOfCoords, setEleOfCoords, getLocalTimeByCoords, getLayoutOfCoord, gmapUrl } from './common'
+import { getEleByCoords, getEleOfCoords, setEleOfCoords, getLocalTimeByCoords, gmapUrl } from './common'
 import { olWptFeature, def_trk_color, getTrkptIndicesAtEnds, getTrkptIndicesByCoord, isTrkFeature} from './gpx';
 import { delayToEnable } from './lib/dom-utils';
 import Opt from './opt';
@@ -122,7 +122,6 @@ export default class PtPopupOverlay extends Overlay{
     _sym_provider: HTMLAnchorElement;
     _sym_license: HTMLAnchorElement;
 
-    _profile;
     _feature;
     _data;
     _resize_observer;
@@ -217,19 +216,9 @@ export default class PtPopupOverlay extends Overlay{
         //trk
         show(this._pt_trk, this._data.trk);
         if(this._data.trk){
-            const is_end_trkpt = this.isEndTrkpt();
-            const is_real_trkpt = this.isRealTrkpt();
-            show(this._pt_join_trk, is_end_trkpt);
-            show(this._pt_split_trk, !is_end_trkpt && is_real_trkpt);
-
-            this.pt_trk_seg_sn = (() => {
-                if(is_real_trkpt){
-                    const [sn, total] = this.getTrksegSn();
-                    if(sn > 0 && total > 1)
-                        return `${sn}/${total}`;
-                }
-                return '';
-            })();
+            show(this._pt_join_trk, this._data.trk.is_end);
+            show(this._pt_split_trk, !this._data.trk.is_end && this._data.trk.is_real);
+            this.pt_trk_seg_sn = this.getTrksegSnText();
         }
 
         //colorboard
@@ -476,67 +465,31 @@ export default class PtPopupOverlay extends Overlay{
     }
 
     async popContent(feature) {
-        const profile = this.profileFeature(feature);
-
-        // get data
-        const track = this._track_feature_of(feature);                // for trkpt
-        const trk = track ? {
-            name: track.get('name'),
-            color: track.get('color'),
-        } : undefined;
-
+        // wpt data
         const name = feature.get('name') || feature.get('desc');     //maybe undefined
         const sym = feature.get('sym');                              //maybe undefined
         const image = feature.get('image');
         let coord = feature.getGeometry().getCoordinates();          //x, y, [ele, [time]]
-        if(profile.is_trkpt && !profile.is_real)
-            coord = this.extendCoord(coord, track.getGeometry().getClosestPoint(coord));
+
+        // trk data
+        const track = this._track_feature_of(feature);                // for trkpt
+        const trk = track ? {
+            name: track.get('name'),
+            color: track.get('color'),
+            is_real: track.getGeometry().getLayout() == feature.getGeometry().getLayout(),
+            is_end: !!getTrkptIndicesAtEnds(track.getGeometry().getCoordinates(), coord),
+        } : undefined;
+
+        if(trk && !trk.is_real) // to get more info from estimation
+            coord = track.getGeometry().getClosestPoint(coord);
 
         // cache for later to use
-        this._profile = profile;
         this._feature = track? track: feature;  // trk(for rm/split/join) or wpt (for rm)
         this._data = {trk, name, sym, coord};   // for creating/updating
 
         this.resetDisplay(image);
         await this.setContent(this._data);
         this.setPosition(coord);
-    }
-
-    private profileFeature(feature){
-        const profile = {
-            is_wpt: undefined,
-            is_trkpt: undefined,
-            is_real: undefined,
-            is_end: undefined,
-            trkseg_idx: undefined,
-            trkseg_num: undefined,
-        };
-
-        const track = this._track_feature_of(feature);
-        profile.is_trkpt = !!track;
-        profile.is_wpt = !track;
-        if(track){
-            const trksegs = track.getGeometry().getCoordinates();
-            const coord = feature.getGeometry().getCoordinates();
-            const indices = getTrkptIndicesByCoord(trksegs, coord);
-
-            profile.trkseg_num = trksegs.length;
-            profile.is_real = !!indices;
-            if(indices){
-                const [i, j] = indices;
-                profile.is_end = (j == 0 || j == trksegs[i].length - 1);
-                profile.trkseg_idx = i;
-            }
-            else{
-                profile.is_end = false;
-            }
-        }
-
-        return profile;
-    }
-
-    private extendCoord(coord, ext){
-        return (ext.length > coord.length && xy_approximate(ext, coord))? ext: coord;
     }
 
     private _track_feature_of(trkpt: Feature<Point>){
@@ -563,7 +516,7 @@ export default class PtPopupOverlay extends Overlay{
         const is_wpt = !!(name || symbol);
 
         if(trk){
-            this.pt_trk_name = trk.name || '';
+            this.pt_trk_name = trk.name;
             this.pt_trk_color = trk.color || def_trk_color;
         }
 
@@ -590,32 +543,67 @@ export default class PtPopupOverlay extends Overlay{
         }
     }
 
-    private isRealTrkpt(){
-        return this._data.trk &&
-               this._feature.getGeometry().getLayout() == getLayoutOfCoord(this._data.coord);  // a heuristic way to check
-    }
-    private isEndTrkpt(){
-        return this._data.trk &&
-               getTrkptIndicesAtEnds(this._feature.getGeometry().getCoordinates(), this._data.coord);
-    }
-
-    private getTrksegSn(){
+    private getTrksegSnText(){
         const trksegs = this._feature.getGeometry().getCoordinates();
-        const len = trksegs.length;
-        if(len <= 1)
-            return [len, len];  // no search, just assume
+        if(trksegs.length <= 1)
+            return '';
 
-        const idxs = getTrkptIndicesByCoord(trksegs, this._data.coord);
-        if(!idxs){
-            console.error("cannot find the index of the coord in the track", this._data.coord, this._feature);
-            return [0, len];
+        if(!this._data.trk.is_real)
+            return `-/${trksegs.length}`;
+
+        const indices = getTrkptIndicesByCoord(trksegs, this._data.coord);  // real trkpt coord
+        if(!indices){
+            console.error("cannot find the trkseg index by the coord");  //should not happen
+            return `-/${trksegs.length}`;
         }
 
-        return [idxs[0]+1, len];
+        const [idx, _] = indices;
+        return `${idx + 1}/${trksegs.length}`;
     }
 
     private setUrlContent(el: HTMLAnchorElement, link){
         el.href = link.url;
         el.textContent = link.title;
     }
+
+    /*
+    private profileFeature(feature){
+        const profile = {
+            is_wpt: undefined,
+            is_trkpt: undefined,
+            is_real: undefined,
+            is_end: undefined,
+            trkseg_idx: undefined,
+            trkseg_num: undefined,
+        };
+
+        const track = this._track_feature_of(feature);
+        profile.is_trkpt = !!track;
+        profile.is_wpt = !track;
+        if(track){
+            const trksegs = track.getGeometry().getCoordinates();
+            const coord = feature.getGeometry().getCoordinates();
+            const indices = getTrkptIndicesByCoord(trksegs, coord);
+
+            profile.trkseg_num = trksegs.length;
+            profile.is_real = !!indices;
+            if(indices){
+                const [i, j] = indices;
+                profile.is_end = (j == 0 || j == trksegs[i].length - 1);
+                profile.trkseg_idx = i;
+            }
+            else if(trksegs.length == 1){
+                profile.is_end = false;
+                profile.trkseg_idx = 0;
+            }
+            else{
+                profile.is_end = false;
+                // get closest point from each line strings, then get the most closeset
+                // really, the information really matters?
+                ///const linestrs = track.getGeometry().getLineString();
+            }
+        }
+        return profile;
+    }
+    */
 }

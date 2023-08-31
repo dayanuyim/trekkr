@@ -437,12 +437,14 @@ select::-ms-expand {
 }
 
 /* as placeholder */
+/*
 #pt-popup span[contenteditable]:empty:before
 {
     color: gray;
     font-weight: normal;
     content: "(empty)";
 }
+*/
 
 .ol-popup-content {
     padding: 4px 32px 4px 4px;  /* right space for tool buttons */
