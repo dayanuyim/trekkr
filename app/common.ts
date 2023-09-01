@@ -13,7 +13,7 @@ const Param = {
 
 export function colorCode(color){
   switch(color.toLowerCase()) {
-    case 'darkyellow': return '#cccc00';
+    case 'darkyellow': return '#ffcc00';
     default:           return color;
   }
 }

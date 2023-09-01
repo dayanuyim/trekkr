@@ -1,6 +1,8 @@
 import Opt from './opt';
 import { fromLonLat } from 'ol/proj';
-import { fromTWD67, fromTWD97, fromTaipowerCoord, toTWD67, toTWD97, fromTWD67Sixcodes, fromTWD97Sixcodes,} from './coord';
+import { fromTWD67, fromTWD97, taipowerCoordToTWD67, toTWD67, toTWD97, TM2Sixcodes } from './coord';
+import { WGS84, TWD97, TWD67, } from './coord';
+import { containsCoordinate } from 'ol/extent';
 
 export class Sidebar{
 
@@ -54,72 +56,92 @@ export class Sidebar{
 ///////////////////////////////////////////
 
 const deg_to_decimal = ([d, m, s]) => Number(d) + m / 60.0 + s / 3600.0;
-const swap2 = ([a, b]) => [b, a];
+const swap = ([a, b]) => [b, a];
+const sixcode_parser = (ref, tokens, trans_webcoord_to) => {
+    if(tokens.length == 1 && tokens[0].length == 6){
+        ref = trans_webcoord_to(ref);
+        return TM2Sixcodes(ref, tokens[0]);
+    }
+    return undefined;
+};
 
 const coordsys_profiles = {
     wgs84: {
+        projection: WGS84,
         placeholder: '緯度 23 33 32.45, 經度 120.926126',
         field: {
             separator: /[^-+.0-9]/,
             width: '14em',
         },
-        parse: (nums) => {
-            switch(nums.length) {
-                case 2: return swap2(nums.map(Number));                                    //swap lat/lon to lon/lat
-                case 6: return [nums.slice(3, 6), nums.slice(0, 3)].map(deg_to_decimal);   //swap lat/lon to lon/lat
+        parse: (tokens) => {
+            switch(tokens.length) {
+                case 2: return swap(tokens.map(Number));                                    //swap lat/lon to lon/lat
+                case 6: return [tokens.slice(3, 6), tokens.slice(0, 3)].map(deg_to_decimal);   //swap lat/lon to lon/lat
                 default: return undefined;
             }
         },
         from: fromLonLat,
     },
     twd97: {
+        projection: TWD97,
         placeholder: 'X 242459, Y 2606189',
         field: {
             separator: /[^-+.0-9]/,
             width: '10em',
         },
-        parse: (nums) => (nums.length == 2)? nums.map(Number): undefined,
+        parse: (tokens) => (tokens.length == 2)? tokens.map(Number): undefined,
         from: fromTWD97,
         to: toTWD97,
     },
     twd67: {
+        projection: TWD67,
         placeholder: 'X 241630, Y 2606394',
         field: {
             separator: /[^-+.0-9]/,
             width: '10em',
         },
-        parse: (nums) => (nums.length == 2)? nums.map(Number): undefined,
+        parse: (tokens) => (tokens.length == 2)? tokens.map(Number): undefined,
         from: fromTWD67,
         to: toTWD67,
     },
     taipower: {
+        projection: TWD67,
         placeholder: 'K8912ED3904',
         field: {
             separator: /[^a-zA-Z0-9]/,
-            width: '7em',
+            width: '8em',
         },
-        parse: (nums) => (nums.length == 1)? nums[0]: undefined,
-        from: fromTaipowerCoord,
+        parse: (tokens) => {
+            if(tokens.length == 1){
+                const txt = tokens[0].toUpperCase();
+                if(txt.match(/^[A-HJ-Z]\d{4}[A-H][A-E]\d{2}(\d{2})?$/))
+                    return taipowerCoordToTWD67(txt);
+            }
+            return undefined;
+        },
+        from: fromTWD67,
     },
     twd97_6: {
-        base_coordsys: 'twd97',
+        projection: TWD97,
         placeholder: '六碼 424061',
         field: {
             separator: /[^0-9]/,
             width: '5em',
         },
-        parse: (nums) => (nums.length == 1 && nums[0].length == 6)? nums[0]: undefined,
-        from: fromTWD97Sixcodes,
+        has_ref: true,
+        parse: (ref, tokens) => sixcode_parser(ref, tokens, toTWD97),
+        from: fromTWD97,
     },
     twd67_6: {
-        base_coordsys: 'twd67',
+        projection: TWD67,
         placeholder: '六碼 416063',
         field: {
             separator: /[^0-9]/,
             width: '5em',
         },
-        parse: (nums) => (nums.length == 1 && nums[0].length == 6)? nums[0]: undefined,
-        from: fromTWD67Sixcodes,
+        has_ref: true,
+        parse: (ref, tokens) => sixcode_parser(ref, tokens, toTWD67),
+        from: fromTWD67,
     },
 }
 
@@ -128,14 +150,14 @@ export class Topbar{
     _base: HTMLElement;
     _goto_btn: HTMLButtonElement;
     _goto_coordsys: HTMLSelectElement;
-    _goto_coord_str: HTMLInputElement;
+    _goto_coord_txt: HTMLInputElement;
     _goto_coord_go: HTMLButtonElement;
     _listeners = {}
 
     get goto_coordsys(){ return this._goto_coordsys.value; }
     set goto_coordsys(v){ this._goto_coordsys.value = v; }
-    get goto_coord_str(){ return this._goto_coord_str.value.trim(); }
-    set goto_coord_str(str){ this._goto_coord_str.value = str.trim(); }
+    get goto_coord_txt(){ return this._goto_coord_txt.value.trim(); }
+    set goto_coord_txt(txt){ this._goto_coord_txt.value = txt.trim(); }
 
     constructor(el: HTMLElement){
         this.initElements(el);
@@ -146,7 +168,7 @@ export class Topbar{
         this._base           = el;
         this._goto_btn       = el.querySelector<HTMLButtonElement>('button.goto-btn');
         this._goto_coordsys  = el.querySelector<HTMLSelectElement>('select.goto-coordsys');
-        this._goto_coord_str   = el.querySelector<HTMLInputElement>('input.goto-coord');
+        this._goto_coord_txt   = el.querySelector<HTMLInputElement>('input.goto-coord-txt');
         this._goto_coord_go   = el.querySelector<HTMLButtonElement>('button.goto-coord-go');
     }
 
@@ -159,8 +181,8 @@ export class Topbar{
 
         const set_coord_panel = (coordsys) => {
             const profile = coordsys_profiles[coordsys];
-            this._goto_coord_str.placeholder = profile.placeholder;
-            this._goto_coord_str.style.width = profile.field.width;
+            this._goto_coord_txt.placeholder = profile.placeholder;
+            this._goto_coord_txt.style.width = profile.field.width;
         };
 
         if(Opt.goto.coordsys){   //init
@@ -172,31 +194,32 @@ export class Topbar{
             set_coord_panel(this.goto_coordsys);
         }
 
-        this._goto_coord_str.onkeyup = e => {if(e.key == 'Enter') this._goto_coord_go.click()};
+        this._goto_coord_txt.oninput = e => this._goto_coord_txt.classList.remove('invalid');
+        this._goto_coord_txt.onkeyup = e => {if(e.key == 'Enter') this._goto_coord_go.click()};
 
         this._goto_coord_go.onclick = e => {
+            const txt = this.goto_coord_txt;
+            if(!txt) return;
             const coordsys = this.goto_coordsys;
             const profile = coordsys_profiles[coordsys];
 
-            const tokens = this.goto_coord_str.split(profile.field.separator).filter(x=>x);
-            const coord = profile.parse(tokens);
-            if(!coord)
-                return console.error(`invalid coordinates string '${this.goto_coord_str}'`);
+            const tokens = txt.split(profile.field.separator).filter(x=>x);
+            const coord = this.parseTokens(profile, tokens);
+            if(!coord || !containsCoordinate(profile.projection.getExtent(), coord))  //check range
+                return this._goto_coord_txt.classList.add('invalid');
 
-            const webcoord = this.fromCoord(profile, coord);
+            const webcoord = profile.from(coord);
             if(webcoord)
                 this._listeners['goto']?.(webcoord);
         }
     }
 
-    private fromCoord(profile, coord){
-        if(profile.base_coordsys){
-            const center = this._listeners['getcenter']?.();                  // webcoord center
-            if(!center) return undefined;
-            const ref = coordsys_profiles[profile.base_coordsys].to(center);  // to base coordsys, as ref
-            return profile.from(ref, coord)
+    private parseTokens(profile, tokens){
+        if(profile.has_ref){
+            const ref = this._listeners['getcenter']?.();      // webcoord center
+            return ref? profile.parse(ref, tokens): undefined;
         }
-        return profile.from(coord);
+        return profile.parse(tokens);
     }
 
     public setListener(event, listener){
