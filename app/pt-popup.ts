@@ -66,6 +66,10 @@ const enter_to_blur_listener = e => {
     }
 }
 
+function showElem(el: HTMLElement, en){
+    el.classList.toggle('hidden', !en)
+}
+
 /*
 declare class Overlay{
     constructor(options: any);
@@ -210,23 +214,13 @@ export default class PtPopupOverlay extends Overlay{
         this.setPosition(undefined);
     }
 
-    private resetDisplay(image?){
-        const show = (el, en) => el.classList.toggle('hidden', !en)
-
-        //trk
-        show(this._pt_trk, this._data.trk);
-        if(this._data.trk){
-            const endidx = getTrkptIndicesAtEnds(this._feature.getGeometry().getCoordinates(), this._data.coord);
-            show(this._pt_join_trk, endidx);
-            show(this._pt_split_trk, !endidx && this._data.trk.is_real);
-            this.pt_trk_seg_sn = this.getTrksegSnText();
-        }
-
+    // reset to initial display status
+    private resetDisplay(image){
         //colorboard
-        show(this._pt_colorboard, false);   //colorboard hidden, if any
+        showElem(this._pt_colorboard, false);   //colorboard hidden, if any
 
         //symboard
-        show(this._pt_symboard, false);     //symboard hidden, if any
+        showElem(this._pt_symboard, false);     //symboard hidden, if any
         this.resetSymboardFilter();         //symboard filter reset
 
         //resizer
@@ -384,12 +378,12 @@ export default class PtPopupOverlay extends Overlay{
 
         this._pt_split_trk.onclick = e => {
             this._listeners['splittrk']?.(this._feature, this._data.coord);
-            this.resetDisplay();  // just refresh ui
+            this.setTrackTools(this._feature, this._data);  // just refresh ui
         };
 
         this._pt_join_trk.onclick = e => {
             const trk_suckedup = this._listeners['jointrk']?.(this._feature, this._data.coord); // the trk is removed after the join
-            trk_suckedup? this.hide(): this.resetDisplay();
+            trk_suckedup? this.hide(): this.setTrackTools(this._feature, this._data);
         }
     }
 
@@ -512,34 +506,49 @@ export default class PtPopupOverlay extends Overlay{
 
     private _setContent({trk, name, coordsys, coordxy, time, ele, symbol})
     {
-        const show = (el, en) => el.classList.toggle('hidden', !en)
-        const is_wpt = !!(name || symbol);
+        const is_wpt = !trk;
 
+        //trk
+        showElem(this._pt_trk, trk);
         if(trk){
             this.pt_trk_name = trk.name;
             this.pt_trk_color = trk.color || def_trk_color;
+            this.setTrackTools(this._feature, {trk, coord: coordxy})
         }
+
+        //wpt
+        showElem(this._pt_wpt_header, is_wpt);   // header contains sym & name
+        showElem(this._pt_mk_wpt, !is_wpt);
+        showElem(this._pt_rm_wpt, is_wpt);
+
+        this.pt_name = name;
 
         this.pt_coord = coordxy;
         this.pt_coord_title = coordsys;
         this.pt_coord_value = toXY[coordsys](coordxy);  //to web xy
         this.pt_gmap = gmapUrl(coordxy);
 
-        this.pt_name = name;
+        this._pt_ele.contentEditable = trk? 'false': 'true';
         this.pt_ele = ele? fmtEle(ele.value): '-';
-        show(this._pt_ele_est, ele.est);
+        showElem(this._pt_ele_est, ele.est);
+
         this.pt_time = time? fmtTime(time): '-';
 
-        show(this._pt_mk_wpt, !is_wpt);
-        show(this._pt_rm_wpt, is_wpt);
-
-        show(this._pt_wpt_header, is_wpt);   // header contains sym & name
-        show(this._sym_copyright, is_wpt);
+        showElem(this._sym_copyright, is_wpt);
         if(symbol){
             this.pt_sym = symbol.path(128);
             this.setUrlContent(this._sym_maker,    symbol.maker);
             this.setUrlContent(this._sym_provider, symbol.provider);
             this.setUrlContent(this._sym_license,  symbol.license);
+        }
+    }
+
+    private setTrackTools(track, {trk, coord}){
+        if(trk){
+            const endidx = getTrkptIndicesAtEnds(track.getGeometry().getCoordinates(), coord);
+            showElem(this._pt_join_trk, endidx);
+            showElem(this._pt_split_trk, !endidx && trk.is_real);
+            this.pt_trk_seg_sn = this.getTrksegSnText();
         }
     }
 
