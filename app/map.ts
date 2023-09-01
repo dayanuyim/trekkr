@@ -435,13 +435,17 @@ function getQueryParameters()
       this._gpx_layer.createWaypoint(this._ctxmenu_coord);
     });
 
+    ctx.setItem(".item-apply-sym", (el) => {
+      this._gpx_layer.getWaypoints().forEach(setSymByRules);
+    });
+
+    ctx.setItem(".item-promote-trksegs", (el) => {
+      this._gpx_layer.promoteTrksegs();
+    });
+
     ctx.setItem(".item-save-gpx", (el) => {
       const xml = this._gpx_layer.genText();
       saveTextAsFile(xml, 'your.gpx', 'application/gpx+xml');
-      //console.log(xml);
-    });
-    ctx.setItem(".item-apply-sym", (el) => {
-      this._gpx_layer.getWaypoints().forEach(setSymByRules);
     });
   }
 

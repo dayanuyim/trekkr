@@ -631,6 +631,35 @@ export class GpxLayer {
     }
   }
 
+  public promoteTrksegs(){
+    this.getTracks()
+      .filter(trk => trk.getGeometry().getCoordinates().length > 1)
+      .flatMap(trk => {
+        const trksegs = trk.getGeometry().getCoordinates();
+        const layout = trk.getGeometry().getLayout();
+        const name = trk.get('name') || '';
+        let color = trk.get('color') || def_trk_color;
+
+        // reset the orginal track
+        trk.getGeometry().setCoordinates([trksegs.shift()]);
+        trk.set('name', `${name}-1`);
+        trk.set('color', color);
+
+        //split out other tracks
+        return trksegs.map((seg, i) => {
+          color = companionColor(color);
+          return olTrackFeature({
+            coordinates: [seg],
+            layout,
+          }, {
+            name: `${name}-${i+2}`,
+            color,
+          });
+        });
+      })
+      .forEach(trk => this.addTrack(trk));
+  }
+
   public genText(){
     const [wpts, trks ] = this.getWptsTrks();
     const node = createGpxNode(wpts, trks);

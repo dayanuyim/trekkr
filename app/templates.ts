@@ -339,6 +339,8 @@ const ctxMenuItems = Handlebars.compile(`
     <div class="ctx-item"><a class="item-add-wpt"><i class="fas fa-location-dot"></i>新增航點</a></div>
     <div class="ctx-item"><a class="item-apply-sym"><i></i>套用&nbsp;Symbol&nbsp;規則</a></div>
     <div class="ctx-item-bar"></div>
+    <div class="ctx-item"><a class="item-promote-trksegs"><i class="fa-solid fa-route"></i>所有航段轉為航跡</a></div>
+    <div class="ctx-item-bar"></div>
     <div class="ctx-item"><a class="item-save-gpx"><i class="fas fa-file-contract"></i>匯出&nbsp;GPX&nbsp;航跡檔</a></div>
 `);
 Handlebars.registerHelper("ctxMenuItems", ()=>{

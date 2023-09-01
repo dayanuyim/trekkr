@@ -573,14 +573,10 @@ export default class PtPopupOverlay extends Overlay{
     private setUrlContent(el: HTMLAnchorElement, {url, title}, license_icon=false){
         const license_html = title => {
             switch (title) {
-                case "Public Domain":
-                    return templates.license_pd();
-                case "Creative Commons BY 3.0":
-                    return templates.license_cc_by();
-                case "Creative Commons BY-SA 4.0":
-                    return templates.license_cc_by_sa();
-                default:
-                    return undefined;
+                case "Public Domain":              return templates.license_pd();
+                case "Creative Commons BY 3.0":    return templates.license_cc_by();
+                case "Creative Commons BY-SA 4.0": return templates.license_cc_by_sa();
+                default: return undefined;
             }
         }
 
