@@ -26,57 +26,55 @@ export function getLayoutOfCoord(coord){
   }
 }
 
-export function getXYZMOfCoords(coords, layout?){
+export function getXYZMOfCoord(coord, layout?){
+  layout = layout || getLayoutOfCoord(coord);
   switch(layout){
-    case 'XY':   return coords.concat([undefined, undefined]);
-    case 'XYZ':  return coords.concat([undefined]);
-    case 'XYM':  return [coords[0], coords[1], undefined, coords[2]];
-    case 'XYZM': return coords;
+    case 'XY':   return coord.concat([undefined, undefined]);
+    case 'XYZ':  return coord.concat([undefined]);
+    case 'XYM':  return [coord[0], coord[1], undefined, coord[2]];
+    case 'XYZM': return coord;
     default:
-      return (coords.length == 4)? coords: [
-        coords[0],
-        coords[1],
-        getEleOfCoords(coords),
-        getEpochOfCoords(coords)
-      ];
+      console.error(`unknown layout '${layout}' to get xyzm of coord`);
+      return undefined;
   }
 }
 
-export function getEleOfCoords(coords, layout?) {
-  if(layout){
-    return (layout == 'XYZ' || layout == 'XYZM')? coords[2]: undefined;
+export function getEleOfCoord(coord, layout?) {
+  layout = layout || getLayoutOfCoord(coord);
+  switch(layout){
+    case 'XY':   return undefined;
+    case 'XYZ':  return coord[2];
+    case 'XYM':  return undefined;
+    case 'XYZM': return coord[2];
+    default:
+      console.error(`unknown layout '${layout}' to get ele of coord`);
+      return undefined;
   }
-  if(coords.length > 2 && coords[2] < 10000.0){   //geometry.getLayout() == 'XYZ' or 'XYZM'
-    return coords[2];
-  }
-  return undefined;
 };
 
-export function setEleOfCoords(coords, ele, layout?) {
+export function setEleOfCoord(coord, ele, layout?) {
+  layout = layout || getLayoutOfCoord(coord);
   switch(layout){
-    case 'XY':   coords.push(ele); break;
-    case 'XYM':  coords.splice(2, 0, ele);  break;
-    case 'XYZ':  coords[2] = ele;  break;
-    case 'XYZM': coords[2] = ele;  break;
+    case 'XY':   coord.push(ele); break;
+    case 'XYM':  coord.splice(2, 0, ele);  break;
+    case 'XYZ':  coord[2] = ele;  break;
+    case 'XYZM': coord[2] = ele;  break;
     default:
-      if(coords.length == 2)
-        coords.push(ele);
-      else if(coords.length == 3 && coords[2] > 10000)
-        coords.splice(2, 0, ele);
-      else
-        coords[2] = ele;
+      console.error(`unknown layout '${layout}' to set ele of coord`);
   }
 }
 
-export function getEpochOfCoords(coords, layout?){
-  if(layout){
-    return (layout == 'XYM' || layout == 'XYZM')?  coords[coords.length-1]: undefined;
+export function getEpochOfCoord(coord, layout?){
+  layout = layout || getLayoutOfCoord(coord);
+  switch(layout){
+    case 'XY':   return undefined;
+    case 'XYZ':  return undefined;
+    case 'XYM':  return coord[2];
+    case 'XYZM': return coord[3];
+    default:
+      console.error(`unknown layout '${layout}' to get epoch of coord`);
+      return undefined;
   }
-  const last = coords.length -1;
-  if(coords.length > 2 && coords[last] > 10000.0){   //geometry.getLayout() == 'XYM' or 'XYZM
-    return coords[last];
-  }
-  return undefined;
 };
 
 // Promisify and Accept only a location
@@ -94,31 +92,32 @@ function googleElevation(lat, lon)
     });
   });
 }
-export const getEleByCoords = async (coordinates) => {
-  const ele = getEleOfCoords(coordinates);
+export const getEleByCoord = async (coord) => {
+  const ele = getEleOfCoord(coord);
   if(ele)
     return {value: ele, est: false};
 
   //get est. elevation from google
-  const [lon, lat] = toLonLat(coordinates);
+  const [lon, lat] = toLonLat(coord);
   try{
     const ele = await googleElevation(lat, lon);
     return {value: ele, est: true}
-  }catch(err){
+  }
+  catch(err){
     console.log(`Google Elevation Error: ${err}`);
     return undefined;
   }
 };
 
-export function getLocalTimeByCoords(coordinates)
+export function getLocalTimeByCoord(coord)
 {
-  const epoch = getEpochOfCoords(coordinates);
+  const epoch = getEpochOfCoord(coord);
   if(!epoch)
     return undefined;
 
   //cache tz to optimize since tzlookup is a slow operation
   if(!Param.tz){
-    const [lon, lat] = toLonLat(coordinates);
+    const [lon, lat] = toLonLat(coord);
     Param.tz = tzlookup(lat, lon);
   }
 

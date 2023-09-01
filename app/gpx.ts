@@ -17,7 +17,7 @@ import { create as createXML } from 'xmlbuilder2';
 
 import Opt from './opt';
 import { def_symbol, getSymbol, matchRules } from './sym'
-import { getEpochOfCoords, getXYZMOfCoords } from './common';
+import { getEpochOfCoord, getXYZMOfCoord } from './common';
 import { epochseconds, binsearchIndex } from './lib/utils';
 
 export const def_trk_color = 'DarkMagenta';
@@ -286,7 +286,7 @@ function companionColor(color){
 // The fuction works only when @coord is a trkpt in the @track.
 export function splitTrack(track, coord)
 {
-  const time = getEpochOfCoords(coord);
+  const time = getEpochOfCoord(coord);
   const layout = track.getGeometry().getLayout();
   const trksegs = track.getGeometry().getCoordinates();
 
@@ -405,7 +405,7 @@ export function olGpxLayer(source_props?, layer_props?){
 
 //@coords is openlayer coords [x, y, ele, time], ele and tiem is optional.
 export function olWptFeature(coords, options?){
-  coords = getXYZMOfCoords(coords);
+  coords = getXYZMOfCoord(coords);
   if(!coords[3]) coords[3] = epochseconds(new Date());
   return new Feature(Object.assign({
     geometry: new Point(coords),
@@ -573,11 +573,11 @@ export class GpxLayer {
   {
     let prev = undefined;
     let prev_dist = Infinity;
-    const time = getEpochOfCoords(coord);
+    const time = getEpochOfCoord(coord);
     for (const trk of this.getTracks()) {
       const last = trk.getGeometry().getLastCoordinate();
       //check the timing
-      const last_time = getEpochOfCoords(last);
+      const last_time = getEpochOfCoord(last);
       if(time && last_time && time < last_time)  //check time if avaialble
         continue;
       const dist = distance2(coord, last);
@@ -593,11 +593,11 @@ export class GpxLayer {
   {
     let next = undefined;
     let next_dist = Infinity;
-    const time = getEpochOfCoords(coord);
+    const time = getEpochOfCoord(coord);
     for (const trk of this.getTracks()) {
       const first = trk.getGeometry().getFirstCoordinate();
       //check the timing
-      const first_time = getEpochOfCoords(first);
+      const first_time = getEpochOfCoord(first);
       if(time && first_time && time > first_time)  //check time if avaialble
         continue;
       const dist = distance2(coord, first);
@@ -664,7 +664,7 @@ const cmp_wpt_time = (w1, w2) => {
   const time = wpt => {
     const coords = wpt.getGeometry().getCoordinates();
     const layout = wpt.getGeometry().getLayout();
-    return getEpochOfCoords(coords, layout) || 0;
+    return getEpochOfCoord(coords, layout) || 0;
   };
   return time(w1) - time(w2);
 }
@@ -673,7 +673,7 @@ const cmp_trk_time = (t1, t2) => {
     const coords = trk.getGeometry().getCoordinates();
     const layout = trk.getGeometry().getLayout();
     if(coords.length > 0 && coords[0].length > 0)
-      return getEpochOfCoords(coords[0][0], layout) || 0;  //first trkseg, first trkpt
+      return getEpochOfCoord(coords[0][0], layout) || 0;  //first trkseg, first trkpt
     return 0;
   }
   return time(t1) - time(t2);
@@ -729,7 +729,7 @@ function getBounds(features){
 function addGpxWaypoints(node, wpts) {
   wpts.sort(cmp_wpt_time).forEach(wpt => {
     const geom = wpt.getGeometry();
-    const [x, y, ele, time] = getXYZMOfCoords(geom.getCoordinates(), geom.getLayout());
+    const [x, y, ele, time] = getXYZMOfCoord(geom.getCoordinates(), geom.getLayout());
     const [lon, lat] = toLonLat([x, y]).map(fmt_coord);
     const name = wpt.get('name');
     const sym = wpt.get('sym');
@@ -774,7 +774,7 @@ function addGpxTracks(node, trks) {
     trk.getGeometry().getCoordinates().forEach(trkseg => {
       node = node.ele('trkseg');
       trkseg.forEach(coords => {
-        const [x, y, ele, time] = getXYZMOfCoords(coords, layout);
+        const [x, y, ele, time] = getXYZMOfCoord(coords, layout);
         const [lon, lat] = toLonLat([x, y]).map(fmt_coord);
         node = node.ele('trkpt', { lat, lon });
         if (ele)  node.ele('ele').txt(fmt_ele(ele)).up();

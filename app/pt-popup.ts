@@ -8,7 +8,7 @@ import {toTWD97, toTWD67, toTaipowerCoord} from './coord';
 
 //import * as moment from 'moment-timezone';
 import { getSymbol, matchRules, symbol_inv } from './sym'
-import { getEleByCoords, getEleOfCoords, setEleOfCoords, getLocalTimeByCoords, gmapUrl } from './common'
+import { getEleByCoord, getEleOfCoord, setEleOfCoord, getLocalTimeByCoord, gmapUrl } from './common'
 import { olWptFeature, def_trk_color, getTrkptIndicesAtEnds, getTrkptIndicesByCoord, isTrkFeature} from './gpx';
 import { delayToEnable } from './lib/dom-utils';
 import Opt from './opt';
@@ -340,8 +340,8 @@ export default class PtPopupOverlay extends Overlay{
                 return;
             }
             const ele = +this.pt_ele;
-            if(getEleOfCoords(this._data.coord) != ele){
-                setEleOfCoords(this._data.coord, ele);
+            if(getEleOfCoord(this._data.coord) != ele){
+                setEleOfCoord(this._data.coord, ele);
                 this._data_ele_changed();
             }
         };
@@ -504,8 +504,8 @@ export default class PtPopupOverlay extends Overlay{
             name,
             coordsys: Opt.coordsys,
             coordxy: coord.slice(0, 2),
-            time: getLocalTimeByCoords(coord),
-            ele: await getEleByCoords(coord),
+            time: getLocalTimeByCoord(coord),
+            ele: await getEleByCoord(coord),
             symbol: getSymbol(sym),
         });
     }
