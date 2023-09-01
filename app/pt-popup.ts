@@ -216,8 +216,9 @@ export default class PtPopupOverlay extends Overlay{
         //trk
         show(this._pt_trk, this._data.trk);
         if(this._data.trk){
-            show(this._pt_join_trk, this._data.trk.is_end);
-            show(this._pt_split_trk, !this._data.trk.is_end && this._data.trk.is_real);
+            const endidx = getTrkptIndicesAtEnds(this._feature.getGeometry().getCoordinates(), this._data.coord);
+            show(this._pt_join_trk, endidx);
+            show(this._pt_split_trk, !endidx && this._data.trk.is_real);
             this.pt_trk_seg_sn = this.getTrksegSnText();
         }
 
@@ -477,7 +478,6 @@ export default class PtPopupOverlay extends Overlay{
             name: track.get('name'),
             color: track.get('color'),
             is_real: track.getGeometry().getLayout() == feature.getGeometry().getLayout(),
-            is_end: !!getTrkptIndicesAtEnds(track.getGeometry().getCoordinates(), coord),
         } : undefined;
 
         if(trk && !trk.is_real) // to get more info from estimation
@@ -572,7 +572,6 @@ export default class PtPopupOverlay extends Overlay{
             is_wpt: undefined,
             is_trkpt: undefined,
             is_real: undefined,
-            is_end: undefined,
             trkseg_idx: undefined,
             trkseg_num: undefined,
         };

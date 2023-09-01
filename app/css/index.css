@@ -437,14 +437,13 @@ select::-ms-expand {
 }
 
 /* as placeholder */
-/*
 #pt-popup span[contenteditable]:empty:before
 {
-    color: gray;
+    color: lightgray;
     font-weight: normal;
-    content: "(empty)";
+    font-style: italic;
+    content: "NAME";
 }
-*/
 
 .ol-popup-content {
     padding: 4px 32px 4px 4px;  /* right space for tool buttons */
