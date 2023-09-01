@@ -8,7 +8,7 @@ import {toTWD97, toTWD67, toTaipowerCoord} from './coord';
 
 //import * as moment from 'moment-timezone';
 import { getSymbol, matchRules, symbol_inv } from './sym'
-import { getEleByCoord, getEleOfCoord, setEleOfCoord, getLocalTimeByCoord, gmapUrl } from './common'
+import { getEleByCoord, getEleOfCoord, setEleOfCoord, getLocalTimeByCoord, gmapUrl, colorCode } from './common'
 import { olWptFeature, def_trk_color, getTrkptIndicesAtEnds, getTrkptIndicesByCoord, isTrkFeature} from './gpx';
 import { delayToEnable } from './lib/dom-utils';
 import Opt from './opt';
@@ -512,7 +512,7 @@ export default class PtPopupOverlay extends Overlay{
         showElem(this._pt_trk, trk);
         if(trk){
             this.pt_trk_name = trk.name;
-            this.pt_trk_color = trk.color || def_trk_color;
+            this.pt_trk_color = colorCode(trk.color || def_trk_color);
             this.setTrackTools(this._feature, {trk, coord: coordxy})
         }
 

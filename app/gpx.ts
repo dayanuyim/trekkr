@@ -17,12 +17,12 @@ import { create as createXML } from 'xmlbuilder2';
 
 import Opt from './opt';
 import { def_symbol, getSymbol, matchRules } from './sym'
-import { getEpochOfCoord, getXYZMOfCoord } from './common';
+import { getEpochOfCoord, getXYZMOfCoord, colorCode } from './common';
 import { epochseconds, binsearchIndex } from './lib/utils';
 
 export const def_trk_color = 'DarkMagenta';
 //export const trk_colors = [
-//  'White', 'Cyan', 'Magenta', 'Blue', 'Yellow', 'Green', 'Red',
+//  'White', 'Cyan', 'Magenta', 'Blue', 'Yellow', 'DarkYellow', 'Green', 'Red',
 //  'DarkGray', 'LightGray', 'DarkCyan', 'DarkMagenta', 'DarkBlue', 'DarkGreen', 'DarkRed', 'Black'
 //];
 
@@ -135,9 +135,11 @@ const arrow_head_style = (start, end, color) => {
     image: new RegularShape({    // regular triangle, like ▲
       points: 3,
       radius,
-      fill: new Fill({ color }),
+      fill: new Fill({
+        color: colorCode(color),
+      }),
       stroke: new Stroke({
-        color: outline_color(color),
+        color: colorCode(outline_color(color)),
         width: 1,
         lineDash: [radius * 1.732],   // only for lateral sides, no buttom line, like /▲\
       }),
@@ -149,13 +151,13 @@ const arrow_head_style = (start, end, color) => {
 }
 
 const track_line_style = color => {
-    return new Style({
-      stroke: new Stroke({
-        color,
-        width: 3
-      }),
-      zIndex: 3,
-    });
+  return new Style({
+    stroke: new Stroke({
+      color: colorCode(color),
+      width: 3
+    }),
+    zIndex: 3,
+  });
 }
 
 const track_styles = feature => {
@@ -261,14 +263,14 @@ export class GPXFormat extends GPX {
 }
 
 //----------------------------------------------------------------
-
 function companionColor(color){
   switch(color){
     case 'White':       return 'Black';
     case 'LightGray':   return 'DarkGray';
     case 'DarkGray':    return 'LightGray';
     case 'Black':       return 'White';
-    case 'Yellow':      return 'Green';   //any others
+    case 'Yellow':      return 'DarkYellow';
+    case 'DarkYellow':  return 'Yellow';
     case 'Magenta':     return 'DarkMagenta';
     case 'DarkMagenta': return 'Magenta';
     case 'Cyan':        return 'DarkCyan';

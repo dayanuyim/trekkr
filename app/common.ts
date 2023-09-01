@@ -11,6 +11,13 @@ const Param = {
   tz: undefined,
 }
 
+export function colorCode(color){
+  switch(color.toLowerCase()) {
+    case 'darkyellow': return '#cccc00';
+    default:           return color;
+  }
+}
+
 export function gmapUrl(coord){
     return fmtCoordinate(toLonLat(coord), `https://www.google.com.tw/maps/@{y},{x},${Opt.zoom}z?hl=zh-TW`, 7);
 }

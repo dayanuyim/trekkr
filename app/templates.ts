@@ -3,7 +3,7 @@ import './lib/handlebars-utils';
 
 import {toLonLat} from 'ol/proj';
 import {format} from 'ol/coordinate';
-import { gmapUrl } from './common';
+import { gmapUrl, colorCode } from './common';
 
 Handlebars.registerHelper("mul", (val, mul, options) => {
     return Math.floor(val * mul);
@@ -31,11 +31,14 @@ Handlebars.registerHelper("selop", (value, selected, text, attrs, options)=>{
     return new Handlebars.SafeString(`<option value="${value}" ${attrs}>${text}</option>`);
 });
 
+Handlebars.registerHelper("colorcode", (color, options)=>{
+    return colorCode(color);
+});
 
 export const colorboardItems = Handlebars.compile(`
     <div class="pt-colorboard-items">
     {{#each colors}}
-        <div class="pt-colorboard-item color-item" style="background-color:{{this}}" title="{{this}}"></div>
+        <div class="pt-colorboard-item color-item" style="background-color:{{colorcode this}}" title="{{this}}"></div>
     {{/each}}
     </div>
 `);
@@ -43,12 +46,14 @@ export const colorboardItems = Handlebars.compile(`
 Handlebars.registerHelper("colorboardItems", (options)=>{
     return new Handlebars.SafeString(colorboardItems({
         colors: [
-            'White', 'LightGray', 'DarkGray', 'Black', 'Yellow',
-            'Magenta', 'Cyan', 'Blue', 'Green', 'Red',
-            'DarkMagenta', 'DarkCyan', 'DarkBlue', 'DarkGreen', 'DarkRed',
+            'White',     'Yellow',    'Cyan',     'Magenta',
+            'LightGray', 'DarkYellow','DarkCyan', 'DarkMagenta',
+            'DarkGray',  'Green',     'Blue',     'Red',
+            'Black',     'DarkGreen', 'DarkBlue', 'DarkRed',
         ]
     }));
 });
+
 
 const coordsysMenu = Handlebars.compile(`
     <select class="{{cls}}" dir="rtl">
