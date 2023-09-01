@@ -539,7 +539,7 @@ export default class PtPopupOverlay extends Overlay{
             this.pt_sym = symbol.path(128);
             this.setUrlContent(this._sym_maker,    symbol.maker);
             this.setUrlContent(this._sym_provider, symbol.provider);
-            this.setUrlContent(this._sym_license,  symbol.license);
+            this.setUrlContent(this._sym_license,  symbol.license, true);
         }
     }
 
@@ -570,9 +570,26 @@ export default class PtPopupOverlay extends Overlay{
         return `${idx + 1}/${trksegs.length}`;
     }
 
-    private setUrlContent(el: HTMLAnchorElement, link){
-        el.href = link.url;
-        el.textContent = link.title;
+    private setUrlContent(el: HTMLAnchorElement, {url, title}, license_icon=false){
+        const license_html = title => {
+            switch (title) {
+                case "Public Domain":
+                    return templates.license_pd();
+                case "Creative Commons BY 3.0":
+                    return templates.license_cc_by();
+                case "Creative Commons BY-SA 4.0":
+                    return templates.license_cc_by_sa();
+                default:
+                    return undefined;
+            }
+        }
+
+        el.href = url;
+        const html = license_icon? license_html(title): undefined;
+        if (html)
+            el.innerHTML = html;
+        else
+            el.textContent = title;
     }
 
     /*

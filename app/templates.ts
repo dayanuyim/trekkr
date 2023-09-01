@@ -125,6 +125,16 @@ export const ptPopup = Handlebars.compile(`
     </div>
 `);
 
+export const license_pd = Handlebars.compile(`
+    <i class="fa-brands fa-creative-commons-pd"></i>
+`);
+export const license_cc_by = Handlebars.compile(`
+    <i class="fa-brands fa-creative-commons"></i><i class="fa-brands fa-creative-commons-by"></i>
+`);
+export const license_cc_by_sa= Handlebars.compile(`
+    <i class="fa-brands fa-creative-commons"></i><i class="fa-brands fa-creative-commons-by"></i><i class="fa-brands fa-creative-commons-sa"></i>
+`);
+
 Handlebars.registerHelper("ptPopup", (data, options)=>{
     data = Object.assign({
         name: '',
