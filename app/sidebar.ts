@@ -75,8 +75,8 @@ const coordsys_profiles = {
         },
         parse: (tokens) => {
             switch(tokens.length) {
-                case 2: return swap(tokens.map(Number));                                    //swap lat/lon to lon/lat
-                case 6: return [tokens.slice(3, 6), tokens.slice(0, 3)].map(deg_to_decimal);   //swap lat/lon to lon/lat
+                case 2: return swap(tokens.map(Number));                                      //swap lat/lon to lon/lat
+                case 6: return [tokens.slice(3, 6), tokens.slice(0, 3)].map(deg_to_decimal);  //swap lat/lon to lon/lat
                 default: return undefined;
             }
         },
