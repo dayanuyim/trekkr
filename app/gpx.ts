@@ -19,6 +19,7 @@ import Opt from './opt';
 import { def_symbol, getSymbol, matchRules } from './sym'
 import { getEpochOfCoord, getXYZMOfCoord, colorCode } from './common';
 import { epochseconds, binsearchIndex } from './lib/utils';
+import ArrowHead from './style/ArrowHead';
 
 export const def_trk_color = 'DarkMagenta';
 //export const trk_colors = [
@@ -127,22 +128,28 @@ const arrow_head_rad = (start, end) => {
   return Math.PI/2 - rotation;
 }
 
-const arrow_head_style = (start, end, color) => {
-  //const radius = Opt.track.arrow.radius;
-  const radius = Math.max(1, Math.round(Opt.zoom/2));  //enlarge when zoom in
-  return new Style({
+const arrow_head_style_gen = (color) => {
+  const sqrt3 = 1.7320508075688772;
+  const shaft_width = 3;                                 // this is the width of track line
+  const radius = Math.max(1, Math.round(Opt.zoom/1.5));  // enlarge when zoom in
+
+  const fill =  new Fill({
+    color: colorCode(color),
+  });
+
+  const stroke = new Stroke({
+    color: colorCode(outline_color(color)),
+    width: 1,
+    lineDash: [(sqrt3+1)*radius - (shaft_width/sqrt3), 2*sqrt3], // add outline, except the part to join the shaft
+  });
+
+  return (start, end) => new Style({
     geometry: new Point(end),
-    image: new RegularShape({    // regular triangle, like ▲
+    image: new ArrowHead({    // like ➤ , head up
       points: 3,
       radius,
-      fill: new Fill({
-        color: colorCode(color),
-      }),
-      stroke: new Stroke({
-        color: colorCode(outline_color(color)),
-        width: 1,
-        lineDash: [radius * 1.732],   // only for lateral sides, no buttom line, like /▲\
-      }),
+      fill,
+      stroke,
       rotateWithView: true,
       rotation: arrow_head_rad(start, end),
     }),
@@ -169,10 +176,11 @@ const track_styles = feature => {
   const begin = 15;   // show arrows in the very ends seems useless, so skip it.
   const min_step = 20;
   if(arrow_num > 0){
+    const arrow_head_style = arrow_head_style_gen(color);
     feature.getGeometry().getLineStrings().forEach(trkseg => {
       const coords = trkseg.getCoordinates();
       for(let i of genSequence(begin, coords.length, arrow_num, min_step))
-        styles.push(arrow_head_style(coords[i-1], coords[i], color));
+        styles.push(arrow_head_style(coords[i-1], coords[i]));
     });
   }
   return styles;
