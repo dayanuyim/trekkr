@@ -24,7 +24,7 @@
     "handlebars": "^4.7.7",
     "html-webpack-plugin": "^5.5.3",
     "html5sortable": "^0.13.3",
-    "jquery": "^3.6.0",
+    "jquery": "^3.7.1",
     "mini-css-extract-plugin": "^2.7.6",
     "ol": "7.4.0",
     "proj4": "^2.7.5",
