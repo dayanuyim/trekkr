@@ -199,7 +199,7 @@ function genSequence(first, end, num, min_step)
   const seq = [];
   const step = Math.max(1, Math.max(min_step, (last - first) / (num - 1)));  // step >= 1
   for(let i = first; i < end; i += step)   // !! may have float number round-off error, use '< end', not '<= last'
-    seq.push(Math.floor(i));
+    seq.push(Math.min(Math.round(i), last));
 
   // correct the last, may be caused by float number round-off error
   const diff = last - seq[seq.length - 1];
