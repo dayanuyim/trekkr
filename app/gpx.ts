@@ -699,23 +699,22 @@ function interpCoords(c1, c2, time){
 const fmt_coord = (n) => n.toFixed(6);
 const fmt_ele = (n) => n.toFixed(1);
 const fmt_time = (sec?) => (sec? new Date(sec*1000): new Date()).toISOString().split('.')[0] + 'Z';
-const cmp_wpt_time = (w1, w2) => {
-  const time = wpt => {
-    const coords = wpt.getGeometry().getCoordinates();
-    const layout = wpt.getGeometry().getLayout();
-    return getEpochOfCoord(coords, layout) || 0;
-  };
-  return time(w1) - time(w2);
-}
-const cmp_trk_time = (t1, t2) => {
-  const time = trk => {
-    const coords = trk.getGeometry().getCoordinates();
-    const layout = trk.getGeometry().getLayout();
-    if(coords.length > 0 && coords[0].length > 0)
-      return getEpochOfCoord(coords[0][0], layout) || 0;  //first trkseg, first trkpt
-    return 0;
+const cmp_time = (f1, f2) => {  //for wpt/trk feature
+  const time = f => {
+    const coord = f.getGeometry().getFirstCoordinate();
+    const layout = f.getGeometry().getLayout();
+    return getEpochOfCoord(coord, layout) || 0;
   }
-  return time(t1) - time(t2);
+  return time(f1) - time(f2);
+}
+const cmp_name = (f1, f2) => {
+  const name = f => f.get('name') || '';
+  return name(f1).localeCompare(name(f2));
+}
+const cmp_feature = (f1, f2) => {
+  let cmp = cmp_time(f1, f2);
+  if(cmp == 0) cmp = cmp_name(f1, f2);
+  return cmp;
 }
 
 // create gpx by wpts and trks
@@ -766,7 +765,7 @@ function getBounds(features){
 
 // @node is a gpx node
 function addGpxWaypoints(node, wpts) {
-  wpts.sort(cmp_wpt_time).forEach(wpt => {
+  wpts.sort(cmp_feature).forEach(wpt => {
     const geom = wpt.getGeometry();
     const [x, y, ele, time] = getXYZMOfCoord(geom.getCoordinates(), geom.getLayout());
     const [lon, lat] = toLonLat([x, y]).map(fmt_coord);
@@ -797,7 +796,7 @@ function addGpxWaypoints(node, wpts) {
 
 // @node is a gpx node
 function addGpxTracks(node, trks) {
-  trks.sort(cmp_trk_time).forEach(trk => {
+  trks.sort(cmp_feature).forEach(trk => {
     const name = trk.get('name');
     const color = trk.get('color');
     node = node.ele('trk');
