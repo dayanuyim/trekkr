@@ -82,10 +82,10 @@ function graticule(coordsys) {
       lonLabelStyle: lonLabelStyle({ offsetY: -16 }),
     }));
     case 'twd67': return new Graticule(Object.assign(def_opt, def_tm2_opt, {
-      gridProjection: 'EPSG:3828',  //TWD67
+      projection: 'EPSG:3828',  //TWD67
     }));
     case 'twd97': return new Graticule(Object.assign(def_opt, def_tm2_opt, {
-      gridProjection: 'EPSG:3826',  //TWD97
+      projection: 'EPSG:3826',  //TWD97
     }));
     default: throw `create graticule layer error: unknown coordsys ${coordsys}`;
   }
