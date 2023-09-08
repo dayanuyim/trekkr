@@ -182,7 +182,7 @@ function getQueryParameters()
   }
 
   private handleSpyRadiusChange(e, inc){
-      const radius = Math.max(25, Math.min(Opt.spy.radius + inc, 250));
+      const radius = Math.max(25, Math.min(Opt.spy.radius + inc, 500));
       if(radius != Opt.spy.radus){
         Opt.update({radius}, 'spy');
         this._map.render();  //trigger prerender
