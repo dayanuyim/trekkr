@@ -19,6 +19,7 @@ import Opt from './opt';
 import { def_symbol, getSymbol, matchRules } from './sym'
 import { getEpochOfCoord, getXYZMOfCoord, colorCode } from './common';
 import { epochseconds, binsearchIndex } from './lib/utils';
+import ArrowHead from './style/ArrowHead';
 
 export const def_trk_color = 'DarkMagenta';
 //export const trk_colors = [
@@ -127,22 +128,28 @@ const arrow_head_rad = (start, end) => {
   return Math.PI/2 - rotation;
 }
 
-const arrow_head_style = (start, end, color) => {
-  //const radius = Opt.track.arrow.radius;
-  const radius = Math.max(1, Math.round(Opt.zoom/2));  //enlarge when zoom in
-  return new Style({
+const arrow_head_style_gen = (color) => {
+  const sqrt3 = 1.7320508075688772;
+  const shaft_width = 3;                                 // this is the width of track line
+  const radius = Math.max(1, Math.round(Opt.zoom/1.5));  // enlarge when zoom in
+
+  const fill =  new Fill({
+    color: colorCode(color),
+  });
+
+  const stroke = new Stroke({
+    color: colorCode(outline_color(color)),
+    width: 1,
+    lineDash: [(sqrt3+1)*radius - (shaft_width/sqrt3), 2*sqrt3], // add outline, except the part to join the shaft
+  });
+
+  return (start, end) => new Style({
     geometry: new Point(end),
-    image: new RegularShape({    // regular triangle, like ▲
+    image: new ArrowHead({    // like ➤ , head up
       points: 3,
       radius,
-      fill: new Fill({
-        color: colorCode(color),
-      }),
-      stroke: new Stroke({
-        color: colorCode(outline_color(color)),
-        width: 1,
-        lineDash: [radius * 1.732],   // only for lateral sides, no buttom line, like /▲\
-      }),
+      fill,
+      stroke,
       rotateWithView: true,
       rotation: arrow_head_rad(start, end),
     }),
@@ -169,10 +176,11 @@ const track_styles = feature => {
   const begin = 15;   // show arrows in the very ends seems useless, so skip it.
   const min_step = 20;
   if(arrow_num > 0){
+    const arrow_head_style = arrow_head_style_gen(color);
     feature.getGeometry().getLineStrings().forEach(trkseg => {
       const coords = trkseg.getCoordinates();
       for(let i of genSequence(begin, coords.length, arrow_num, min_step))
-        styles.push(arrow_head_style(coords[i-1], coords[i], color));
+        styles.push(arrow_head_style(coords[i-1], coords[i]));
     });
   }
   return styles;
@@ -191,7 +199,7 @@ function genSequence(first, end, num, min_step)
   const seq = [];
   const step = Math.max(1, Math.max(min_step, (last - first) / (num - 1)));  // step >= 1
   for(let i = first; i < end; i += step)   // !! may have float number round-off error, use '< end', not '<= last'
-    seq.push(Math.floor(i));
+    seq.push(Math.min(Math.round(i), last));
 
   // correct the last, may be caused by float number round-off error
   const diff = last - seq[seq.length - 1];
@@ -691,23 +699,22 @@ function interpCoords(c1, c2, time){
 const fmt_coord = (n) => n.toFixed(6);
 const fmt_ele = (n) => n.toFixed(1);
 const fmt_time = (sec?) => (sec? new Date(sec*1000): new Date()).toISOString().split('.')[0] + 'Z';
-const cmp_wpt_time = (w1, w2) => {
-  const time = wpt => {
-    const coords = wpt.getGeometry().getCoordinates();
-    const layout = wpt.getGeometry().getLayout();
-    return getEpochOfCoord(coords, layout) || 0;
-  };
-  return time(w1) - time(w2);
-}
-const cmp_trk_time = (t1, t2) => {
-  const time = trk => {
-    const coords = trk.getGeometry().getCoordinates();
-    const layout = trk.getGeometry().getLayout();
-    if(coords.length > 0 && coords[0].length > 0)
-      return getEpochOfCoord(coords[0][0], layout) || 0;  //first trkseg, first trkpt
-    return 0;
+const cmp_time = (f1, f2) => {  //for wpt/trk feature
+  const time = f => {
+    const coord = f.getGeometry().getFirstCoordinate();
+    const layout = f.getGeometry().getLayout();
+    return getEpochOfCoord(coord, layout) || 0;
   }
-  return time(t1) - time(t2);
+  return time(f1) - time(f2);
+}
+const cmp_name = (f1, f2) => {
+  const name = f => f.get('name') || '';
+  return name(f1).localeCompare(name(f2));
+}
+const cmp_feature = (f1, f2) => {
+  let cmp = cmp_time(f1, f2);
+  if(cmp == 0) cmp = cmp_name(f1, f2);
+  return cmp;
 }
 
 // create gpx by wpts and trks
@@ -758,7 +765,7 @@ function getBounds(features){
 
 // @node is a gpx node
 function addGpxWaypoints(node, wpts) {
-  wpts.sort(cmp_wpt_time).forEach(wpt => {
+  wpts.sort(cmp_feature).forEach(wpt => {
     const geom = wpt.getGeometry();
     const [x, y, ele, time] = getXYZMOfCoord(geom.getCoordinates(), geom.getLayout());
     const [lon, lat] = toLonLat([x, y]).map(fmt_coord);
@@ -789,7 +796,7 @@ function addGpxWaypoints(node, wpts) {
 
 // @node is a gpx node
 function addGpxTracks(node, trks) {
-  trks.sort(cmp_trk_time).forEach(trk => {
+  trks.sort(cmp_feature).forEach(trk => {
     const name = trk.get('name');
     const color = trk.get('color');
     node = node.ele('trk');
