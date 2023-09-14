@@ -94,8 +94,9 @@ export class AppMap{
 
     // pseudo gpx layer
     const layer = olGpxLayer();
+    this._map.addLayer(layer);
+    this.setInteraction(layer)
     this._gpx_layer = new GpxLayer(layer);
-    this.addLayerWithInteraction(layer)
 
     //create layer from features, and add it to the map
     drag_interaciton.on('addfeatures', (e) => {
@@ -109,7 +110,8 @@ export class AppMap{
       /*/
       // create new layer
       const layer = olLayer({features});
-      this.addLayerWithInteraction(layer);
+      this._map.addLayer(layer);
+      this.setInteraction(layer);
       this._map.getView().fit(layer.getSource().getExtent(), { maxZoom: 16 });
       //*/
     });
@@ -271,14 +273,15 @@ function getQueryParameters()
   }
   */
 
-  private addLayerWithInteraction(layer) {
-    this._map.addLayer(layer);
-    this._map.addInteraction(new Modify({    //let trkpt feature as 'Point', instead of 'MultiLineString'
-      source: layer.getSource(),
-      condition: platformModifierKeyOnly,
-    }));
+  private setInteraction(layer) {
+    if(!layer.isInteractionSet){
+      layer.isInteractionSet = true;
+      this._map.addInteraction(new Modify({    //let trkpt feature as 'Point', instead of 'MultiLineString'
+        source: layer.getSource(),
+        condition: platformModifierKeyOnly,
+      }));
+    }
   }
-
 
   //Note:
   // 1. OL is anti-order against @conf.
@@ -319,6 +322,8 @@ function getQueryParameters()
             map_layers.remove(layer); //in case the layer is added but in the wrong place
             map_layers.insertAt(idx, layer);
             layer.setOpacity(cnf.opacity);
+            if(cnf.interactable)
+              this.setInteraction(layer);
           }
         });
   }

@@ -98,7 +98,12 @@ function osmLayer(){
   });
 }
 
-function xyzLayer(url, urls, options?){
+function xyzLayer(url, options?){
+  let urls = undefined;
+  if(Array.isArray(url)){
+    urls = url;
+    url = undefined
+  }
   return new TileLayer(Object.assign({
     source: new XYZ({
       url,
@@ -107,7 +112,12 @@ function xyzLayer(url, urls, options?){
   }, options));
 }
 
-function wmsLayer(url, urls, layers, options?){
+function wmsLayer(url, layers, options?){
+  let urls = undefined;
+  if(Array.isArray(url)){
+    urls = url;
+    url = undefined
+  }
   return new TileLayer(Object.assign({
     source: new TileWMS({
       url,
@@ -134,20 +144,30 @@ function gpxLayer(url, options?){
       format: new GPXFormat(),
       url
     }),
-    style: gpxStyle,
+    style: gpx_style,
   }, options));
   */
 }
 
-function mkLayer({legend, type, url, urls, layers})
+function kmlLayer(url, options?){
+  return new VectorLayer(Object.assign({
+    source: new VectorSource({
+      format: new KML(),
+      url
+    }),
+  }, options));
+}
+
+function mkLayer({legend, type, url, layers})
 {
   const opt = legend? {transition: 0}: undefined;
   switch(type){
     case 'osm': return osmLayer();
-    case 'xyz': return xyzLayer(url, urls, opt);
-    case 'wms': return wmsLayer(url, urls, layers);
+    case 'xyz': return xyzLayer(url, opt);
+    case 'wms': return wmsLayer(url, layers);
     case 'json': return jsonLayer(url);
     case 'gpx': return gpxLayer(url);
+    case 'kml': return kmlLayer(url);
     case 'grid': return graticule(url);
     default: throw `unrecognize layer conf type: ${type}`;
   }
