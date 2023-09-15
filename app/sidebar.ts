@@ -1,6 +1,6 @@
 import Opt from './opt';
-import { fromLonLat } from 'ol/proj';
-import { fromTWD67, fromTWD97, taipowerCoordToTWD67, toTWD67, toTWD97, TM2Sixcodes } from './coord';
+import { transform  } from 'ol/proj';
+import { taipowerCoordToTWD67, toTWD67, toTWD97, TM2Sixcodes, WEB_MERCATOR } from './coord';
 import { WGS84, TWD97, TWD67, } from './coord';
 import { containsCoordinate } from 'ol/extent';
 
@@ -80,7 +80,6 @@ const coordsys_profiles = {
                 default: return undefined;
             }
         },
-        from: fromLonLat,
     },
     twd97: {
         projection: TWD97,
@@ -90,8 +89,6 @@ const coordsys_profiles = {
             width: '10em',
         },
         parse: (tokens) => (tokens.length == 2)? tokens.map(Number): undefined,
-        from: fromTWD97,
-        to: toTWD97,
     },
     twd67: {
         projection: TWD67,
@@ -101,8 +98,6 @@ const coordsys_profiles = {
             width: '10em',
         },
         parse: (tokens) => (tokens.length == 2)? tokens.map(Number): undefined,
-        from: fromTWD67,
-        to: toTWD67,
     },
     taipower: {
         projection: TWD67,
@@ -119,7 +114,6 @@ const coordsys_profiles = {
             }
             return undefined;
         },
-        from: fromTWD67,
     },
     twd97_6: {
         projection: TWD97,
@@ -130,7 +124,6 @@ const coordsys_profiles = {
         },
         has_ref: true,
         parse: (ref, tokens) => sixcode_parser(ref, tokens, toTWD97),
-        from: fromTWD97,
     },
     twd67_6: {
         projection: TWD67,
@@ -141,7 +134,6 @@ const coordsys_profiles = {
         },
         has_ref: true,
         parse: (ref, tokens) => sixcode_parser(ref, tokens, toTWD67),
-        from: fromTWD67,
     },
 }
 
@@ -208,7 +200,7 @@ export class Topbar{
             if(!coord || !containsCoordinate(profile.projection.getExtent(), coord))  //check range
                 return this._goto_coord_txt.classList.add('invalid');
 
-            const webcoord = profile.from(coord);
+            const webcoord = transform(coord, profile.projection, WEB_MERCATOR);
             if(webcoord)
                 this._listeners['goto']?.(webcoord);
         }
