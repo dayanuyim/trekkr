@@ -6,7 +6,7 @@ import Graticule from 'ol/layer/Graticule';
 
 import BiMap from 'bidirectional-map';
 
-import { olGpxLayer } from './gpx';
+import { GpxLayer, GPXFormat } from './gpx';
 import Confs from './data/layer-conf';
 
 const def_label_style = {
@@ -137,12 +137,18 @@ function jsonLayer(url, options?){
 }
 
 function gpxLayer(url, options?){
-  return olGpxLayer({url}, options)
+  return new GpxLayer(Object.assign({
+    source: new VectorSource({
+      url,
+      format: new GPXFormat(),
+    }),
+  }, options));
+
   /*
   return new VectorLayer(Object.assign({
     source: new VectorSource({
+      url,
       format: new GPXFormat(),
-      url
     }),
     style: gpx_style,
   }, options));

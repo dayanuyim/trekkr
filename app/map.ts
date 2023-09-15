@@ -13,7 +13,7 @@ import * as Extent from 'ol/extent';
 import { GeoJSON, IGC, KML, TopoJSON } from 'ol/format';
 import PhotoFormat from './format/Photo';
 
-import { olGpxLayer, GpxLayer, GPXFormat, setSymByRules, splitTrack} from './gpx';
+import { GpxLayer, GPXFormat, setSymByRules, splitTrack} from './gpx';
 import PtPopupOverlay from './pt-popup';
 import Opt from './opt';
 import * as LayerRepo from './layer-repo';
@@ -93,10 +93,9 @@ export class AppMap{
       .setListener('lookupcoords', (time) => this._gpx_layer.estimateCoord(time));
 
     // pseudo gpx layer
-    const layer = olGpxLayer();
-    this._map.addLayer(layer);
-    this.setInteraction(layer)
-    this._gpx_layer = new GpxLayer(layer);
+    this._gpx_layer = new GpxLayer();
+    this._map.addLayer(this._gpx_layer);
+    this.setInteraction(this._gpx_layer);
 
     //create layer from features, and add it to the map
     drag_interaciton.on('addfeatures', (e) => {
@@ -449,7 +448,7 @@ function getQueryParameters()
     });
 
     ctx.setItem(".item-save-gpx", (el) => {
-      const xml = this._gpx_layer.genText();
+      const xml = this._gpx_layer.genXml();
       saveTextAsFile(xml, 'your.gpx', 'application/gpx+xml');
     });
   }

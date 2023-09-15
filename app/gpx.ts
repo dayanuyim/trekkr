@@ -404,6 +404,7 @@ const xy_equals = ([x1, y1], [x2, y2]) => (x1 === x2 && y1 === y2);
 
 // @source_props should contain 'features' or 'url' for local-drag-n-drop or remote gpx files.
 // no @source_props results an empty gpx layer.
+/*
 export function olGpxLayer(source_props?, layer_props?){
     return new VectorLayer(Object.assign({
       source: new VectorSource(Object.assign({
@@ -412,6 +413,7 @@ export function olGpxLayer(source_props?, layer_props?){
       style: gpx_style,
     }, layer_props));
 }
+*/
 
 //@coords is openlayer coords [x, y, ele, time], ele and tiem is optional.
 export function olWptFeature(coords, options?){
@@ -450,7 +452,7 @@ export function isTrkFeature(feature){
   return feature.getGeometry().getType() == 'MultiLineString';
 }
 
-export class GpxLayer {
+export class GpxLayer extends VectorLayer<VectorSource>{
   static mkCrosshairWpt(coords, options?){
     return olWptFeature(coords, Object.assign({
       name: '',
@@ -458,17 +460,14 @@ export class GpxLayer {
     }, options));
   }
 
-  _layer;
   _crosshair_wpt;
-  get underlying() { return this._layer; }
 
-  public constructor(layer: VectorLayer<VectorSource<Geometry>>){
-    this._layer = layer;
+  public constructor(options?){
+    options = options || {};
+    options.style = options.style || gpx_style;
+    options.source = options.source || new VectorSource();
+    super(options);
   }
-
-  //////////////////////////////////////
-  public getSource() { return this._layer.getSource(); }
-  //////////////////////////////////////
 
   public addWaypoint(wpt)    { this.getSource().addFeature(wpt);}
   public removeWaypoint(wpt) { this.getSource().removeFeature(wpt);}
@@ -480,15 +479,16 @@ export class GpxLayer {
   }
 
   public getWaypoints() {
-    return this._layer.getSource().getFeatures().filter(isWptFeature);
+    return this.getSource().getFeatures().filter(isWptFeature).map(f => f as Feature<Point>);
   }
 
   public getTracks() {
-    return this._layer.getSource().getFeatures().filter(isTrkFeature);
+    return this.getSource().getFeatures().filter(isTrkFeature).map(f => f as Feature<MultiLineString>);
   }
 
+  /*
   private getWptsTrks(){
-    return this._layer.getSource().getFeatures().reduce((result,feature) => {
+    return this.getSource().getFeatures().reduce((result,feature) => {
       const idx = isWptFeature(feature)? 0:
                   isTrkFeature(feature)? 1: -1;
       if(idx >= 0)
@@ -496,6 +496,7 @@ export class GpxLayer {
       return result;
     }, [[],[]]);
   }
+  */
 
   public setCrosshairWpt(coord){
     //remove the old
@@ -558,14 +559,14 @@ export class GpxLayer {
     let [i, j] = idx;
     // track head
     if(i == 0 && j == 0) {
-        console.log('track join the previous');
+        console.debug('track join the previous');
         const prev = this.findPreviousTrack(coord);
         if(prev)
           return this.joinTracks(prev, trk);    // !! return to indicate whether @trk is removed !!
     }
     // track tail
     else if(i == trksegs.length - 1 && j > 0){    // assert j == trksegs[i].length - 1
-        console.log('track join the next');
+        console.debug('track join the next');
         const next = this.findNextTrack(coord);
         if(next)
           this.joinTracks(trk, next);
@@ -573,7 +574,7 @@ export class GpxLayer {
     // in the middle
     else{
       if(j == 0) --i;  // this head is the last tail
-      console.log(`track join trksegs [${i}, ${i+2})`);
+      console.debug(`track join trksegs [${i}, ${i+2})`);
       joinTrksegs(trk, i, i+2)
     }
     return false;
@@ -670,9 +671,11 @@ export class GpxLayer {
       .forEach(trk => this.addTrack(trk));
   }
 
-  public genText(){
-    const [wpts, trks ] = this.getWptsTrks();
-    const node = createGpxNode(wpts, trks);
+  public genXml(){
+    const node = createGpxNode(
+      this.getWaypoints(),
+      this.getTracks()
+    );
     return node.end({ prettyPrint: true, indent: '\t' });
   }
 
