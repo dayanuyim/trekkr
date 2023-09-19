@@ -160,8 +160,8 @@ export class Topbar{
         this._base           = el;
         this._goto_btn       = el.querySelector<HTMLButtonElement>('button.goto-btn');
         this._goto_coordsys  = el.querySelector<HTMLSelectElement>('select.goto-coordsys');
-        this._goto_coord_txt   = el.querySelector<HTMLInputElement>('input.goto-coord-txt');
-        this._goto_coord_go   = el.querySelector<HTMLButtonElement>('button.goto-coord-go');
+        this._goto_coord_txt = el.querySelector<HTMLInputElement>('input.goto-coord-txt');
+        this._goto_coord_go  = el.querySelector<HTMLButtonElement>('button.goto-coord-go');
     }
 
     private init(){
