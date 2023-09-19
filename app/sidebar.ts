@@ -28,7 +28,7 @@ export class Sidebar{
         this._spy_btn.addEventListener('click', e =>{
             const enabled = this._spy_btn.classList.toggle('active');
             Opt.update({enabled}, 'spy');
-            this._listeners['click']?.();
+            this._listeners['spyenabled']?.(Opt.spy);
         });
 
         //this._goto_btn.classList.add('active');

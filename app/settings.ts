@@ -143,7 +143,7 @@ export class Settings{
         if(update_opt){
             Opt.update({layer: id}, 'spy');   // option
         }
-        this._listeners['spychanged']?.(id);  // map
+        this._listeners['spychanged']?.(Opt.spy);  // map
     }
 
     // ----------------------------------------------------------------

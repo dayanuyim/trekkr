@@ -340,9 +340,11 @@ function getQueryParameters()
 
 ////////////////////////////////////////////////////////////////
 
-  //TODO: are there beter ways than creating spy layer everytime?
-  //      Or creating spy layer everytime really hurt the performance?
-  public setSpyLayer(id) {
+  // to eanble:             add the layer
+  // to disable:            remove the origianl layer
+  // changed when eanbled:  remove the original layer && add the layer
+  // changed when disabled: do nothing
+  public setSpyLayer(spy) {
     const layers = this._map.getLayers();
     const idx = this.indexOfSpyLayer();  // !! the index is correct only if the configurated layers are set; otherwise do the following search to find out the proper index.
     /*
@@ -358,13 +360,15 @@ function getQueryParameters()
         }
       }
       if(has_old_spy)*/
-    if (LayerRepo.getId(layers.item(idx)) == 'SPY')  //remove the original if any
+    if(LayerRepo.getId(layers.item(idx)) == 'SPY')  // either disabled or changed, it is needed to remove the original if any
       layers.removeAt(idx);
-    layers.insertAt(idx, this.createSpyLayer(id));
+
+    if(spy.enabled)
+      layers.insertAt(idx, this.createSpyLayer(spy.layer));
   }
 
-  private createSpyLayer(id) {
-    const spy_conf = Object.assign({}, LayerRepo.getConf(id), { id: 'SPY' });
+  private createSpyLayer(layer_id) {
+    const spy_conf = Object.assign({}, LayerRepo.getConf(layer_id), { id: 'SPY' });
     const layer = LayerRepo.createByConf(spy_conf);
     this.setSpyEvents(layer);
     return layer;

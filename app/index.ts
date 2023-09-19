@@ -52,14 +52,14 @@ function main(main_el: HTMLElement)
   map.setCtxMenu(document.getElementById('ctx-menu'));
 
   const sidebar = new Sidebar(main_el.querySelector('.settings-bar.side'))
-    .setListener('click', () => map.render());
+    .setListener('spyenabled', (spy) => map.setSpyLayer(spy));
 
   const topbar = new Topbar(main_el.querySelector('.settings-bar.top'))
     .setListener('getcenter', () => map.getView().getCenter())
     .setListener('goto', (coord) => map.setCrosshairWpt(coord));
 
   const settings = new Settings(main_el.querySelector('.settings'))
-    .setListener('spychanged', (id) => map.setSpyLayer(id))
+    .setListener('spychanged', (spy) => map.setSpyLayer(spy))
     .setListener('layerschanged', (layers_conf) => map.setLayers(layers_conf))
     .setListener('opacitychanged', (id, opacity) => map.setLayerOpacity(id, opacity))
     .setListener('wptchanged', () => map.redrawText())
