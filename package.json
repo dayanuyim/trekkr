@@ -16,7 +16,7 @@
     "bidirectional-map": "^1.1.1",
     "copy-webpack-plugin": "^11.0.0",
     "css-loader": "^6.8.1",
-    "exifreader": "^4.13.0",
+    "exifreader": "^4.13.2",
     "file-loader": "^6.2.0",
     "google-elevation-api": "^1.0.0",
     "handlebars": "^4.7.8",
