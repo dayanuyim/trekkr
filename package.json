@@ -12,7 +12,7 @@
   "//": {},
   "devDependencies": {
     "@fortawesome/fontawesome-free": "^6.4.2",
-    "@types/proj4": "^2.5.2",
+    "@types/proj4": "^2.5.4",
     "bidirectional-map": "^1.1.1",
     "copy-webpack-plugin": "^11.0.0",
     "css-loader": "^6.8.1",
@@ -25,7 +25,7 @@
     "jquery": "^3.7.1",
     "mini-css-extract-plugin": "^2.7.6",
     "ol": "8.0.0",
-    "proj4": "^2.7.5",
+    "proj4": "^2.9.1",
     "style-loader": "^3.3.3",
     "ts-loader": "^9.4.4",
     "typescript": "^5.2.2",
