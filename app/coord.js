@@ -9,6 +9,7 @@ import proj4 from 'proj4';
    ["EPSG:3826", "+title=二度分帶：TWD97 TM2 台灣 +proj=tmerc +lat_0=0 +lon_0=121 +k=0.9999 +x_0=250000 +y_0=0 +ellps=GRS80 +units=m +no_defs"],
    ["EPSG:3827", "+title=二度分帶：TWD67 TM2 澎湖 +proj=tmerc +lat_0=0 +lon_0=119 +k=0.9999 +x_0=250000 +y_0=0 +ellps=aust_SA +towgs84=-752,-358,-179,-0.0000011698,0.0000018398,0.0000009822,0.00002329 +units=m"],
    ["EPSG:3828", "+title=二度分帶：TWD67 TM2 台灣 +proj=tmerc +lat_0=0 +lon_0=121 +k=0.9999 +x_0=250000 +y_0=0 +ellps=aust_SA +towgs84=-752,-358,-179,-0.0000011698,0.0000018398,0.0000009822,0.00002329 +units=m +no_defs"],
+   ["EPSG:3829", "+title+虎子山 UTM zone 51N +proj=utm +zone=51 +ellps=intl +towgs84=-637,-549,-203,0,0,0,0 +units=m +no_defs +type=crs"],
    //["EPSG:3857", "+title=Web Mercator +proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +wktext  +no_defs"],
    //["EPSG:4326", '+title=WGS 84 (long/lat) +proj=longlat +ellps=WGS84 +datum=WGS84 +units=degrees'],
    //["EPSG:900913", "+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +towgs84=0,0,0,0,0,0,0 +units=m +nadgrids=@null +wktext  +no_defs"],
@@ -79,21 +80,25 @@ export const TM2Sixcodes = (reftm2, sixcodes) => {
   return [ to_tm2(xref, xcode), to_tm2(yref, ycode) ];
 }
 
+// ref: https://wiki.osgeo.org/wiki/Taiwan_Power_Company_grid
+// I: underwater, S: Mazu, U: Orchid Island, XY: Penghu, Z: Jinmen
 // coord format /^[A-HJ-Z]\d{4}[A-H][A-E]\d{2}(\d{2})?$/
 export function taipowerCoordToTWD67(coord)
 {
   // the base of each area of electic coord
-  const [EW, EH] = [80 * 1000, 50 * 1000];
+  const [EW, EH] = [ 80 * 1000,   50 * 1000];
   const [X0, Y0] = [250 * 1000, 2500 * 1000];
+  const [X1, Y1] = [275 * 1000, 2564 * 1000]; //Penghu
   const EBASE = {
                              'A': [X0-EW, Y0+5*EH], 'B': [X0, Y0+5*EH], 'C': [X0+EW, Y0+5*EH],
                              'D': [X0-EW, Y0+4*EH], 'E': [X0, Y0+4*EH], 'F': [X0+EW, Y0+4*EH],
-                             'G': [X0-EW, Y0+3*EH], 'H': [X0, Y0+3*EH],
+                             'G': [X0-EW, Y0+3*EH], 'H': [X0, Y0+3*EH], 'I': [X0+EW, Y0+3*EH],
     'J': [X0-2*EW, Y0+2*EH], 'K': [X0-EW, Y0+2*EH], 'L': [X0, Y0+2*EH],
     'M': [X0-2*EW, Y0+1*EH], 'N': [X0-EW, Y0+1*EH], 'O': [X0, Y0+1*EH],
     'P': [X0-2*EW, Y0+0*EH], 'Q': [X0-EW, Y0+0*EH], 'R': [X0, Y0+0*EH],
                              'T': [X0-EW, Y0-1*EH], 'U': [X0, Y0-1*EH],
                              'V': [X0-EW, Y0-2*EH], 'W': [X0, Y0-2*EH],
+
   };
 
   // preprocess, coord should be a string or a one-dimensional array
