@@ -1,4 +1,5 @@
 import { Feature } from 'ol';
+import { FeatureLike } from 'ol/Feature';
 import { defaults as defaultControls, ScaleLine, OverviewMap, ZoomSlider, Control } from 'ol/control';
 import { defaults as defaultInteractions, DragAndDrop, Modify, Select } from 'ol/interaction';
 import { toSize } from 'ol/size';
@@ -48,6 +49,16 @@ export class AppMap{
   _map: Map
   _gpx_layer: GpxLayer;   //a gpx adapter for VectorLayer
   _ctxmenu_coord;
+  _formats = [
+    GPXFormat,
+    new PhotoFormat()
+      .setListener('featureexists', (time) => this._gpx_layer.findWaypoint(time))
+      .setListener('lookupcoords',  (time) => this._gpx_layer.estimateCoord(time)),
+    GeoJSON,
+    IGC,
+    KML,
+    TopoJSON,
+  ]
 
   public constructor(target){
     this.init(target);
@@ -56,9 +67,8 @@ export class AppMap{
 
   private init(target)
   {
-    const photo_format = new PhotoFormat();
     const drag_interaciton = new DragAndDrop({
-      formatConstructors: [GPXFormat, photo_format, GeoJSON, IGC, KML, TopoJSON]
+      formatConstructors: this._formats,
     });
 
     this._map = new Map({
@@ -88,10 +98,6 @@ export class AppMap{
       ],
     });
 
-    photo_format
-      .setListener('featureexists', (time) => this._gpx_layer.findWaypoint(time))
-      .setListener('lookupcoords', (time) => this._gpx_layer.estimateCoord(time));
-
     // pseudo gpx layer
     this._gpx_layer = new GpxLayer();
     this._map.addLayer(this._gpx_layer);
@@ -99,35 +105,59 @@ export class AppMap{
 
     //create layer from features, and add it to the map
     drag_interaciton.on('addfeatures', (e) => {
-      const features = e.features.filter(f => f instanceof Feature)  // filter out RenderFeature
+      this.addGpxFeatures(e.features);
+    });
+  };
+
+  private addGpxFeatures(features: FeatureLike[]): void {
+      const real_features = features.filter(f => f instanceof Feature)  // filter out RenderFeature
                                  .map(f => f as Feature);
       //*
       // add to the gpx layer
-      this._gpx_layer.getSource().addFeatures(features);                              // add only 'filtered' features
-      const extent = unionExtents(e.features.map(f => f.getGeometry().getExtent()));  // extent of 'original' features
+      this._gpx_layer.getSource().addFeatures(real_features);                       // add only 'filtered' features
+      const extent = unionExtents(features.map(f => f.getGeometry().getExtent()));  // extent of 'original' features
       this._map.getView().fit(extent, { maxZoom: 16 });
       /*/
       // create new layer
-      const layer = olLayer({features});
+      const layer = olLayer({real_features});
       this._map.addLayer(layer);
       this.setInteraction(layer);
       this._map.getView().fit(layer.getSource().getExtent(), { maxZoom: 16 });
       //*/
-    });
-  };
+  }
 
-/*
-function getQueryParameters()
-{
-  const query = window.location.search.substring(1);
-  return query.split('&')
-    .reduce((all, param) => {
-      const [key, value] = param.split('=');
-      all[key] = value;
-      return all;
-    }, {});
-}
-*/
+  // This function is much like the ability to read features from drag-and-drop files, but here from text content.
+  //    ref: ol/interaction/DragAndDrop.js
+  // TODO: handle arraybuffer for PhotoFormat
+  public parseFeatures(text: string)
+  {
+    for(let i = 0; i < this._formats.length; ++i){
+      //get format obj
+      const format = this._formats[i];
+      const formater = (typeof format === 'function')?  new format(): format;
+
+      // try to get features
+      const features = this.tryReadFeatures_(formater, text, {
+        featureProjection: this._map.getView().getProjection(),
+      });
+
+      //test the next format
+      if(!features || features.length == 0)
+        continue;
+
+      this.addGpxFeatures(features);
+      break;  //stop the loop to parse
+    }
+  }
+
+  private tryReadFeatures_(format, text, options) {
+    try {
+      return format.readFeatures(text, options);
+    } catch (e) {
+      return null;
+    }
+  }
+
 
   private initEvents() {
     const map = this._map;
@@ -151,7 +181,7 @@ function getQueryParameters()
     view.on('change:resolution', () => Opt.update({zoom: view.getZoom()}));
 
     // when pt-popup overlay make or remove a wpt feature
-    const pt_popup = (map.getOverlayById('pt-popup') as PtPopupOverlay)
+    (map.getOverlayById('pt-popup') as PtPopupOverlay)
       .setListener('mkwpt', (wpt) => this._gpx_layer.getSource().addFeature(wpt))
       .setListener('rmwpt', (wpt) => this._gpx_layer.removeWaypoint(wpt))
       .setListener('rmtrk', (trk) => this._gpx_layer.removeTrack(trk))
@@ -290,7 +320,7 @@ function getQueryParameters()
   //     layers[n]     is the spy layer
   //     layers[n+1]   is the pseudo gpx layer
   //     layers[n+1+m] is the mth user-provided gpx laeyr
-  // 2. remove only the layers whith are set disabled in @conf
+  // 2. remove only the layers which are set disabled in @conf
   // 3. invoke getLayer only for those enalbed in @conf
   // 4. as mush as graceful to reorder the map's layers.
   public setLayers(conf)

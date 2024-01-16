@@ -34,7 +34,7 @@ class Opt{
     };
     track = {
         arrow: {
-            max_num: 24,
+            max_num: 8,
             interval: 20, //TODO: consider to deprecate
             radius: 8,    //TODO: consider to deprecate
         }

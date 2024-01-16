@@ -19,23 +19,6 @@ import { Sidebar, Topbar } from './sidebar';
 (async () => {
   main(document.body);
 
-
-  /*
-  const params = getQueryParameters();
-  if(params['gpx']){
-    console.log(params['gpx']);
-    const resp = await fetch(params['gpx'], {
-      mode: 'no-cors', // no-cors, cors, *same-origin
-      headers: new Headers({
-        'Access-Control-Allow-Origin': '*',
-        'Content-Type': 'application/gpx+xml'
-      }),
-    });
-    const txt = await resp.text();
-    addGPXLayer(map, txt);
-  }
-  */
-
   /*
   navigator.geolocation.getCurrentPosition(function(pos) {
     const coords = fromLonLat([pos.coords.longitude, pos.coords.latitude]);
@@ -48,6 +31,7 @@ function main(main_el: HTMLElement)
 {
   main_el.innerHTML = templates.main();
 
+  // set ui utils
   const map = new AppMap('map');
   map.setCtxMenu(document.getElementById('ctx-menu'));
 
@@ -66,7 +50,7 @@ function main(main_el: HTMLElement)
     .setListener('trkchanged', () => map.redrawText())
     .apply();
 
-  //set hotkey
+  // set hotkey
   main_el.addEventListener('keydown', function (e) {
       if (e.ctrlKey && e.key === 's')
           settings.toggle();
@@ -76,4 +60,23 @@ function main(main_el: HTMLElement)
           main_el.requestFullscreen();
       }
   });
+
+  // default gpx
+  loadQueryGpx(map);
+}
+
+async function loadQueryGpx(map){
+  const params = new URLSearchParams(window.location.search);
+  if(!params.has('gpx')) return;
+
+  const gpx = params.get('gpx');
+  const resp = await fetch(gpx, {
+    method: 'GET',
+    mode: 'cors', // dont set no-cors,  which not mean 'no cors' or 'to disable cors'!
+    headers: new Headers({
+      'Content-Type': 'application/gpx+xml'
+    }),
+  });
+  const txt = await resp.text();
+  map.parseFeatures(txt);
 }
