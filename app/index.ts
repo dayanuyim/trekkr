@@ -70,6 +70,8 @@ async function loadQueryGpx(map){
   if(!params.has('gpx')) return;
 
   const gpx = params.get('gpx');
+  if(!gpx) return;
+
   const resp = await fetch(gpx, {
     method: 'GET',
     mode: 'cors', // dont set no-cors,  which not mean 'no cors' or 'to disable cors'!
