@@ -126,18 +126,20 @@ export class AppMap{
       //*/
   }
 
-  // This function is much like the ability to read features from drag-and-drop files, but here from text content.
+  // This function is much like the ability to read features from drag-and-drop files, but here the from file content.
   //    ref: ol/interaction/DragAndDrop.js
-  // TODO: handle arraybuffer for PhotoFormat
-  public parseFeatures(text: string)
+  public parseFeatures(arrbuf: ArrayBuffer)
   {
+    const text = new TextDecoder().decode(arrbuf);
+
     for(let i = 0; i < this._formats.length; ++i){
       //get format obj
       const format = this._formats[i];
       const formater = (typeof format === 'function')?  new format(): format;
+      const data = (formater.getType() == 'arraybuffer')? arrbuf: text;
 
       // try to get features
-      const features = this.tryReadFeatures_(formater, text, {
+      const features = this.tryReadFeatures_(formater, data, {
         featureProjection: this._map.getView().getProjection(),
       });
 
@@ -145,8 +147,9 @@ export class AppMap{
       if(!features || features.length == 0)
         continue;
 
+      // got features and stop
       this.addGpxFeatures(features);
-      break;  //stop the loop to parse
+      break;
     }
   }
 

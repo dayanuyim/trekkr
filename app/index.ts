@@ -61,24 +61,39 @@ function main(main_el: HTMLElement)
       }
   });
 
-  // default gpx
-  loadQueryGpx(map);
+  // default data
+  loadQueryData(map);
 }
 
-async function loadQueryGpx(map){
+async function loadQueryData(map){
   const params = new URLSearchParams(window.location.search);
-  if(!params.has('gpx')) return;
+  if(!params.has('data')) return;
+  if(!params.get('data')) return;
+  try{
+    const url = params.get('data');
+    const data = await fetchData(url);
+    if(data) map.parseFeatures(data);
+  }
+  catch(e){
+    alert(`parse data error: ${e.message}`);
+  }
+}
 
-  const gpx = params.get('gpx');
-  if(!gpx) return;
+async function fetchData(url){
+  try{
+    const resp = await fetch(url, {
+      method: 'GET',
+      mode: 'cors', // dont set no-cors,  which not mean 'no cors' or 'to disable cors'!
+      //headers: new Headers({ 'Content-Type': mime, }),
+    });
 
-  const resp = await fetch(gpx, {
-    method: 'GET',
-    mode: 'cors', // dont set no-cors,  which not mean 'no cors' or 'to disable cors'!
-    headers: new Headers({
-      'Content-Type': 'application/gpx+xml'
-    }),
-  });
-  const txt = await resp.text();
-  map.parseFeatures(txt);
+    if(!resp.ok)
+      throw new Error(`${resp.status} ${resp.statusText}`)
+
+    return await resp.arrayBuffer();
+  }
+  catch(e){
+    alert(`fetch data error: ${e.message}`);
+    return null;
+  }
 }
