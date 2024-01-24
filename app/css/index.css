@@ -631,7 +631,7 @@ select::-ms-expand {
 
 .pt-symboard-items {
     display: grid;
-    grid-template-columns: repeat(20, 1fr);
+    grid-template-columns: repeat(21, 1fr);
 }
 
 .pt-symboard-item {
