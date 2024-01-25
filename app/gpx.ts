@@ -801,9 +801,14 @@ function addGpxWaypoints(node, wpts) {
 function addGpxTracks(node, trks) {
   trks.sort(cmp_feature).forEach(trk => {
     const name = trk.get('name');
+    const desc = trk.get('desc');
+    const cmt  = trk.get('cmt');
     const color = trk.get('color');
+
     node = node.ele('trk');
     if (name) node.ele('name').txt(name).up();
+    if (desc) node.ele('desc').txt(desc).up();
+    if (cmt)  node.ele('cmt').txt(cmt).up();
     if (color)
       node.ele('extensions')
         .ele('gpxx:TrackExtension', { 'xmlns:gpxx': 'http://www.garmin.com/xmlschemas/GpxExtensions/v3' })

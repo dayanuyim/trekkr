@@ -81,14 +81,15 @@ export const ptPopup = Handlebars.compile(`
             </legend>
         </fieldset>
         <div class="pt-trk-color color-item"></div><!--
-     --><span class="pt-trk-name" contenteditable="true"></span>
+     --><span class="pt-trk-name" contenteditable="true" data-placeholder="NAME"></span>
         <span class="pt-trk-seg-sn"></span>
     </div>
     <div class="pt-colorboard glassmophism hidden">
         {{colorboardItems}}
     </div>
 
-    <div class="pt-wpt">
+    <!-------------- Wpt or Trkpt -------------->
+    <div class="pt-content">
         <fieldset class="pt-wpt-tool">
             <button class="pt-tool-mk-wpt" title="Make Wpt"><i class="fas fa-map-pin"></i></button>
             <button class="pt-tool-rm-wpt" title="Delete Wpt"><i class="fas fa-trash-can"></i></button>
@@ -96,10 +97,14 @@ export const ptPopup = Handlebars.compile(`
 
         <div class="pt-wpt-header">
             <img class="pt-sym" width="24" heigh="24" src="{{sym}}"><!--
-        --><span class="pt-name" contenteditable="true">{{name}}</span>
+        --><span class="pt-name" contenteditable="true" data-placeholder="NAME">{{name}}</span>
             <!--<input type="text" class="pt-name" value="{{name}}">-->
         </div>
         <div class="pt-symboard glassmophism hidden"></div>
+
+        <div class="pt-desc">
+            <span class="pt-desc-value" contenteditable="true" data-placeholder="Description for the wpt">{{desc}}</span>
+        </div>
 
         <div class="pt-coord" data-pt-coord="{{coordinate}}">
             {{coordsysMenu "pt-coord-title"}}
@@ -112,7 +117,7 @@ export const ptPopup = Handlebars.compile(`
 
         <div class="pt-ele">
             <span class="pt-ele-title">ELE.</span>
-            <span class="pt-ele-value" contenteditable="true">{{fmtEle ele.value}}</span> m
+            <span class="pt-ele-value" contenteditable="true" data-placeholder="0.0">{{fmtEle ele.value}}</span> m
             <!--<input type="text" class="pt-ele-value" pattern="[0-9]+([\.][0-9]+)?" value="{{fmtEle ele.value}}"> m-->
             <span class="pt-ele-est">(est.)</span>
         </div>
@@ -143,6 +148,7 @@ export const license_cc_by_sa= Handlebars.compile(`
 Handlebars.registerHelper("ptPopup", (data, options)=>{
     data = Object.assign({
         name: '',
+        desc: '',
         coordsys: '',
         coordinate: [0, 0],
         time: undefined,

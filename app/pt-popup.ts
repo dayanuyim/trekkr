@@ -109,6 +109,7 @@ export default class PtPopupOverlay extends Overlay{
     _pt_symboard: HTMLElement;
     _pt_symboard_filter: HTMLInputElement;
     _pt_name: HTMLElement;
+    _pt_desc: HTMLElement;
     _pt_coord: HTMLElement;
     _pt_coord_title: HTMLSelectElement;
     _pt_coord_value: HTMLElement;
@@ -141,6 +142,8 @@ export default class PtPopupOverlay extends Overlay{
     set pt_sym(src) { this._pt_sym.src = src;}
     get pt_name() { return this._pt_name.textContent; }
     set pt_name(value) { this._pt_name.textContent = value; }
+    get pt_desc() { return this._pt_desc.textContent; }
+    set pt_desc(value) { this._pt_desc.textContent = value; }
     get pt_coord() { return this._pt_coord.getAttribute('data-pt-coord').split(',').map(Number); }
     set pt_coord(value) { this._pt_coord.setAttribute('data-pt-coord', value.join(',')); }
     get pt_coord_title() { return this._pt_coord_title.value; }
@@ -192,6 +195,7 @@ export default class PtPopupOverlay extends Overlay{
         this._pt_symboard =        el.querySelector<HTMLElement>('.pt-symboard');
         //this._pt_symboard_filter = ... //DONT DO THIS since symboard is lazy initailized
         this._pt_name =            el.querySelector<HTMLElement>('.pt-name');
+        this._pt_desc =            el.querySelector<HTMLElement>('.pt-desc-value');
         this._pt_coord =           el.querySelector<HTMLElement>('.pt-coord');
         this._pt_coord_title =     this._pt_coord.querySelector<HTMLSelectElement>('.pt-coord-title');
         this._pt_coord_value =     this._pt_coord.querySelector<HTMLElement>('.pt-coord-value');
@@ -314,6 +318,16 @@ export default class PtPopupOverlay extends Overlay{
             if(this._data.name != name){     //cache != ui
                 this._data.name = name;
                 this._data_name_changed();
+            }
+        }
+
+        // change desc
+        this._pt_desc.onkeydown = enter_to_blur_listener;
+        this._pt_desc.onblur = e => {
+            const desc = this.pt_desc.trim();
+            if(this._data.desc != desc){     //cache != ui
+                this._data.desc = desc;
+                this._data_desc_changed();
             }
         }
 
@@ -454,6 +468,11 @@ export default class PtPopupOverlay extends Overlay{
         }
     }
 
+    private _data_desc_changed(){
+        this._feature.set('desc', this._data.desc);
+        //this.setContent(this._data);
+    }
+
     private _data_ele_changed(){
         this._pt_ele_est.classList.add('hidden');
         this._feature.getGeometry().setCoordinates(this._data.coord);
@@ -461,7 +480,8 @@ export default class PtPopupOverlay extends Overlay{
 
     async popContent(feature) {
         // wpt data
-        const name = feature.get('name') || feature.get('desc');     //maybe undefined
+        const name = feature.get('name');                            //maybe undefined
+        const desc = feature.get('desc');                            //maybe undefined
         const sym = feature.get('sym');                              //maybe undefined
         const image = feature.get('image');
         let coord = feature.getGeometry().getCoordinates();          //x, y, [ele, [time]]
@@ -470,16 +490,17 @@ export default class PtPopupOverlay extends Overlay{
         const track = this._track_feature_of(feature);                // for trkpt
         const trk = track ? {
             name: track.get('name'),
+            desc: track.get('desc'),
             color: track.get('color'),
-            is_real: track.getGeometry().getLayout() == feature.getGeometry().getLayout(),
+            has_vpt: track.getGeometry().getLayout() != feature.getGeometry().getLayout(),  //the trkpt is virtual
         } : undefined;
 
-        if(trk && !trk.is_real) // to get more info from estimation
+        if(trk && trk.has_vpt && !coord) // to get more info from estimation
             coord = track.getGeometry().getClosestPoint(coord);
 
         // cache for later to use
         this._feature = track? track: feature;  // trk(for rm/split/join) or wpt (for rm)
-        this._data = {trk, name, sym, coord};   // for creating/updating
+        this._data = {trk, name, desc, sym, coord};   // for creating/updating
 
         this.resetDisplay(image);
         await this.setContent(this._data);
@@ -491,11 +512,12 @@ export default class PtPopupOverlay extends Overlay{
         return features ? features.find(isTrkFeature) : undefined;
     }
 
-    private async setContent({trk, name, sym, coord})
+    private async setContent({trk, name, desc, sym, coord})
     {
         this._setContent({
             trk,
             name,
+            desc,
             coordsys: Opt.coordsys,
             coordxy: coord.slice(0, 2),
             time: getLocalTimeByCoord(coord),
@@ -504,7 +526,7 @@ export default class PtPopupOverlay extends Overlay{
         });
     }
 
-    private _setContent({trk, name, coordsys, coordxy, time, ele, symbol})
+    private _setContent({trk, name, desc, coordsys, coordxy, time, ele, symbol})
     {
         const is_wpt = !trk;
 
@@ -522,6 +544,9 @@ export default class PtPopupOverlay extends Overlay{
         showElem(this._pt_rm_wpt, is_wpt);
 
         this.pt_name = name;
+
+        this.pt_desc = desc ;
+        //showElem(this._pt_desc, desc);
 
         this.pt_coord = coordxy;
         this.pt_coord_title = coordsys;
@@ -547,7 +572,7 @@ export default class PtPopupOverlay extends Overlay{
         if(trk){
             const endidx = getTrkptIndicesAtEnds(track.getGeometry().getCoordinates(), coord);
             showElem(this._pt_join_trk, endidx);
-            showElem(this._pt_split_trk, !endidx && trk.is_real);
+            showElem(this._pt_split_trk, !endidx && !trk.has_vpt);
             this.pt_trk_seg_sn = this.getTrksegSnText();
         }
     }
@@ -557,7 +582,7 @@ export default class PtPopupOverlay extends Overlay{
         if(trksegs.length <= 1)
             return '';
 
-        if(!this._data.trk.is_real)
+        if(this._data.trk.has_vpt)
             return `-/${trksegs.length}`;
 
         const indices = getTrkptIndicesByCoord(trksegs, this._data.coord);  // real trkpt coord
@@ -593,7 +618,7 @@ export default class PtPopupOverlay extends Overlay{
         const profile = {
             is_wpt: undefined,
             is_trkpt: undefined,
-            is_real: undefined,
+            has_vpt: undefined,
             trkseg_idx: undefined,
             trkseg_num: undefined,
         };
@@ -607,7 +632,7 @@ export default class PtPopupOverlay extends Overlay{
             const indices = getTrkptIndicesByCoord(trksegs, coord);
 
             profile.trkseg_num = trksegs.length;
-            profile.is_real = !!indices;
+            profile.has_vpt = !indices;
             if(indices){
                 const [i, j] = indices;
                 profile.is_end = (j == 0 || j == trksegs[i].length - 1);

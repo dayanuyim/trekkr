@@ -460,7 +460,7 @@ select::-ms-expand {
     color: lightgray;
     font-weight: normal;
     font-style: italic;
-    content: "NAME";
+    content: attr(data-placeholder);
 }
 
 .ol-popup-content {
@@ -549,7 +549,7 @@ select::-ms-expand {
     margin: 3px;
 }
 /*----------------------------------------------------------------*/
-.pt-wpt {
+.pt-content {
 }
 
 .pt-wpt-tool {
@@ -679,6 +679,12 @@ select::-ms-expand {
     /*font-weight: bold;*/
     font-size: 20px;
     /*width: 9em;*/
+}
+
+.pt-desc {
+    color: gray;
+    white-space: nowrap;
+    font-size: smaller;
 }
 
 .pt-coord, .pt-ele, .pt-time{
