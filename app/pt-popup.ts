@@ -101,6 +101,7 @@ export default class PtPopupOverlay extends Overlay{
     _pt_image: HTMLElement;
     _pt_trk: HTMLElement;
     _pt_trk_name: HTMLElement;
+    _pt_trk_desc: HTMLElement;
     _pt_trk_seg_sn: HTMLElement;
     _pt_trk_color: HTMLElement;
     _pt_colorboard: HTMLElement;
@@ -134,6 +135,8 @@ export default class PtPopupOverlay extends Overlay{
 
     get pt_trk_name() { return this._pt_trk_name.textContent; }
     set pt_trk_name(value) { this._pt_trk_name.textContent = value; }
+    get pt_trk_desc() { return this._pt_trk_desc.textContent; }
+    set pt_trk_desc(value) { this._pt_trk_desc.textContent = value; }
     get pt_trk_seg_sn() { return this._pt_trk_seg_sn.textContent; }
     set pt_trk_seg_sn(value) { this._pt_trk_seg_sn.textContent = value; }
     get pt_trk_color() { return this._pt_trk_color.style.backgroundColor; }
@@ -187,6 +190,7 @@ export default class PtPopupOverlay extends Overlay{
         this._pt_image =           el.querySelector<HTMLElement>('.pt-image');
         this._pt_trk =             el.querySelector<HTMLElement>('.pt-trk');
         this._pt_trk_name =        el.querySelector<HTMLElement>('.pt-trk-name');
+        this._pt_trk_desc =        el.querySelector<HTMLElement>('.pt-trk-desc');
         this._pt_trk_seg_sn =      el.querySelector<HTMLElement>('.pt-trk-seg-sn');
         this._pt_trk_color =       el.querySelector<HTMLElement>('.pt-trk-color');
         this._pt_colorboard =      el.querySelector<HTMLElement>('.pt-colorboard');
@@ -264,25 +268,6 @@ export default class PtPopupOverlay extends Overlay{
         };
         */
 
-        // colorboard
-        setSubBoardEvents(
-            this.getElement(),
-            this._pt_trk_color,
-            this._pt_colorboard,
-            this._pt_colorboard.querySelectorAll<HTMLElement>('.pt-colorboard-item'), (item) => {
-                const color = item.getAttribute("title");
-                this._updateData('trk', 'color', color);
-            });
-
-        // change trk name
-        this._pt_trk_name.onkeydown = enter_to_blur_listener;
-        this._pt_trk_name.onblur = e => {
-            const name = this.pt_trk_name.trim();
-            if(!name)
-                return this.pt_trk_name = this._data.trk.name;
-            this._updateData('trk', 'name', this.pt_trk_name, false);
-        }
-
         // set resizer-conetnt as the same size as the resizer
         this._resize_observer = new ResizeObserver((entries)=>{
             const {width, height} = entries[0].contentRect;
@@ -303,6 +288,32 @@ export default class PtPopupOverlay extends Overlay{
             console.log('init symboard');
             this.initSymboard();
         }, {once: true});
+
+        // colorboard
+        setSubBoardEvents(
+            this.getElement(),
+            this._pt_trk_color,
+            this._pt_colorboard,
+            this._pt_colorboard.querySelectorAll<HTMLElement>('.pt-colorboard-item'), (item) => {
+                const color = item.getAttribute("title");
+                this._updateData('trk', 'color', color);
+            });
+
+        // change trk name
+        this._pt_trk_name.onkeydown = enter_to_blur_listener;
+        this._pt_trk_name.onblur = e => {
+            const name = this.pt_trk_name.trim();
+            if(!name)
+                return this.pt_trk_name = this._data.trk.name;
+            this._updateData('trk', 'name', this.pt_trk_name, false);
+        }
+
+        // change trk desc
+        this._pt_trk_desc.onkeydown = enter_to_blur_listener;
+        this._pt_trk_desc.onblur = e => {
+            const desc = this.pt_trk_desc.trim();
+            this._updateData('pt', 'desc', desc, false);
+        }
 
         // change pt name
         this._pt_name.onkeydown = enter_to_blur_listener;
@@ -499,8 +510,10 @@ export default class PtPopupOverlay extends Overlay{
         showElem(this._pt_trk, trk);
         if(trk){
             this.pt_trk_name = trk.name;
+            this.pt_trk_desc = trk.desc;
             this.pt_trk_color = colorCode(trk.color || def_trk_color);
             this.setTrackTools(this._feature, {trk, pt})
+            showElem(this._pt_trk_desc, trk.desc);   // show only if set. TODO: show the field on demand
         }
 
         //wpt

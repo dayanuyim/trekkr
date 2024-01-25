@@ -80,9 +80,14 @@ export const ptPopup = Handlebars.compile(`
             <button class="pt-tool-join-trk" title="Join Track"><i class="fa-solid fa-link"></i></button>
             </legend>
         </fieldset>
-        <div class="pt-trk-color color-item"></div><!--
-     --><span class="pt-trk-name" contenteditable="true" data-placeholder="NAME"></span>
-        <span class="pt-trk-seg-sn"></span>
+        <div class="pt-trk-header">
+            <div class="pt-trk-color color-item"></div><!--
+         --><span class="pt-trk-name" contenteditable="true" data-placeholder="NAME"></span>
+            <span class="pt-trk-seg-sn"></span>
+        </div>
+        <div class="pt-row">
+            <span class="pt-trk-desc" contenteditable="true" data-placeholder="Description for the track">{{desc}}</span>
+        </div>
     </div>
     <div class="pt-colorboard glassmophism hidden">
         {{colorboardItems}}

@@ -473,6 +473,7 @@ select::-ms-expand {
     position: relative;
     white-space: nowrap;
     border-bottom: solid 1px lightgray;
+    padding-bottom: 4px;
     margin-bottom: 5px;
     /*border: solid 1px transparent;*/
     /*border-radius: 8px;*/
@@ -509,7 +510,7 @@ select::-ms-expand {
 
 .color-item {
     padding: 8px;
-    margin: 4px;
+    margin: 4px 4px 0 4px;
     border-radius: 4px;
     border: solid 1px #d0d0d0;
 }
@@ -520,7 +521,7 @@ select::-ms-expand {
 }
 
 .pt-trk-name {
-    vertical-align: 7px;
+    vertical-align: 3px;
     font-weight: bold;
 }
 
@@ -530,6 +531,12 @@ select::-ms-expand {
     right: -25px;
     color: gray;
     font-size: small;
+}
+
+.pt-trk-desc {
+    color: gray;
+    white-space: nowrap;
+    font-size: smaller;
 }
 
 .pt-colorboard {
