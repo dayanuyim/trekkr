@@ -102,17 +102,17 @@ function googleElevation(lat, lon)
 export const getEleByCoord = async (coord) => {
   const ele = getEleOfCoord(coord);
   if(ele)
-    return {value: ele, est: false};
+    return {ele, is_est: false};
 
   //get est. elevation from google
   const [lon, lat] = toLonLat(coord);
   try{
     const ele = await googleElevation(lat, lon);
-    return {value: ele, est: true}
+    return {ele, is_est: true}
   }
   catch(err){
     console.log(`Google Elevation Error: ${err}`);
-    return undefined;
+    return {};
   }
 };
 

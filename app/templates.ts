@@ -95,7 +95,7 @@ export const ptPopup = Handlebars.compile(`
             <button class="pt-tool-rm-wpt" title="Delete Wpt"><i class="fas fa-trash-can"></i></button>
         </fieldset>
 
-        <div class="pt-wpt-header">
+        <div class="pt-header">
             <img class="pt-sym" width="24" heigh="24" src="{{sym}}"><!--
         --><span class="pt-name" contenteditable="true" data-placeholder="NAME">{{name}}</span>
             <!--<input type="text" class="pt-name" value="{{name}}">-->
