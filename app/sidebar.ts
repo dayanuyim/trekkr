@@ -3,6 +3,7 @@ import { transform  } from 'ol/proj';
 import { taipowerCoordToTWD67, toTWD67, toTWD97, TM2Sixcodes, WEB_MERCATOR } from './coord';
 import { WGS84, TWD97, TWD67, } from './coord';
 import { containsCoordinate } from 'ol/extent';
+import { tablink } from './lib/dom-utils';
 
 export class Sidebar{
 
@@ -140,10 +141,18 @@ const coordsys_profiles = {
 export class Topbar{
 
     _base: HTMLElement;
+    _filter_btn: HTMLButtonElement;
+    _filter_wpt_name_en: HTMLInputElement;
+    _filter_wpt_name: HTMLInputElement;
+    _filter_wpt_desc_en: HTMLInputElement;
+    _filter_wpt_desc: HTMLInputElement;
+    _filter_wpt_sym_en: HTMLInputElement;
+    _filter_wpt_sym: HTMLInputElement;
     _goto_btn: HTMLButtonElement;
     _goto_coordsys: HTMLSelectElement;
     _goto_coord_txt: HTMLInputElement;
     _goto_coord_go: HTMLButtonElement;
+
     _listeners = {}
 
     get goto_coordsys(){ return this._goto_coordsys.value; }
@@ -157,14 +166,28 @@ export class Topbar{
     }
 
     private initElements(el: HTMLElement){
-        this._base           = el;
-        this._goto_btn       = el.querySelector<HTMLButtonElement>('button.goto-btn');
-        this._goto_coordsys  = el.querySelector<HTMLSelectElement>('select.goto-coordsys');
-        this._goto_coord_txt = el.querySelector<HTMLInputElement>('input.goto-coord-txt');
-        this._goto_coord_go  = el.querySelector<HTMLButtonElement>('button.goto-coord-go');
+        this._base               = el;
+        this._filter_btn         = el.querySelector<HTMLButtonElement>('button.ctrl-btn-filter');
+        this._filter_wpt_name_en = el.querySelector<HTMLInputElement>('#filter-wpt-name-en');
+        this._filter_wpt_name    = el.querySelector<HTMLInputElement>('#filter-wpt-name');
+        this._filter_wpt_desc_en = el.querySelector<HTMLInputElement>('#filter-wpt-desc-en');
+        this._filter_wpt_desc    = el.querySelector<HTMLInputElement>('#filter-wpt-desc');
+        this._filter_wpt_sym_en  = el.querySelector<HTMLInputElement>('#filter-wpt-sym-en');
+        this._filter_wpt_sym     = el.querySelector<HTMLInputElement>('#filter-wpt-sym');
+        this._goto_btn           = el.querySelector<HTMLButtonElement>('button.ctrl-btn-goto');
+        this._goto_coordsys      = el.querySelector<HTMLSelectElement>('select.goto-coordsys');
+        this._goto_coord_txt     = el.querySelector<HTMLInputElement>('input.goto-coord-txt');
+        this._goto_coord_go      = el.querySelector<HTMLButtonElement>('button.goto-coord-go');
     }
 
     private init(){
+        tablink('.filter-panel .tablink', '.filter-panel .tabcontent');  //init tab
+        this._filter_btn.classList.toggle('active', true);               //init display
+        this._filter_btn.onclick = e =>{
+            const active = this._filter_btn.classList.toggle('active');
+            //Opt.update({active}, 'filter');
+        };
+
         this._goto_btn.classList.toggle('active', Opt.goto.active);  //init
         this._goto_btn.onclick = e =>{
             const active = this._goto_btn.classList.toggle('active');

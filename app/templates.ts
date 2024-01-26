@@ -229,9 +229,9 @@ export const settings = Handlebars.compile(`
     </div>
     <div class="settings-main">
         <div class="tab">
-            <button class="tablink" data-content="setting-layers">圖層</button>
-            <button class="tablink" data-content="setting-opts">設定</button>
-            <button class="tablink" data-content="setting-about">關於</button>
+            <span class="tablink" data-content="setting-layers">圖層</span>
+            <span class="tablink" data-content="setting-opts">設定</span>
+            <span class="tablink" data-content="setting-about">關於</span>
         </div>
 
         <div class="tabcontent" id="setting-layers">
@@ -308,25 +308,56 @@ export const settings = Handlebars.compile(`
     </div>
 `);
 
-export const settingsSidebar = Handlebars.compile(`
-    <button class="ctrl-btn spy-btn" title="Spy Mode"><i class="fas fa-crosshairs"></i></button>
+export const toolbarSide = Handlebars.compile(`
+    <div class="ol-control">
+        <button class="ctrl-btn spy-btn" title="Spy Mode"><i class="fas fa-crosshairs"></i></button>
+    </div>
 `);
-Handlebars.registerHelper("settingsSidebar", ()=>{
-    return new Handlebars.SafeString(settingsSidebar());
+Handlebars.registerHelper("toolbarSide", ()=>{
+    return new Handlebars.SafeString(toolbarSide());
 });
 
-export const settingsTopbar = Handlebars.compile(`
-    <span class="goto-panel">
-        <button class="ctrl-btn goto-btn" title="Goto..."><i class="fas fa-person-walking"></i></button><!--
-     --><span class="goto-coord"><!--
-         -->{{coordsysMenu "goto-coordsys"}}<!--
+export const toolbarTop = Handlebars.compile(`
+    <div class="ol-control">
+        <button class="ctrl-btn ctrl-btn-filter" title="Filter..."><i class="fas fa-filter"></i></button>
+        <div class="filter-panel glassmophism">
+            <div class="tab">
+                <span class="tablink" data-content="filter-wpt">Waypoint</span>
+                <span class="tablink" data-content="filter-trk">Track</span>
+            </div>
+            <div class="tabcontent" id="filter-wpt">
+                <div class="filter-row">
+                    <input type="checkbox" id="filter-wpt-name-en"/>
+                    <label for="filter-wpt-name-en">name</label>
+                    <input type="text" id="filter-wpt-name"/>
+                </div>
+                <div class="filter-row">
+                    <input type="checkbox" id="filter-wpt-desc-en"/>
+                    <label for="filter-wpt-desc-en">desc</label>
+                    <input type="text" id="filter-wpt-desc"/>
+                </div>
+                <div class="filter-row">
+                    <input type="checkbox" id="filter-wpt-sym-en"/>
+                    <label for="filter-wpt-sym-en">sym</label>
+                    <input type="text" id="filter-wpt-sym"/>
+                </div>
+            </div>
+            <div class="tabcontent" id="filter-trk">
+                <p>The fitlers for tracks</p>
+            </div>
+        </div>
+    </div>
+    <div class="ol-control">
+        <button class="ctrl-btn ctrl-btn-goto" title="Goto..."><i class="fas fa-person-walking"></i></button>
+        <span class="goto-panel">
+            {{coordsysMenu "goto-coordsys"}}<!--
          --><input type="text" class="goto-coord-txt" placeholder="X, Y"/><!--
          --><button class="goto-coord-go"><i class="fas fa-person-walking-arrow-right"></i></button>
         </span>
-    <span>
+    </div>
 `);
-Handlebars.registerHelper("settingsTopbar", ()=>{
-    return new Handlebars.SafeString(settingsTopbar());
+Handlebars.registerHelper("toolbarTop", ()=>{
+    return new Handlebars.SafeString(toolbarTop());
 });
 
 export const main = Handlebars.compile(`
@@ -342,8 +373,8 @@ export const main = Handlebars.compile(`
     </div>
 
     <div class="settings collapsed"></div>
-    <div class="settings-bar side ol-control">{{settingsSidebar}}</div>
-    <div class="settings-bar top  ol-control">{{settingsTopbar}}</div>
+    <div class="toolbar toolbar-side">{{toolbarSide}}</div>
+    <div class="toolbar toolbar-top">{{toolbarTop}}</div>
 
     <div id="ctx-menu">{{ctxMenuItems}}</div>
 

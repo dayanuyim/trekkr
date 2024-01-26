@@ -253,38 +253,90 @@ html, body {
     margin-bottom: 4px;
 }
 
-/*============ Bar Settings ==================*/
-.settings-bar {
+/*********************************************************
+/* Toolbar
+/********************************************************/
+
+.toolbar{
+    position: relative;
     z-index: 9;   /* prvent being covered by the map */
 }
 
-.settings-bar .ctrl-btn:not(.active){
+.toolbar .ctrl-btn {
+    display: inline-block;
+}
+
+.toolbar .ctrl-btn:not(.active){
     /*background: rgba(64, 64, 64, .5);*/
     color: lightgray;
 }
 
-/*------------ Sidebar Settings ------------------*/
+/*============ Sidebar ==================*/
 
-.settings-bar.side {
+.toolbar-side{
     left: .5em;
     top: 18em;
 }
 
-/*------------ Topbar Settings ------------------*/
-.settings-bar.top {
+/*============ Topbar =================*/
+.toolbar-top{
     left: 3em;
     top: .5em;
-    border-radius: 0 16px 16px 0;
-}
-.settings-bar.top button{
-    display: inline-block;
 }
 
-.settings-bar.top /*.goto-panel:not(:hover)*/ .goto-btn:not(.active) + .goto-coord{
+.toolbar-top .ol-control:nth-child(2) { left: 2em; }
+.toolbar-top .ol-control:nth-child(3) { left: 4em; }
+.toolbar-top .ol-control:nth-child(4) { left: 6em; }
+.toolbar-top .ol-control:nth-child(5) { left: 8em; }
+
+
+/*------------ Topbar / Filter -----------------*/
+
+.toolbar-top .ctrl-btn-filter:not(.active) ~ .filter-panel{
     display: none;
 }
 
-.settings-bar.top .goto-coord .goto-coordsys {
+.filter-panel{
+    position: absolute;  /* use absolute since it is under the ol-control */
+    min-width: 10em;
+    padding: 6px;
+    border-radius: 0 4px 8px 8px;
+    margin-top: 1px;
+}
+
+.filter-panel .tabcontent {
+    border-width: 0;
+}
+
+.filter-panel .filter-row {
+    white-space: nowrap;
+}
+
+.filter-panel .filter-row label{
+    display: inline-block;
+    width: 3em;
+    color: #404040;
+}
+.filter-panel .filter-row input{
+    border-width: 0;
+    border-bottom: 1px dashed lightgray;
+    padding: 0px 4px;
+    color: #404040;
+}
+
+.filter-panel .filter-row input:focus-visible{
+    outline: 0;
+    background-color: #f8f8f8;
+}
+
+
+/*------------ Topbar / Goto -------------------*/
+
+.toolbar-top .ctrl-btn-goto:not(.active) ~ .goto-panel{
+    display: none;
+}
+
+.toolbar-top .goto-panel .goto-coordsys {
     text-align: center;
     font-size: 95%;
     outline: 0;
@@ -295,46 +347,45 @@ html, body {
     vertical-align: 0px;
     margin: 0 -4px;
 }
-.settings-bar.top .goto-coord .goto-coordsys:hover {
+.toolbar-top .goto-panel .goto-coordsys:hover {
     cursor: pointer;
 }
 
-.settings-bar.top .goto-coord .goto-coord-txt{
+.toolbar-top .goto-panel .goto-coord-txt{
     text-align: left;
     font-size: 16px;
     border: none;
     border-radius: 0 16px 16px 0;
     outline: 0;
-    vertical-align: 0px;
-    padding: 2px 8px 1px 8px;
-    margin-right: 1px;
+    vertical-align: 1px;
+    padding: 2px 8px 2px 8px;
     width: 7em;
 }
 
-.settings-bar.top .goto-coord .goto-coord-txt.invalid {
+.toolbar-top .goto-panel .goto-coord-txt.invalid {
     background-color: #ffa0a0;
 }
 
-.settings-bar.top .goto-coord .goto-coord-txt::placeholder{
+.toolbar-top .goto-panel .goto-coord-txt::placeholder{
     color: #b0b0b0;
     font-size: smaller;
 }
 
-.settings-bar.top .goto-coord .goto-coord-go:hover {
+.toolbar-top .goto-panel .goto-coord-go:hover {
     cursor: pointer;
 }
-.settings-bar.top .goto-coord .goto-coord-go {
+.toolbar-top .goto-panel .goto-coord-go {
     margin-left: 0px;
     border-radius: 16px;
-    position: absolute;
-    right: 0px;
+    position: absolute;   /* use 'absolute', which help ol-control to fit its width */
+    right: -8px;
     top: 0px;
     border: solid 1px lightgray;
     padding: 2px;
     font-size: 16px;
 }
 
-.settings-bar.top .goto-coord .goto-coord-go svg{
+.toolbar-top .goto-panel .goto-coord-go svg{
     font-size: 12px;
 }
 

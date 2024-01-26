@@ -35,10 +35,11 @@ function main(main_el: HTMLElement)
   const map = new AppMap('map');
   map.setCtxMenu(document.getElementById('ctx-menu'));
 
-  const sidebar = new Sidebar(main_el.querySelector('.settings-bar.side'))
+  const sidebar = new Sidebar(main_el.querySelector('.toolbar-side'))
     .setListener('spyenabled', (spy) => map.setSpyLayer(spy));
 
-  const topbar = new Topbar(main_el.querySelector('.settings-bar.top'))
+  const topbar = new Topbar(main_el.querySelector('.toolbar-top'))
+    .setListener('filterchanged', () => map.redrawText())
     .setListener('getcenter', () => map.getView().getCenter())
     .setListener('goto', (coord) => map.setCrosshairWpt(coord));
 

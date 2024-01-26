@@ -94,7 +94,7 @@ export class Settings{
     // ----------------------------------------------------------------
 
     private initLayers(){
-        tablink('.tablink', '.tabcontent', 0);
+        tablink('.settings-main .tablink', '.settings-main .tabcontent');
 
         this._toggle_btn.onclick = () => this._base.classList.toggle('collapsed');
         this._toggle_btn.title = Opt.tooltip.btn_settings;
