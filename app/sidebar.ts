@@ -28,7 +28,7 @@ export class Sidebar{
         this._spy_btn.title = Opt.tooltip.btn_spy;
         this._spy_btn.addEventListener('click', e =>{
             const enabled = this._spy_btn.classList.toggle('active');
-            Opt.update({enabled}, 'spy');
+            Opt.update('spy.enabled', enabled);
             this._listeners['spyenabled']?.(Opt.spy);
         });
 
@@ -185,13 +185,13 @@ export class Topbar{
         this._filter_btn.classList.toggle('active', true);               //init display
         this._filter_btn.onclick = e =>{
             const active = this._filter_btn.classList.toggle('active');
-            //Opt.update({active}, 'filter');
+            //Opt.update('filter.active', active);
         };
 
         this._goto_btn.classList.toggle('active', Opt.goto.active);  //init
         this._goto_btn.onclick = e =>{
             const active = this._goto_btn.classList.toggle('active');
-            Opt.update({active}, 'goto');
+            Opt.update('goto.active', active);
         };
 
         const set_coord_panel = (coordsys) => {
@@ -205,7 +205,7 @@ export class Topbar{
             set_coord_panel(this.goto_coordsys)
         }
         this._goto_coordsys.onchange = e =>{
-            Opt.update({coordsys: this.goto_coordsys}, 'goto');
+            Opt.update('goto.coordsys', this.goto_coordsys);
             set_coord_panel(this.goto_coordsys);
         }
 

@@ -359,7 +359,7 @@ export default class PtPopupOverlay extends Overlay{
             const el = <HTMLSelectElement>e.currentTarget;
             const coordsys = el.value;
             this.pt_coord_value = toXY[coordsys](this.pt_coord)
-            Opt.update({coordsys});
+            Opt.update('coordsys', coordsys);
         };
 
         // make wpt from trkpt

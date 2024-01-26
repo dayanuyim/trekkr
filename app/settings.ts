@@ -125,7 +125,7 @@ export class Settings{
     {
         const layers = this.layers.map(ly => ly.obj());
         if(update_opt){
-            Opt.update({ layers });
+            Opt.update('layers', layers);
         }
         this._listeners['layerschanged']?.(layers);
     }
@@ -133,7 +133,7 @@ export class Settings{
     private updateLayerOpacity(id, opacity, update_opt=true){
         if(update_opt){
             const layers = this.layers.map(ly => ly.obj());
-            Opt.update({ layers });
+            Opt.update('layers', layers);
         }
         this._listeners['opacitychanged']?.(id, opacity);
     }
@@ -141,7 +141,7 @@ export class Settings{
     private updateSpy(id, update_opt=true){
         this.layers.forEach(layer => layer.spy = (layer.id === id));  //ui
         if(update_opt){
-            Opt.update({layer: id}, 'spy');   // option
+            Opt.update('spy.layer', id);   // option
         }
         this._listeners['spychanged']?.(Opt.spy);  // map
     }
@@ -175,7 +175,7 @@ export class Settings{
             if(!empty_check(e.target, Opt.waypoint.fontsize))
                 return;
             const fontsize = pos_int_check(e.target);
-            Opt.update({ fontsize }, 'waypoint');  // coockie
+            Opt.update( 'waypoint.fontsize', fontsize);  // coockie
             this._listeners['wptchanged']?.();   // map
         };
 
@@ -184,14 +184,14 @@ export class Settings{
             disp.checked = (disp.value == Opt.waypoint.display);
             disp.onchange = () => {   //checked
                 this._opt_wpt_display_auto_zoom.disabled = disp.value != 'auto';
-                Opt.update({display: disp.value}, 'waypoint');            // coockie
+                Opt.update('waypoint.display', disp.value);            // coockie
                 this._listeners['wptchanged']?.();                        // map
             }
         });
 
         this._opt_wpt_display_auto_zoom.disabled = !this._opt_wpt_displays.find(disp => disp.value == 'auto').checked;
         this._opt_wpt_display_auto_zoom.onclick = e => {
-                Opt.update({display_auto_zoom: Opt.zoom}, 'waypoint');    // coockie
+                Opt.update('waypoint.display_auto_zoom', Opt.zoom);    // coockie
                 this._listeners['wptchanged']?.();                        // map
         };
 
@@ -205,7 +205,7 @@ export class Settings{
             this._opt_trk_arrow_interval.disabled = !max_num;
             this._opt_trk_arrow_radius.disabled = !max_num;
 
-            Opt.update({ max_num }, 'track', 'arrow');
+            Opt.update('track.arrow.max_num', max_num);
             this._listeners['trkchanged']?.();   // map
         };
 
@@ -214,7 +214,7 @@ export class Settings{
             if(!empty_check(e.target, Opt.track.arrow.interval))
                 return;
             const interval = pos_int_check(e.target);
-            Opt.update({ interval}, 'track', 'arrow');
+            Opt.update('track.arrow.interval', interval);
             this._listeners['trkchanged']?.();   // map
         };
 
@@ -223,7 +223,7 @@ export class Settings{
             if(!empty_check(e.target, Opt.track.arrow.radius))
                 return;
             const radius = pos_int_check(e.target);
-            Opt.update({radius}, 'track', 'arrow');
+            Opt.update('track.arrow.radius', radius);
             this._listeners['trkchanged']?.();   // map
         };
     }

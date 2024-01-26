@@ -71,15 +71,20 @@ class Opt{
         return undefined;
     }
 
-    public update(conf?, sub?) {
-        if(conf){
-            let target = this;
-            for(let i = 1; i < arguments.length; ++i)
-                target = target[arguments[i]];
-            Object.assign(target, conf)
-            //console.log('update', target, 'by', conf);
-        }
+    public update(keypath: string, value){
+        const keys = keypath.split('.');
+        const key = keys.pop();
+        const obj = keys.reduce((obj, key) => obj[key], this);
 
+        const is_changed = (obj[key] !== value);
+        if(is_changed){
+            obj[key] = value;
+            this.lazySave();
+        }
+        return is_changed;
+    }
+
+    private lazySave(){
         if(_cookies_save_timer) clearTimeout(_cookies_save_timer);
         _cookies_save_timer = setTimeout(() => {
             _cookies_save_timer = null;

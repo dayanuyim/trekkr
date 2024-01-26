@@ -180,8 +180,8 @@ export class AppMap{
     //map.on('moveend', (e) => {   //invoked only when view is locked down
 
     const view = map.getView();
-    view.on('change:center',     () => Opt.update({xy: view.getCenter()}));
-    view.on('change:resolution', () => Opt.update({zoom: view.getZoom()}));
+    view.on('change:center',     () => Opt.update('xy', view.getCenter()));
+    view.on('change:resolution', () => Opt.update('zoom', view.getZoom()));
 
     // when pt-popup overlay make or remove a wpt feature
     (map.getOverlayById('pt-popup') as PtPopupOverlay)
@@ -218,7 +218,7 @@ export class AppMap{
   private handleSpyRadiusChange(e, inc){
       const radius = Math.max(25, Math.min(Opt.spy.radius + inc, 500));
       if(radius != Opt.spy.radus){
-        Opt.update({radius}, 'spy');
+        Opt.update('spy.radius', radius);
         this._map.render();  //trigger prerender
         e.preventDefault();
       }
