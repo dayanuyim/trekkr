@@ -223,3 +223,17 @@ export function delayToEnable(el: HTMLButtonElement|HTMLInputElement, ms: number
         }, ms);
     });
 }
+
+const _key_enter_to_blur_listener = e => {
+    if (e.key == "Enter") {
+        e.preventDefault();
+        e.target.blur();
+    }
+};
+
+export function keyEnterToBlur(el: HTMLInputElement)
+{
+    el.addEventListener('keydown', _key_enter_to_blur_listener);
+}
+
+

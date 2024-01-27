@@ -17,7 +17,7 @@ import { create as createXML } from 'xmlbuilder2';
 
 import Opt from './opt';
 import { def_symbol, getSymbol, matchRules } from './sym'
-import { getEpochOfCoord, getXYZMOfCoord, colorCode } from './common';
+import { getEpochOfCoord, getXYZMOfCoord, colorCode, matchRule } from './common';
 import { epochseconds, binsearchIndex } from './lib/utils';
 import ArrowHead from './style/ArrowHead';
 
@@ -100,15 +100,38 @@ function _wpt_style(name, sym, bg?)
   return bg? [white_circle_style, sym_style]: sym_style;
 }
 
-const wpt_style = feature => {
-  const has_bg = !!feature.get('image');
-  const name = feature.get('name');
-  let sym = feature.get('sym');
-  // set default symbol name if none. Although 'sym' is not a mandatory node for wpt, having one helps ui display for edit.
-  if (!sym) {
-    sym = def_symbol.name;
-    feature.set('sym', sym);
+function filterOut(values)
+{
+  //not match if any rule not match
+  const notmatch = ['name', 'desc', 'sym'].find((kind)=>{
+    const rule = Opt.filter.wpt[kind];
+    return rule.enabled && !matchRule(rule, values[kind]);
+  });
+  return notmatch;
+}
+
+const feat_prop = (feature, key, def_value?) => {
+  const value = feature.get(key);
+  if(!value && def_value){
+    feature.set(def_value);
+    return def_value;
   }
+  return value;
+}
+
+const wpt_style = feature => {
+  const has_bg = !!feat_prop(feature, 'image');
+  const name = feat_prop(feature, 'name');
+  const desc = feat_prop(feature, 'desc');
+  const sym =  feat_prop(feature, 'sym', def_symbol.name); // set default symbol name if none. Although 'sym' is not a mandatory node for wpt, having one helps ui display for edit.
+
+  if(filterOut({
+    name: name.toLowerCase(),  //for caseignore
+    desc: desc.toLowerCase(),
+    sym:  sym.toLowerCase(),
+  }))
+    return null;
+
   return _wpt_style(name, sym, has_bg);
 }
 

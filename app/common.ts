@@ -130,3 +130,16 @@ export function getLocalTimeByCoord(coord)
 
   return moment.unix(epoch).tz(Param.tz);
 }
+
+export function matchRule({enabled, type, text}, str: string){
+  if(!enabled)
+    return false;
+  switch(type){
+      case "contains":   return str.includes(text);
+      case "startswith": return str.startsWith(text);
+      case "endswith":   return str.endsWith(text);
+      case "equals":     return str == text;
+      case "regex":      return str.match(text);
+      default:           return false;
+  };
+}

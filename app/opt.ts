@@ -13,7 +13,7 @@ class Opt{
     }
 
     //cookie options
-    _version = 7;
+    _version = 8;
     xy = [13461784.981041275, 2699338.9447048027];    //xy = fromLonLat([120.929272, 23.555519]);
     zoom = 15;
     coordsys = 'twd67';
@@ -23,6 +23,14 @@ class Opt{
         radius: 75,
         layer: "NLSC_PHOTO_MIX",
     };
+    filter = {
+        active: false,
+        wpt: {
+            name:{ enabled: false, type: "contains", text: ""},
+            desc:{ enabled: false, type: "contains", text: ""},
+            sym: { enabled: false, type: "contains", text: ""},
+        }
+    }
     goto = {
         active: false,
         coordsys: 'wgs84',

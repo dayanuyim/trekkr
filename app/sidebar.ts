@@ -3,7 +3,7 @@ import { transform  } from 'ol/proj';
 import { taipowerCoordToTWD67, toTWD67, toTWD97, TM2Sixcodes, WEB_MERCATOR } from './coord';
 import { WGS84, TWD97, TWD67, } from './coord';
 import { containsCoordinate } from 'ol/extent';
-import { tablink } from './lib/dom-utils';
+import { tablink, keyEnterToBlur } from './lib/dom-utils';
 
 export class Sidebar{
 
@@ -181,13 +181,19 @@ export class Topbar{
     }
 
     private init(){
+        // filter -----------------------
         tablink('.filter-panel .tablink', '.filter-panel .tabcontent');  //init tab
-        this._filter_btn.classList.toggle('active', true);               //init display
+        this._filter_btn.classList.toggle('active', Opt.filter.active);  //init display
         this._filter_btn.onclick = e =>{
             const active = this._filter_btn.classList.toggle('active');
-            //Opt.update('filter.active', active);
+            Opt.update('filter.active', active);
         };
 
+        this.initFilter(this._filter_wpt_name_en, this._filter_wpt_name, 'name');
+        this.initFilter(this._filter_wpt_desc_en, this._filter_wpt_desc, 'desc');
+        this.initFilter(this._filter_wpt_sym_en,  this._filter_wpt_sym,  'sym');
+
+        // goto -----------------------
         this._goto_btn.classList.toggle('active', Opt.goto.active);  //init
         this._goto_btn.onclick = e =>{
             const active = this._goto_btn.classList.toggle('active');
@@ -227,6 +233,24 @@ export class Topbar{
             if(webcoord)
                 this._listeners['goto']?.(webcoord);
         }
+    }
+
+    private initFilter(en: HTMLInputElement, text: HTMLInputElement, kind: string){
+        en.checked = Opt.filter.wpt[kind].enabled;
+        text.value = Opt.filter.wpt[kind].text;
+
+        en.onchange = e => {
+            if(Opt.update(`filter.wpt.${kind}.enabled`, en.checked))
+                this._listeners['filterchanged']?.();
+        };
+
+        keyEnterToBlur(text);
+
+        text.onchange = e => {
+            if(Opt.update(`filter.wpt.${kind}.text`, text.value.toLowerCase()) &&  // saving lower, for caseignore
+               Opt.filter.wpt[kind].enabled)
+                this._listeners['filterchanged']?.();
+        };
     }
 
     private parseTokens(profile, tokens){

@@ -1,6 +1,7 @@
 import symbols from './data/symbols.json';
 import rules from './data/symbol-rules.json';
 import inv from './data/symbol-inventory.json';
+import {matchRule} from './common';
 
 const sym_dir = './images/sym';
 
@@ -38,19 +39,6 @@ export function getSymbol(name){
 }
 
 export function matchRules(str){
-    const rule = rules.find(r => {
-        return r.enabled && matchRule(str, r.type, r.text);
-    });
+    const rule = rules.find(r => matchRule(r, str));
     return rule? getSymbol(rule.sym): undefined;
-}
-
-function matchRule(str: string, type: string, text: string){
-    switch(type){
-        case "contains":   return str.includes(text);
-        case "startswith": return str.startsWith(text);
-        case "endswith":   return str.endsWith(text);
-        case "equals":     return str == text;
-        case "regex":      return str.match(text);
-        default:           return undefined;
-    };
 }
