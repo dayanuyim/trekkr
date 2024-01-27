@@ -100,14 +100,17 @@ function _wpt_style(name, sym, bg?)
   return bg? [white_circle_style, sym_style]: sym_style;
 }
 
-function filterOut(values)
-{
-  //not match if any rule not match
+function lowercase(val){
+  return val? val.toLowerCase(): val;
+}
+
+function checkFilter(feature){
+  //not match if finding any rule does not match
   const notmatch = ['name', 'desc', 'sym'].find((kind)=>{
     const rule = Opt.filter.wpt[kind];
-    return rule.enabled && !matchRule(rule, values[kind]);
+    return rule.enabled && !matchRule(rule, lowercase(feature.get(kind)));
   });
-  return notmatch;
+  return !notmatch;
 }
 
 const feat_prop = (feature, key, def_value?) => {
@@ -120,18 +123,12 @@ const feat_prop = (feature, key, def_value?) => {
 }
 
 const wpt_style = feature => {
+  if(!checkFilter(feature))
+    return empty_style;
+
   const has_bg = !!feat_prop(feature, 'image');
   const name = feat_prop(feature, 'name');
-  const desc = feat_prop(feature, 'desc');
   const sym =  feat_prop(feature, 'sym', def_symbol.name); // set default symbol name if none. Although 'sym' is not a mandatory node for wpt, having one helps ui display for edit.
-
-  if(filterOut({
-    name: name.toLowerCase(),  //for caseignore
-    desc: desc.toLowerCase(),
-    sym:  sym.toLowerCase(),
-  }))
-    return null;
-
   return _wpt_style(name, sym, has_bg);
 }
 
@@ -249,7 +246,7 @@ const route_style = (feature) => {
 }
 
 // ----------------------------------------------------------------------------
-const empty_style = new Style();
+const empty_style = new Style({});
 
 export const gpx_style = (feature) => {
   switch (feature.getGeometry().getType()) {
