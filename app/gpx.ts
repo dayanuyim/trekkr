@@ -104,7 +104,7 @@ function lowercase(val){
   return val? val.toLowerCase(): val;
 }
 
-function checkFilter(feature){
+function filterWpt(feature){
   //not match if finding any rule does not match
   const notmatch = ['name', 'desc', 'sym'].find((kind)=>{
     const rule = Opt.filter.wpt[kind];
@@ -123,7 +123,7 @@ const feat_prop = (feature, key, def_value?) => {
 }
 
 const wpt_style = feature => {
-  if(!checkFilter(feature))
+  if(!isCrosshairWpt && !filterWpt(feature))
     return empty_style;
 
   const has_bg = !!feat_prop(feature, 'image');

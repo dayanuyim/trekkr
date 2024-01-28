@@ -9,7 +9,7 @@ import {toTWD97, toTWD67, toTaipowerCoord} from './coord';
 //import * as moment from 'moment-timezone';
 import { getSymbol, matchRules, symbol_inv } from './sym'
 import { getEleByCoord, getEleOfCoord, setEleOfCoord, getLocalTimeByCoord, gmapUrl, colorCode } from './common'
-import { olWptFeature, def_trk_color, getTrkptIndicesAtEnds, getTrkptIndicesByCoord, isTrkFeature} from './gpx';
+import { olWptFeature, def_trk_color, getTrkptIndicesAtEnds, getTrkptIndicesByCoord, isTrkFeature, isWptFeature} from './gpx';
 import { delayToEnable } from './lib/dom-utils';
 import Opt from './opt';
 import * as templates from './templates';
@@ -463,6 +463,9 @@ export default class PtPopupOverlay extends Overlay{
     }
 
     async popContent(feature) {
+        // @@! Experimental, restore the hidden wpt
+        feature = this._wpt_feature_of(feature) || feature;
+
         // trk data
         const track = this._track_feature_of(feature);                // for trkpt
         const trk = track ? {
@@ -495,6 +498,11 @@ export default class PtPopupOverlay extends Overlay{
     private _track_feature_of(trkpt: Feature<Point>){
         const features = trkpt.get('features');
         return features ? features.find(isTrkFeature) : undefined;
+    }
+
+    private _wpt_feature_of(trkpt: Feature<Point>){
+        const features = trkpt.get('features');
+        return features ? features.find(isWptFeature) : undefined;
     }
 
     private async setContent({trk, pt})
