@@ -296,7 +296,7 @@ export default class PtPopupOverlay extends Overlay{
             this._pt_colorboard,
             this._pt_colorboard.querySelectorAll<HTMLElement>('.pt-colorboard-item'), (item) => {
                 const color = item.getAttribute("title");
-                this._updateData('trk', 'color', color);
+                this._updateData('trk.color', color);
             });
 
         // change trk name
@@ -305,14 +305,14 @@ export default class PtPopupOverlay extends Overlay{
             const name = this.pt_trk_name.trim();
             if(!name)
                 return this.pt_trk_name = this._data.trk.name;
-            this._updateData('trk', 'name', this.pt_trk_name, false);
+            this._updateData('trk.name', this.pt_trk_name, false);
         }
 
         // change trk desc
         this._pt_trk_desc.onkeydown = enter_to_blur_listener;
         this._pt_trk_desc.onblur = e => {
             const desc = this.pt_trk_desc.trim();
-            this._updateData('pt', 'desc', desc, false);
+            this._updateData('pt.desc', desc, false);
         }
 
         // change pt name
@@ -321,18 +321,18 @@ export default class PtPopupOverlay extends Overlay{
             const name = this.pt_name.trim();
             if(!name)
                 return this.pt_name = this._data.pt.name;
-            if(!this._updateData('pt', 'name', name, false))
+            if(!this._updateData('pt.name', name, false))
                 return;
             const symbol = matchRules(name); // auto pick symbol
             if(symbol)
-                this._updateData('pt', 'sym', symbol.name);
+                this._updateData('pt.sym', symbol.name);
         };
 
         // change desc
         this._pt_desc.onkeydown = enter_to_blur_listener;
         this._pt_desc.onblur = e => {
             const desc = this.pt_desc.trim();
-            this._updateData('pt', 'desc', desc, false);
+            this._updateData('pt.desc', desc, false);
         }
 
         // check elevation, be careful not to limit editing key
@@ -412,7 +412,7 @@ export default class PtPopupOverlay extends Overlay{
             this._pt_symboard,
             this._pt_symboard.querySelectorAll<HTMLElement>('.pt-symboard-item'), (item) => {
                 const sym = item.getAttribute("title");
-                this._updateData('pt', 'sym', sym);
+                this._updateData('pt.sym', sym);
             });
 
         // filter
@@ -440,18 +440,23 @@ export default class PtPopupOverlay extends Overlay{
     }
 
     // Update the cached data and feature, and redraw UI if needed
-    //   kind: trk|pt
-    //   name: name|color|desc|sym|ele
+    //   key0: trk|pt
+    //   key1: name|color|desc|sym|ele
     //   reutrn true if update otherwise false
-    private _updateData(kind, key, value, need_reset=true)
+    private _updateData(keypath, value, need_reset=true)
     {
-        if(this._data[kind][key] != value){
-            this._data[kind][key] = value;
-            this._feature.set(key, value);  //TODO: we either modify TRK or PT at a time, so not need to check the feature kind... but be careful if need to support for trkpt edit or something like that.
+        const keys = keypath.split('.');
+        const key = keys.pop();
+        const obj = keys.reduce((obj, key) => obj[key], this._data);
+
+        const is_changed = (obj[key] !== value);
+        if(is_changed){
+            obj[key] = value;
+            this._feature.set(key, value);       // TODO: we either modify TRK or PT at a time, so not need to check the feature kind... but be careful if need to support for trkpt edit or something like that.
+            this._feature.set('pseudo', false);  // pseudo -> real
             if(need_reset) this.setContent(this._data);
-            return true;
         }
-        return false;
+        return is_changed;
     }
 
     private _updateDataPtEle(ele){
@@ -463,6 +468,8 @@ export default class PtPopupOverlay extends Overlay{
     }
 
     async popContent(feature) {
+        //console.log('popContent', feature);
+
         // @@! Experimental, restore the hidden wpt
         feature = this._wpt_feature_of(feature) || feature;
 
@@ -507,6 +514,8 @@ export default class PtPopupOverlay extends Overlay{
 
     private async setContent({trk, pt})
     {
+        const readonly = this._feature.get('readonly');
+
         const is_wpt = !trk;
         const coordsys = Opt.coordsys;
         const coordxy = pt.coord.slice(0, 2);
@@ -529,10 +538,13 @@ export default class PtPopupOverlay extends Overlay{
         showElem(this._pt_rm_wpt, is_wpt);
 
         //pt
-        showElem(this._pt_header, is_wpt || pt.sym || pt.name);   // header contains sym & name
         this.pt_name = pt.name;
+        this._pt_name.contentEditable = readonly? 'false': 'true';
+        this._pt_sym.style.pointerEvents = readonly? 'none': '';
+        showElem(this._pt_header, is_wpt || pt.sym || pt.name);   // header contains sym & name
 
         this.pt_desc = pt.desc ;
+        this._pt_desc.contentEditable = readonly? 'false': 'true';
         showElem(this._pt_desc, is_wpt || pt.desc);   // not show for trkpt if empty
 
         this.pt_coord = coordxy;
@@ -540,8 +552,10 @@ export default class PtPopupOverlay extends Overlay{
         this.pt_coord_value = toXY[coordsys](coordxy);  //to web xy
         this.pt_gmap = gmapUrl(coordxy);
 
-        this._pt_ele.contentEditable = is_wpt? 'true': 'false';
-        this.pt_ele = !ele? '-': is_wpt? ele: fmtEle(ele);  // only formatting if readonly
+        this.pt_ele = !ele? '-':
+                    (readonly || !is_wpt)? fmtEle(ele):   // only formatting if readonly
+                    ele;
+        this._pt_ele.contentEditable = (readonly || !is_wpt)? 'false': 'true';
         showElem(this._pt_ele_est, is_est);
 
         this.pt_time = time? fmtTime(time): '-';

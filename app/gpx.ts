@@ -123,8 +123,8 @@ const feat_prop = (feature, key, def_value?) => {
 }
 
 const wpt_style = feature => {
-  if(!isCrosshairWpt && !filterWpt(feature))
-    return empty_style;
+  if(feature.get('hidden')) return null;
+  if(!isPseudoWpt(feature) && !filterWpt(feature)) return null;
 
   const has_bg = !!feat_prop(feature, 'image');
   const name = feat_prop(feature, 'name');
@@ -232,6 +232,24 @@ function genSequence(first, end, num, min_step)
   return seq;
 }
 
+function _getNode(node, name){
+  const children = node.childNodes;
+  for(let i = 0; i < children.length; i++)
+      if(children[i].nodeName == name)
+        return children[i];
+  return undefined;
+}
+
+function getNodeContent(node, ...names)
+{
+  for(let i = 1; i < arguments.length; i++){
+    node = _getNode(node, arguments[i]);
+    if(!node)
+      break;
+  }
+  return node? node.textContent: undefined;
+}
+
 
 // ----------------------------------------------------------------------------
 // @not really use, just for in case
@@ -243,6 +261,10 @@ const route_style = (feature) => {
     }),
     zIndex: 5,
   });
+}
+
+function boolval(s: string){
+  return s && s.toLowerCase() == 'true';
 }
 
 // ----------------------------------------------------------------------------
@@ -265,28 +287,16 @@ export class GPXFormat extends GPX {
     super(Object.assign({
       readExtensions: (feat, node) => {
         //set color for track if any
-        if(node && isTrkFeature(feat)) {
-          const color = this._getTrackColor(node);
-          feat.set('color', color);
+        if(!node) return;
+        if(isTrkFeature(feat)) {
+          feat.set('color', getNodeContent(node, "gpxx:TrackExtension", "gpxx:DisplayColor") || def_trk_color);
+        }
+        else if(isWptFeature(feat)) {
+          feat.set('hidden', boolval(getNodeContent(node, "hidden")));
+          feat.set('readonly', boolval(getNodeContent(node, "readonly")));
         }
       },
     }, options));
-  }
-
-  _getTrackColor(extensions) {
-    let color = null;
-    if (extensions) {
-      extensions.childNodes.forEach((ext) => {
-        if (ext.nodeName == "gpxx:TrackExtension") {
-          ext.childNodes.forEach((attr) => {
-            if (attr.nodeName == "gpxx:DisplayColor") {
-              color = attr.textContent;
-            }
-          });
-        }
-      });
-    }
-    return color;
   }
 }
 
@@ -459,13 +469,17 @@ export function setSymByRules(wpt: Feature<Point>) {
   if (symbol) wpt.set('sym', symbol.name);
 }
 
+/*
 function isCrosshairWpt(feature){
   return !feature.get('name') && feature.get('sym') == getSymbol('crosshair').name;
 }
+*/
+function isPseudoWpt(feature){
+  return !!feature.get('pseudo');
+}
 
 export function isWptFeature(feature){
-  return feature.getGeometry().getType() == 'Point' &&
-          !isCrosshairWpt(feature); //!! filter out the Crosshair wpt !!
+  return !isPseudoWpt(feature) && feature.getGeometry().getType() == 'Point';
 }
 
 export function isTrkFeature(feature){
@@ -477,6 +491,7 @@ export class GpxLayer extends VectorLayer<VectorSource>{
     return olWptFeature(coords, Object.assign({
       name: '',
       sym: getSymbol('crosshair').name,
+      pseudo: true,
     }, options));
   }
 
@@ -520,7 +535,7 @@ export class GpxLayer extends VectorLayer<VectorSource>{
 
   public setCrosshairWpt(coord){
     //remove the old
-    if(this._crosshair_wpt && isCrosshairWpt(this._crosshair_wpt))
+    if(this._crosshair_wpt && isPseudoWpt(this._crosshair_wpt))
       this.removeWaypoint(this._crosshair_wpt);
     //add the new
     this._crosshair_wpt = GpxLayer.mkCrosshairWpt(coord);
