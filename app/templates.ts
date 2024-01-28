@@ -317,6 +317,18 @@ Handlebars.registerHelper("toolbarSide", ()=>{
     return new Handlebars.SafeString(toolbarSide());
 });
 
+const filterRow = Handlebars.compile(`
+    <div class="filter-row">
+        <input type="checkbox" id="filter-wpt-{{kind}}-en"/>
+        <label for="filter-wpt-{{kind}}-en">{{kind}}</label>
+        <input type="text" id="filter-wpt-{{kind}}"/>
+        <button type="button" class="filter-wpt-regex" id="filter-wpt-{{kind}}-regex" title="use regex">.*</button>
+    </div>
+`);
+Handlebars.registerHelper("filterRow", (kind)=>{
+    return new Handlebars.SafeString(filterRow({kind}));
+});
+
 export const toolbarTop = Handlebars.compile(`
     <div class="ol-control">
         <button class="ctrl-btn ctrl-btn-filter" title="Filter..."><i class="fas fa-filter"></i></button>
@@ -326,21 +338,9 @@ export const toolbarTop = Handlebars.compile(`
                 <span class="tablink" data-content="filter-trk">Track</span>
             </div>
             <div class="tabcontent" id="filter-wpt">
-                <div class="filter-row">
-                    <input type="checkbox" id="filter-wpt-name-en"/>
-                    <label for="filter-wpt-name-en">name</label>
-                    <input type="text" id="filter-wpt-name"/>
-                </div>
-                <div class="filter-row">
-                    <input type="checkbox" id="filter-wpt-desc-en"/>
-                    <label for="filter-wpt-desc-en">desc</label>
-                    <input type="text" id="filter-wpt-desc"/>
-                </div>
-                <div class="filter-row">
-                    <input type="checkbox" id="filter-wpt-sym-en"/>
-                    <label for="filter-wpt-sym-en">sym</label>
-                    <input type="text" id="filter-wpt-sym"/>
-                </div>
+                {{filterRow "name"}}
+                {{filterRow "desc"}}
+                {{filterRow "sym"}}
             </div>
             <div class="tabcontent" id="filter-trk">
                 <p>The fitlers for tracks</p>

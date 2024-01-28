@@ -132,8 +132,8 @@ export function getLocalTimeByCoord(coord)
 }
 
 export function matchRule({enabled, type, text}, str: string){
-  if(!enabled)
-    return false;
+  if(!str) return false;
+  if(!enabled) return false;
   switch(type){
       case "contains":   return str.includes(text);
       case "startswith": return str.startsWith(text);

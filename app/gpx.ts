@@ -116,7 +116,7 @@ function checkFilter(feature){
 const feat_prop = (feature, key, def_value?) => {
   const value = feature.get(key);
   if(!value && def_value){
-    feature.set(def_value);
+    feature.set(key, def_value);
     return def_value;
   }
   return value;

@@ -142,12 +142,17 @@ export class Topbar{
 
     _base: HTMLElement;
     _filter_btn: HTMLButtonElement;
+    /*
     _filter_wpt_name_en: HTMLInputElement;
     _filter_wpt_name: HTMLInputElement;
+    _filter_wpt_name_regex: HTMLButtonElement;
     _filter_wpt_desc_en: HTMLInputElement;
     _filter_wpt_desc: HTMLInputElement;
+    _filter_wpt_desc_regex: HTMLButtonElement;
     _filter_wpt_sym_en: HTMLInputElement;
     _filter_wpt_sym: HTMLInputElement;
+    _filter_wpt_sym_regex: HTMLButtonElement;
+    */
     _goto_btn: HTMLButtonElement;
     _goto_coordsys: HTMLSelectElement;
     _goto_coord_txt: HTMLInputElement;
@@ -168,12 +173,6 @@ export class Topbar{
     private initElements(el: HTMLElement){
         this._base               = el;
         this._filter_btn         = el.querySelector<HTMLButtonElement>('button.ctrl-btn-filter');
-        this._filter_wpt_name_en = el.querySelector<HTMLInputElement>('#filter-wpt-name-en');
-        this._filter_wpt_name    = el.querySelector<HTMLInputElement>('#filter-wpt-name');
-        this._filter_wpt_desc_en = el.querySelector<HTMLInputElement>('#filter-wpt-desc-en');
-        this._filter_wpt_desc    = el.querySelector<HTMLInputElement>('#filter-wpt-desc');
-        this._filter_wpt_sym_en  = el.querySelector<HTMLInputElement>('#filter-wpt-sym-en');
-        this._filter_wpt_sym     = el.querySelector<HTMLInputElement>('#filter-wpt-sym');
         this._goto_btn           = el.querySelector<HTMLButtonElement>('button.ctrl-btn-goto');
         this._goto_coordsys      = el.querySelector<HTMLSelectElement>('select.goto-coordsys');
         this._goto_coord_txt     = el.querySelector<HTMLInputElement>('input.goto-coord-txt');
@@ -189,9 +188,9 @@ export class Topbar{
             Opt.update('filter.active', active);
         };
 
-        this.initFilter(this._filter_wpt_name_en, this._filter_wpt_name, 'name');
-        this.initFilter(this._filter_wpt_desc_en, this._filter_wpt_desc, 'desc');
-        this.initFilter(this._filter_wpt_sym_en,  this._filter_wpt_sym,  'sym');
+        this.initFilterRow('name');
+        this.initFilterRow('desc');
+        this.initFilterRow('sym');
 
         // goto -----------------------
         this._goto_btn.classList.toggle('active', Opt.goto.active);  //init
@@ -235,9 +234,14 @@ export class Topbar{
         }
     }
 
-    private initFilter(en: HTMLInputElement, text: HTMLInputElement, kind: string){
+    private initFilterRow(kind: string){
+        const en    = this._base.querySelector<HTMLInputElement>(`#filter-wpt-${kind}-en`);
+        const text  = this._base.querySelector<HTMLInputElement>(`#filter-wpt-${kind}`);
+        const regex = this._base.querySelector<HTMLButtonElement>(`#filter-wpt-${kind}-regex`);
+
         en.checked = Opt.filter.wpt[kind].enabled;
         text.value = Opt.filter.wpt[kind].text;
+        regex.classList.toggle('active', Opt.filter.wpt[kind].type == "regex");
 
         en.onchange = e => {
             if(Opt.update(`filter.wpt.${kind}.enabled`, en.checked))
@@ -245,9 +249,15 @@ export class Topbar{
         };
 
         keyEnterToBlur(text);
-
         text.onchange = e => {
             if(Opt.update(`filter.wpt.${kind}.text`, text.value.toLowerCase()) &&  // saving lower, for caseignore
+               Opt.filter.wpt[kind].enabled)
+                this._listeners['filterchanged']?.();
+        };
+
+        regex.onclick = e => {
+            const active = regex.classList.toggle('active');
+            if(Opt.update(`filter.wpt.${kind}.type`, active?"regex":"contains") &&
                Opt.filter.wpt[kind].enabled)
                 this._listeners['filterchanged']?.();
         };

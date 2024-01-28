@@ -329,6 +329,17 @@ html, body {
     background-color: #f8f8f8;
 }
 
+.filter-panel .filter-row button {
+    display: inline;
+    font-size: 10px;
+    vertical-align: 1px;
+}
+
+.filter-panel .filter-row button.active {
+    background: powderblue;
+    border: solid 1px lightskyblue;
+}
+
 
 /*------------ Topbar / Goto -------------------*/
 
