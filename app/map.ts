@@ -10,17 +10,19 @@ import { getRenderPixel } from 'ol/render';
 import { platformModifierKeyOnly } from 'ol/events/condition';
 import { Geometry } from 'ol/geom';
 import * as Extent from 'ol/extent';
-
 import { GeoJSON, IGC, KML, TopoJSON } from 'ol/format';
-import PhotoFormat from './format/Photo';
 
-import { GpxLayer, GPXFormat, setSymByRules, splitTrack} from './gpx';
-import PtPopupOverlay from './pt-popup';
+import PhotoFormat from './ol/format/Photo';
+import { GPX as GPXLayer } from './ol/layer/GPX';
+import { GPX as GPXFormat} from './ol/format/GPX';
+
 import Opt from './opt';
-import * as LayerRepo from './layer-repo';
+import { saveTextAsFile } from './lib/dom-utils';
 import { gmapUrl} from './common';
 import { CtxMenu } from './ctx-menu';
-import { saveTextAsFile } from './lib/dom-utils';
+import * as LayerRepo from './layer-repo';
+import PtPopupOverlay from './pt-popup';
+import { matchRules } from './sym'
 
 /*
 //TODO: better way to do this?
@@ -47,7 +49,7 @@ function unionExtents(extents){
 
 export class AppMap{
   _map: Map
-  _gpx_layer: GpxLayer;   //a gpx adapter for VectorLayer
+  _gpx_layer: GPXLayer;   //a gpx adapter for VectorLayer
   _ctxmenu_coord;
   _formats = [
     GPXFormat,
@@ -99,7 +101,7 @@ export class AppMap{
     });
 
     // pseudo gpx layer
-    this._gpx_layer = new GpxLayer();
+    this._gpx_layer = new GPXLayer();
     this._map.addLayer(this._gpx_layer);
     this.setInteraction(this._gpx_layer);
 
@@ -189,11 +191,7 @@ export class AppMap{
       .setListener('rmwpt', (wpt) => this._gpx_layer.removeWaypoint(wpt))
       .setListener('rmtrk', (trk) => this._gpx_layer.removeTrack(trk))
       .setListener('jointrk', (trk, coord) => this._gpx_layer.joinTrackAt(trk, coord))  //the return matters
-      .setListener('splittrk', (trk, coord) => {
-        const trk2 = splitTrack(trk, coord);
-        if(trk2)
-          this._gpx_layer.addTrack(trk2);
-      });
+      .setListener('splittrk', (trk, coord) => this._gpx_layer.splitTrack(trk, coord));
 
     // record the pixel position with every move
     document.addEventListener('mousemove', (e) =>{
@@ -477,7 +475,10 @@ export class AppMap{
     });
 
     ctx.setItem(".item-apply-sym", (el) => {
-      this._gpx_layer.getWaypoints().forEach(setSymByRules);
+      this._gpx_layer.getWaypoints().forEach(wpt => {
+        const symbol = matchRules(wpt.get('name'));
+        if (symbol) wpt.set('sym', symbol.name);
+      });
     });
 
     ctx.setItem(".item-promote-trksegs", (el) => {
@@ -489,5 +490,4 @@ export class AppMap{
       saveTextAsFile(xml, 'your.gpx', 'application/gpx+xml');
     });
   }
-
 }

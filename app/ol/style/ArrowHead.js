@@ -1,5 +1,5 @@
 /**
- * @module ./style/ArrowHead
+ * @module ./ol/style/ArrowHead
  */
 
 import ImageState from 'ol/ImageState.js';

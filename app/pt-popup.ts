@@ -9,7 +9,7 @@ import {toTWD97, toTWD67, toTaipowerCoord} from './coord';
 //import * as moment from 'moment-timezone';
 import { getSymbol, matchRules, symbol_inv } from './sym'
 import { getEleByCoord, getEleOfCoord, setEleOfCoord, getLocalTimeByCoord, gmapUrl, colorCode } from './common'
-import { olWptFeature, def_trk_color, getTrkptIndicesAtEnds, getTrkptIndicesByCoord, isTrkFeature, isWptFeature} from './gpx';
+import { olWptFeature, def_trk_color, getTrkptIndices, isTrkFeature, isWptFeature} from './ol/gpx-common';
 import { delayToEnable } from './lib/dom-utils';
 import Opt from './opt';
 import * as templates from './templates';
@@ -589,7 +589,7 @@ export default class PtPopupOverlay extends Overlay{
             //tool
             displayElem(this._pt_trk_tool, !readonly && !pt.is_virtual);
             if(!readonly && !pt.is_virtual){
-                const endidx = getTrkptIndicesAtEnds(track.getGeometry().getCoordinates(), pt.coord);
+                const endidx = getTrkptIndices(track.getGeometry().getCoordinates(), {coord: pt.coord, atends: true } );
                 displayElem(this._pt_join_trk,  endidx);
                 displayElem(this._pt_split_trk, !endidx);  // TODO: let a virtual pt can to split
             }
@@ -606,7 +606,7 @@ export default class PtPopupOverlay extends Overlay{
         if(this._data.pt.is_virtual)
             return `-/${trksegs.length}`;
 
-        const indices = getTrkptIndicesByCoord(trksegs, this._data.pt.coord);  // real trkpt coord
+        const indices = getTrkptIndices(trksegs, {coord: this._data.pt.coord});  // real trkpt coord
         if(!indices){
             console.error("cannot find the trkseg index by the coord");  //should not happen
             return `-/${trksegs.length}`;

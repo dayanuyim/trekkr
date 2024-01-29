@@ -1,12 +1,14 @@
 import {Tile as TileLayer, Vector as VectorLayer, Layer} from 'ol/layer';
 import {Vector as VectorSource, VectorTile, XYZ, OSM, TileJSON, TileWMS } from 'ol/source';
-import {GPX, GeoJSON, IGC, KML, TopoJSON} from 'ol/format';
+import {GeoJSON, IGC, KML, TopoJSON} from 'ol/format';
 import {Stroke, Text, Fill} from 'ol/style';
 import Graticule from 'ol/layer/Graticule';
 
 import BiMap from 'bidirectional-map';
 
-import { GpxLayer, GPXFormat, GPXStyle } from './gpx';
+import { GPX as GPXLayer } from './ol/layer/GPX';
+import { GPX as GPXFormat } from './ol/format/GPX';
+import { GPX as GPXStyle } from './ol/style/GPX';
 import Confs from './data/layer-conf';
 
 const def_label_style = {
@@ -137,7 +139,7 @@ function jsonLayer(url, options?){
 }
 
 function gpxLayer(url, layer_ops?, format_ops?, style_ops?){
-  return new GpxLayer(Object.assign({
+  return new GPXLayer(Object.assign({
     source: new VectorSource({
       url,
       format: new GPXFormat(format_ops),

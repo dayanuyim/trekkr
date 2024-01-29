@@ -1,14 +1,14 @@
 /**
- * @module ./format/PhotoFeature
+ * @module ./ol-ext/format/Photo
  */
 import FeatureFormat from 'ol/format/Feature.js';
 import RenderFeature from 'ol/render/Feature';
 
 import * as exif from 'exifreader'
 import { transform } from 'ol/proj';
-import { WGS84 } from '../coord';
-import { olWptFeature } from '../gpx';
-import { epochseconds } from '../lib/utils';
+import { WGS84 } from '../../coord';
+import { olWptFeature } from '../layer/GPX';
+import { epochseconds } from '../../lib/utils';
 
 function toRenderFeature(feature){
   return new RenderFeature(

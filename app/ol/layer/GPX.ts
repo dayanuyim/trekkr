@@ -1,331 +1,44 @@
-/****************************************************************
- * GPX Related Operations in Openlayers.
- * A GPX layer is a Vector Layer with Vector Source.
- * A Vector Source can be 
- *      1) url with GPX format or
- *      2) features (manually created or parsed by GPX Format)
- ***************************************************************/
-
+import { Feature } from 'ol';
 import { Vector as VectorLayer } from 'ol/layer';
 import { Vector as VectorSource } from 'ol/source';
-import { Icon as IconStyle, Circle as CircleStyle, RegularShape, Fill, Stroke, Style, Text } from 'ol/style';
-import { GPX } from 'ol/format';
-import { Feature } from 'ol';
-import { Geometry, MultiLineString, Point } from 'ol/geom';
+import { MultiLineString, Point } from 'ol/geom';
 import { toLonLat } from 'ol/proj';
 import { create as createXML } from 'xmlbuilder2';
 
-import Opt from './opt';
-import { def_symbol, getSymbol, matchRules } from './sym'
-import { getEpochOfCoord, getXYZMOfCoord, colorCode, matchRule } from './common';
-import { epochseconds, binsearchIndex } from './lib/utils';
-import ArrowHead from './style/ArrowHead';
+import { GPX as GPXStyle } from '../style/GPX';
+import { def_trk_color, isTrkFeature, isWptFeature, olWptFeature, olTrackFeature, getTrkptIndices } from '../gpx-common';
 
-export const def_trk_color = 'DarkMagenta';
-//export const trk_colors = [
-//  'White', 'Cyan', 'Magenta', 'Blue', 'Yellow', 'DarkYellow', 'Green', 'Red',
-//  'DarkGray', 'LightGray', 'DarkCyan', 'DarkMagenta', 'DarkBlue', 'DarkGreen', 'DarkRed', 'Black'
-//];
+import { getSymbol } from '../../sym'
+import { getEpochOfCoord, getXYZMOfCoord } from '../../common';
 
-// Waypoint Style ----------------------------------------------------------------
 
-function wpt_name_style(text)
-{
-  let {fontsize, display, display_auto_zoom} = Opt.waypoint;
-  fontsize = fontsize || 16;
+const xy_equals = ([x1, y1], [x2, y2]) => (x1 === x2 && y1 === y2);
 
-  if(display == "none" ||
-    (display == "auto" && Opt.zoom <= display_auto_zoom))
-    return null;
-
-  return new Text({
-    text,
-    textAlign: 'left',
-    offsetX: 8,
-    offsetY: -8,
-    font: `normal ${fontsize}px "Noto Sans TC", "Open Sans", "Arial Unicode MS", "sans-serif"`,
-    placement: 'point',
-    fill: new Fill({color: '#fff'}),
-    stroke: new Stroke({color: '#000', width: 2}),
-  });
+function distance2(c1, c2){
+  const [x1, y1] = c1;
+  const [x2, y2] = c2;
+  const d1 = x2 - x1;
+  const d2 = y2 - y1;
+  return d1*d1 + d2*d2;
 }
 
-const white_circle_style = new Style({
-  image: new CircleStyle({
-    fill: new Fill({
-      color: 'rgba(255,255,255,0.4)'
-    }),
-    radius: 20,
-    stroke: new Stroke({
-      color: '#f0f0f0',
-      width: 1
-    })
-  }),
-  zIndex: 8,
-});
+function interpCoords(c1, c2, time){
+  const t1 = c1[c1.length - 1];
+  const t2 = c2[c2.length - 1];
+  const ratio = (time - t1) / (t2 - t1)
+  const v = (v1, v2) => (v2 - v1) * ratio + v1;
 
+  const x = v(c1[0], c2[0]);
+  const y = v(c1[1], c2[1]);
+  if(Math.max(c1.length, c2.length) < 4)
+    return [x, y, null, time]
 
-function _wpt_style(name, sym, scale=1)
-{
-  if(!sym){
-    return new Style({
-      image: new CircleStyle({
-        fill: new Fill({
-          color: 'rgba(255,255,0,0.4)'
-        }),
-        radius: 5,
-        stroke: new Stroke({
-          color: '#ff0',
-          width: 1
-        })
-      }),
-      text: wpt_name_style(name),
-      zIndex: 9,
-    });
-  }
-
-  return new Style({
-    image: new IconStyle({
-      src: getSymbol(sym).path(64),
-      //rotateWithView: true,
-      //size: toSize([32, 32]),
-      //opacity: 0.8,
-      //anchor: sym.anchor,
-      scale: 0.5 * scale,
-    }),
-    text: wpt_name_style(name),
-    zIndex: 9,
-  });
-}
-
-function lowercase(val){
-  return val? val.toLowerCase(): val;
-}
-
-function filterWpt(feature){
-  //not match if finding any rule does not match
-  const notmatch = ['name', 'desc', 'sym'].find((kind)=>{
-    const rule = Opt.filter.wpt[kind];
-    return rule.enabled && !matchRule(rule, lowercase(feature.get(kind)));
-  });
-  return !notmatch;
-}
-
-const feat_prop = (feature, key, def_value?) => {
-  const value = feature.get(key);
-  if(!value && def_value){
-    feature.set(key, def_value);
-    return def_value;
-  }
-  return value;
-}
-
-const wpt_style = (feature, options?) => {
-  options = options || {};
-  if(!isPseudoWpt(feature)){  //normal wpt
-    if(options.hidden) return null;
-    if(options.filterable && !filterWpt(feature)) return null;
-  }
-
-  const name = feat_prop(feature, 'name');
-  const sym =  feat_prop(feature, 'sym', def_symbol.name); // set default symbol name if none. Although 'sym' is not a mandatory node for wpt, having one helps ui display for edit.
-  const scale = options.scale || 1;
-  const style = _wpt_style(name, sym, scale);
-
-  return feat_prop(feature, 'image')?
-    [white_circle_style, style]:
-    style;
-}
-
-// Track Style ----------------------------------------------------------------
-const outline_color = (color) => {
-  switch(color){
-    case 'lightgray': return '#ededed';
-    default: return 'lightgray';
-  }
-}
-
-// the math from: https://openlayers.org/en/latest/examples/line-arrows.html
-const arrow_head_rad = (start, end) => {
-  const dx = end[0] - start[0];
-  const dy = end[1] - start[1];
-  const rotation = Math.atan2(dy, dx);
-  return Math.PI/2 - rotation;
-}
-
-const arrow_head_style_gen = (color) => {
-  const sqrt3 = 1.7320508075688772;
-  const shaft_width = 3;                                 // this is the width of track line
-  const radius = Math.max(1, Math.round(Opt.zoom/1.5));  // enlarge when zoom in
-
-  const fill =  new Fill({
-    color: colorCode(color),
-  });
-
-  const stroke = new Stroke({
-    color: colorCode(outline_color(color)),
-    width: 1,
-    lineDash: [(sqrt3+1)*radius - (shaft_width/sqrt3), 2*sqrt3], // add outline, except the part to join the shaft
-  });
-
-  return (start, end) => new Style({
-    geometry: new Point(end),
-    image: new ArrowHead({    // like ➤ , head up
-      points: 3,
-      radius,
-      fill,
-      stroke,
-      rotateWithView: true,
-      rotation: arrow_head_rad(start, end),
-    }),
-    zIndex: 4,
-  });
-}
-
-const track_line_style = color => {
-  return new Style({
-    stroke: new Stroke({
-      color: colorCode(color),
-      width: 3
-    }),
-    zIndex: 3,
-  });
-}
-
-const track_styles = (feature, options?) => {
-  const color = (feature.get('color') || def_trk_color).toLowerCase();
-  const styles = [track_line_style(color)];
-
-  //let { interval, max_num: arrow_num } = Opt.track.arrow;
-  const arrow_num = Opt.track.arrow.max_num;
-  const begin = 15;   // show arrows in the very ends seems useless, so skip it.
-  const min_step = 20;
-  if(arrow_num > 0){
-    const arrow_head_style = arrow_head_style_gen(color);
-    feature.getGeometry().getLineStrings().forEach(trkseg => {
-      const coords = trkseg.getCoordinates();
-      for(let i of genSequence(begin, coords.length, arrow_num, min_step))
-        styles.push(arrow_head_style(coords[i-1], coords[i]));
-    });
-  }
-  return styles;
-}
-
-// generate integer sequence from [first, end)
-// if possible, pick the ends at first.
-// @first, @end, @num should be integer
-function genSequence(first, end, num, min_step)
-{
-  const last = end - 1;
-  if(num <= 0) return [];
-  if(num == 1) return [last];
-  if(last < first) return [last];   // !! special case
-
-  const seq = [];
-  const step = Math.max(1, Math.max(min_step, (last - first) / (num - 1)));  // step >= 1
-  for(let i = first; i < end; i += step)   // !! may have float number round-off error, use '< end', not '<= last'
-    seq.push(Math.min(Math.round(i), last));
-
-  // correct the last, may be caused by float number round-off error
-  const diff = last - seq[seq.length - 1];
-  if(diff > 0){
-    if(diff <= 1 || seq.length >= num)
-      seq[seq.length - 1] = last;
-    else
-      seq.push(last);
-  }
-  return seq;
-}
-
-function _getNode(node, name){
-  const children = node.childNodes;
-  for(let i = 0; i < children.length; i++)
-      if(children[i].nodeName == name)
-        return children[i];
-  return undefined;
-}
-
-function getNodeContent(node, ...names)
-{
-  for(let i = 1; i < arguments.length; i++){
-    node = _getNode(node, arguments[i]);
-    if(!node)
-      break;
-  }
-  return node? node.textContent: undefined;
-}
-
-
-// ----------------------------------------------------------------------------
-// @not really use, just for in case
-const route_style = (feature, options?) => {
-  return new Style({
-    stroke: new Stroke({
-      color: '#f00',
-      width: 3
-    }),
-    zIndex: 5,
-  });
-}
-
-function boolval(s: string){
-  return s && s.toLowerCase() == 'true';
-}
-
-// ----------------------------------------------------------------------------
-const empty_style = new Style({});
-
-const gpx_style = (feature, options?) => {
-  switch (feature.getGeometry().getType()) {
-    case 'Point':           return wpt_style(feature, options);
-    case 'MultiLineString': return track_styles(feature, options);
-    case 'LineString':      return route_style(feature, options);
-    default:                return empty_style;  //for fallback
-  }
-};
-
-export function GPXStyle(options?){
-  // default options
-  options = Object.assign({
-    hidden: false,
-    filterable: true,
-    scale: 1,
-  }, options)
-  return (feature) => gpx_style(feature, options);
-}
-
-// ============================================================================
-
-// GPX format which reads extensions node
-export class GPXFormat extends GPX {
-  _readonly: boolean;
-  constructor(options?){
-    super(Object.assign({
-      readExtensions: (feat, node) => {
-        if(!node) return;
-        if(isTrkFeature(feat)) {   //set color for track if any
-          const color = getNodeContent(node, "gpxx:TrackExtension", "gpxx:DisplayColor");
-          if(color) feat.set('color', color);
-        }
-      },
-    }, options));
-    this._readonly = !!(options && options.readonly);
-  }
-
-  readFeature(source, options?){
-    const feature = super.readFeature(source, options)
-    feature.set('readonly', this._readonly)
-    return feature;
-  }
-
-  readFeatures(source, options?){
-    const features = super.readFeatures(source, options)
-    features.forEach(f => f.set('readonly', this._readonly))
-    return features;
-  }
+  const ele = v(c1[2], c2[2]);
+  return [x, y, ele, time]
 }
 
 //----------------------------------------------------------------
+
 function companionColor(color){
   switch(color){
     case 'White':       return 'Black';
@@ -347,17 +60,34 @@ function companionColor(color){
     default:            return companionColor(def_trk_color);
   }
 }
+
+
 //----------------------------------------------------------------
+
+function mkCrosshairWpt(coords, options?){
+  return olWptFeature(coords, Object.assign({
+    name: '',
+    sym: getSymbol('crosshair').name,
+    pseudo: true,
+  }, options));
+}
+
+function isCrosshairWpt(feature){
+  return !!feature.get('pseudo');
+}
+
+//----------------------------------------------------------------
+
 // The fuction works only when @coord is a trkpt in the @track.
-export function splitTrack(track, coord)
+function splitTrack(track, coord)
 {
   const time = getEpochOfCoord(coord);
   const layout = track.getGeometry().getLayout();
   const trksegs = track.getGeometry().getCoordinates();
 
   const point = (time && layout.endsWith('M'))?
-      getTrkptIndicesByTime(trksegs, time):
-      getTrkptIndicesByCoord(trksegs, coord);
+      getTrkptIndices(trksegs, {time}):
+      getTrkptIndices(trksegs, {coord});
   if(!point){
     console.error('cannot find the split point by coord', coord);
     return null;
@@ -379,46 +109,6 @@ export function splitTrack(track, coord)
   })
 }
 
-export function getTrkptIndicesByTime(trksegs, time)
-{
-  const time_of = (coords) => coords[coords.length - 1];
-
-  for(let i = 0; i < trksegs.length; ++i){
-    const trkseg = trksegs[i];
-    if(!(time_of(trkseg[0]) <= time && time <= time_of(trkseg[trkseg.length-1])))
-      continue;
-    const idx = binsearchIndex(trkseg, (coords, i, arr) => {
-      const t = time_of(coords);
-      return (time >= t) ? (time - t) :
-        (time > time_of(arr[i - 1])) ? 0 : -1; // i should be larger than 0 here
-    });
-    return [i, idx];
-  }
-  return null;
-}
-
-export function getTrkptIndicesByCoord(trksegs, coord)
-{
-  for(let i = 0; i < trksegs.length; ++i){
-    const j = trksegs[i].findIndex(c => xy_equals(c, coord));
-    if(j >= 0)
-      return [i, j];
-  }
-  return null;
-}
-
-// only check the ends of the trkseg
-export function getTrkptIndicesAtEnds(trksegs, coord)
-{
-    for(let i = 0; i < trksegs.length; i++){
-      const trkseg = trksegs[i];
-      if(xy_equals(trkseg[0], coord)) return [i, 0];
-      const j = trkseg.length -1;
-      if(xy_equals(trkseg[j], coord)) return [i, j];
-    }
-    return null;
-}
-
 function splitTrksegs(trksegs, point){
   const [i, j] = point;
   const trksegs1 = trksegs.slice(0, i);
@@ -427,10 +117,9 @@ function splitTrksegs(trksegs, point){
   trksegs2.unshift(trksegs[i].slice(j));   // duplicate the trkpt
   return [trksegs1, trksegs2];
 }
-//----------------------------------------------------------------
 
 // join the trksegs [begin, end) of @trk
-export function joinTrksegs(trk, begin, end){
+function joinTrksegs(trk, begin, end){
   const trksegs = trk.getGeometry().getCoordinates();
   if(0 <= begin && begin < end && end <= trksegs.length) {
     //join [begin, end) to a new trkseg
@@ -446,80 +135,16 @@ export function joinTrksegs(trk, begin, end){
   }
 }
 
-function distance2(c1, c2){
-  const [x1, y1] = c1;
-  const [x2, y2] = c2;
-  const d1 = x2 - x1;
-  const d2 = y2 - y1;
-  return d1*d1 + d2*d2;
-}
 
-const xy_equals = ([x1, y1], [x2, y2]) => (x1 === x2 && y1 === y2);
-//----------------------------------------------------------------
+/****************************************************************
+ * GPX Related Operations in Openlayers.
+ * A GPX layer is a Vector Layer with Vector Source.
+ * A Vector Source can be 
+ *      1) url with GPX format or
+ *      2) features (manually created or parsed by GPX Format)
+ ***************************************************************/
 
-// @source_props should contain 'features' or 'url' for local-drag-n-drop or remote gpx files.
-// no @source_props results an empty gpx layer.
-/*
-export function olGpxLayer(source_props?, layer_props?){
-    return new VectorLayer(Object.assign({
-      source: new VectorSource(Object.assign({
-        format: new GPXFormat(),
-      }, source_props)),
-      style: gpx_style,
-    }, layer_props));
-}
-*/
-
-//@coords is openlayer coords [x, y, ele, time], ele and tiem is optional.
-export function olWptFeature(coords, options?){
-  coords = getXYZMOfCoord(coords);
-  if(!coords[3]) coords[3] = epochseconds(new Date());
-  return new Feature(Object.assign({
-    geometry: new Point(coords),
-    name: "WPT",
-    sym: def_symbol.name,
-  }, options));
-}
-
-export function olTrackFeature({coordinates, layout}, {name, color}, options?){
-  return new Feature(Object.assign({
-    geometry: new MultiLineString(coordinates, layout),
-    name,
-    color,
-  }, options));
-}
-
-export function setSymByRules(wpt: Feature<Point>) {
-  const symbol = matchRules(wpt.get('name'));
-  if (symbol) wpt.set('sym', symbol.name);
-}
-
-/*
-function isCrosshairWpt(feature){
-  return !feature.get('name') && feature.get('sym') == getSymbol('crosshair').name;
-}
-*/
-function isPseudoWpt(feature){
-  return !!feature.get('pseudo');
-}
-
-export function isWptFeature(feature){
-  return !isPseudoWpt(feature) && feature.getGeometry().getType() == 'Point';
-}
-
-export function isTrkFeature(feature){
-  return feature.getGeometry().getType() == 'MultiLineString';
-}
-
-export class GpxLayer extends VectorLayer<VectorSource>{
-  static mkCrosshairWpt(coords, options?){
-    return olWptFeature(coords, Object.assign({
-      name: '',
-      sym: getSymbol('crosshair').name,
-      pseudo: true,
-    }, options));
-  }
-
+export class GPX extends VectorLayer<VectorSource>{
   _crosshair_wpt;
 
   public constructor(options?){
@@ -539,11 +164,16 @@ export class GpxLayer extends VectorLayer<VectorSource>{
   }
 
   public getWaypoints() {
-    return this.getSource().getFeatures().filter(isWptFeature).map(f => f as Feature<Point>);
+    return this.getSource().getFeatures()
+            .filter(isWptFeature)
+            .filter(f => !isCrosshairWpt(f))
+            .map(f => f as Feature<Point>);
   }
 
   public getTracks() {
-    return this.getSource().getFeatures().filter(isTrkFeature).map(f => f as Feature<MultiLineString>);
+    return this.getSource().getFeatures()
+            .filter(isTrkFeature)
+            .map(f => f as Feature<MultiLineString>);
   }
 
   /*
@@ -560,10 +190,10 @@ export class GpxLayer extends VectorLayer<VectorSource>{
 
   public setCrosshairWpt(coord){
     //remove the old
-    if(this._crosshair_wpt && isPseudoWpt(this._crosshair_wpt))
+    if(this._crosshair_wpt && isCrosshairWpt(this._crosshair_wpt))
       this.removeWaypoint(this._crosshair_wpt);
     //add the new
-    this._crosshair_wpt = GpxLayer.mkCrosshairWpt(coord);
+    this._crosshair_wpt = mkCrosshairWpt(coord);
     this.addWaypoint(this._crosshair_wpt);
     return this._crosshair_wpt;
   }
@@ -578,8 +208,7 @@ export class GpxLayer extends VectorLayer<VectorSource>{
   public estimateCoord(time) {
     //*/
     return this.getTracks()
-      .map(trk => trk.getGeometry().getCoordinateAtM(time))
-      .find(coords => !!coords);       //return the first, otherwise undefined
+      .reduce((coord, trk) => coord || trk.getGeometry().getCoordinateAtM(time), undefined);   // return the first if found
     /*/
     const time_of = (coords) => coords[coords.length - 1];
     return this.getTracks()
@@ -613,7 +242,7 @@ export class GpxLayer extends VectorLayer<VectorSource>{
   public joinTrackAt(trk, coord)
   {
     const trksegs = trk.getGeometry().getCoordinates();
-    const idx = getTrkptIndicesAtEnds(trksegs, coord);
+    const idx = getTrkptIndices(trksegs, {coord, atends: true});
     if(!idx) return false;
 
     let [i, j] = idx;
@@ -702,6 +331,12 @@ export class GpxLayer extends VectorLayer<VectorSource>{
     }
   }
 
+  public splitTrack(trk, coord){
+    const trk2 = splitTrack(trk, coord);
+    if(trk2)
+      this.addTrack(trk2);
+  }
+
   public promoteTrksegs(){
     this.getTracks()
       .filter(trk => trk.getGeometry().getCoordinates().length > 1)
@@ -740,21 +375,6 @@ export class GpxLayer extends VectorLayer<VectorSource>{
   }
 
 }//class end
-
-function interpCoords(c1, c2, time){
-  const t1 = c1[c1.length - 1];
-  const t2 = c2[c2.length - 1];
-  const ratio = (time - t1) / (t2 - t1)
-  const v = (v1, v2) => (v2 - v1) * ratio + v1;
-
-  const x = v(c1[0], c2[0]);
-  const y = v(c1[1], c2[1]);
-  if(Math.max(c1.length, c2.length) < 4)
-    return [x, y, null, time]
-
-  const ele = v(c1[2], c2[2]);
-  return [x, y, ele, time]
-}
 
 //----------------------- utils for Generating Gpx Text-----------------------------------------//
 

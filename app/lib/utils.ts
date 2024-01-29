@@ -160,27 +160,27 @@ export const toArray = (obj) => {
     return array;
 }
 
-export function cmpArray(a1, a2, cmpfn){
-    function valid(a){
-        if(!Array.isArray(a)){
-            console.error("cmpArray error: not array: ", a);
-            return false;
-        }
-        return true;
-    }
+//shadow-compare two array
+export function arrayCompare(a1, a2, comparator?){
+    if(!comparator)
+        comparator = (v1, v2) => v1 === v2;
 
-    if(!valid(a1)) return valid(a2)? -1: 0;
-    if(!valid(a2)) return 1;
+    if(!Array.isArray(a1)) return -2;
+    if(!Array.isArray(a2)) return 2;
 
     let cmp = a1.length - a2.length;
     if(cmp !== 0)
         return cmp;
 
     for(let i = 0; i < a1.length; ++i){
-        if((cmp = cmpfn(a1[i], a2[i])) !== 0)
+        if((cmp = comparator(a1[i], a2[i])) !== 0)
             return cmp;
     }
     return cmp;  //assert(cmp === 0);
+}
+
+export function arrayEquals(a1, s2, comparator?){
+    return arrayCompare(a1, s2, comparator) === 0;
 }
 
 export function cmpString(s1, s2)
