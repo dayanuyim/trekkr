@@ -65,7 +65,7 @@ const white_circle_style = new Style({
 });
 
 
-function _wpt_style(name, sym, bg?)
+function _wpt_style(name, sym, scale=1)
 {
   if(!sym){
     return new Style({
@@ -84,20 +84,18 @@ function _wpt_style(name, sym, bg?)
     });
   }
 
-  const sym_style = new Style({
+  return new Style({
     image: new IconStyle({
-      src: getSymbol(sym).path(128),
+      src: getSymbol(sym).path(64),
       //rotateWithView: true,
       //size: toSize([32, 32]),
       //opacity: 0.8,
       //anchor: sym.anchor,
-      scale: 0.25,
+      scale: 0.5 * scale,
     }),
     text: wpt_name_style(name),
     zIndex: 9,
   });
-
-  return bg? [white_circle_style, sym_style]: sym_style;
 }
 
 function lowercase(val){
@@ -122,14 +120,21 @@ const feat_prop = (feature, key, def_value?) => {
   return value;
 }
 
-const wpt_style = feature => {
-  if(feature.get('hidden')) return null;
-  if(!isPseudoWpt(feature) && !filterWpt(feature)) return null;
+const wpt_style = (feature, options?) => {
+  options = options || {};
+  if(!isPseudoWpt(feature)){  //normal wpt
+    if(options.hidden) return null;
+    if(options.filterable && !filterWpt(feature)) return null;
+  }
 
-  const has_bg = !!feat_prop(feature, 'image');
   const name = feat_prop(feature, 'name');
   const sym =  feat_prop(feature, 'sym', def_symbol.name); // set default symbol name if none. Although 'sym' is not a mandatory node for wpt, having one helps ui display for edit.
-  return _wpt_style(name, sym, has_bg);
+  const scale = options.scale || 1;
+  const style = _wpt_style(name, sym, scale);
+
+  return feat_prop(feature, 'image')?
+    [white_circle_style, style]:
+    style;
 }
 
 // Track Style ----------------------------------------------------------------
@@ -187,7 +192,7 @@ const track_line_style = color => {
   });
 }
 
-const track_styles = feature => {
+const track_styles = (feature, options?) => {
   const color = (feature.get('color') || def_trk_color).toLowerCase();
   const styles = [track_line_style(color)];
 
@@ -253,7 +258,7 @@ function getNodeContent(node, ...names)
 
 // ----------------------------------------------------------------------------
 // @not really use, just for in case
-const route_style = (feature) => {
+const route_style = (feature, options?) => {
   return new Style({
     stroke: new Stroke({
       color: '#f00',
@@ -270,33 +275,53 @@ function boolval(s: string){
 // ----------------------------------------------------------------------------
 const empty_style = new Style({});
 
-export const gpx_style = (feature) => {
+const gpx_style = (feature, options?) => {
   switch (feature.getGeometry().getType()) {
-    case 'Point':           return wpt_style(feature);
-    case 'MultiLineString': return track_styles(feature);
-    case 'LineString':      return route_style(feature);
+    case 'Point':           return wpt_style(feature, options);
+    case 'MultiLineString': return track_styles(feature, options);
+    case 'LineString':      return route_style(feature, options);
     default:                return empty_style;  //for fallback
   }
 };
+
+export function GPXStyle(options?){
+  // default options
+  options = Object.assign({
+    hidden: false,
+    filterable: true,
+    scale: 1,
+  }, options)
+  return (feature) => gpx_style(feature, options);
+}
 
 // ============================================================================
 
 // GPX format which reads extensions node
 export class GPXFormat extends GPX {
+  _readonly: boolean;
   constructor(options?){
     super(Object.assign({
       readExtensions: (feat, node) => {
-        //set color for track if any
         if(!node) return;
-        if(isTrkFeature(feat)) {
-          feat.set('color', getNodeContent(node, "gpxx:TrackExtension", "gpxx:DisplayColor") || def_trk_color);
-        }
-        else if(isWptFeature(feat)) {
-          feat.set('hidden', boolval(getNodeContent(node, "hidden")));
-          feat.set('readonly', boolval(getNodeContent(node, "readonly")));
+        if(isTrkFeature(feat)) {   //set color for track if any
+          const color = getNodeContent(node, "gpxx:TrackExtension", "gpxx:DisplayColor");
+          if(color) feat.set('color', color);
         }
       },
     }, options));
+    this._readonly = !!(options && options.readonly);
+  }
+
+  readFeature(source, options?){
+    const feature = super.readFeature(source, options)
+    feature.set('readonly', this._readonly)
+    return feature;
+  }
+
+  readFeatures(source, options?){
+    const features = super.readFeatures(source, options)
+    features.forEach(f => f.set('readonly', this._readonly))
+    return features;
   }
 }
 
@@ -499,7 +524,7 @@ export class GpxLayer extends VectorLayer<VectorSource>{
 
   public constructor(options?){
     options = options || {};
-    options.style = options.style || gpx_style;
+    options.style = options.style || GPXStyle();
     options.source = options.source || new VectorSource();
     super(options);
   }

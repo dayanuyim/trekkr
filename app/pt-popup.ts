@@ -66,9 +66,18 @@ const enter_to_blur_listener = e => {
     }
 }
 
-function showElem(el: HTMLElement, en){
+function displayElem(el: HTMLElement, en){
     el.classList.toggle('hidden', !en)
 }
+
+function readonlyElem(el: HTMLElement, readonly)
+{
+    if(el instanceof HTMLSpanElement)
+        el.contentEditable = readonly? 'false': 'true';
+    else
+        el.style.pointerEvents = readonly? 'none': '';
+}
+
 
 /*
 declare class Overlay{
@@ -100,6 +109,7 @@ export default class PtPopupOverlay extends Overlay{
     _content: HTMLElement;
     _pt_image: HTMLElement;
     _pt_trk: HTMLElement;
+    _pt_trk_tool: HTMLElement;
     _pt_trk_name: HTMLElement;
     _pt_trk_desc: HTMLElement;
     _pt_trk_seg_sn: HTMLElement;
@@ -189,6 +199,7 @@ export default class PtPopupOverlay extends Overlay{
         this._content =            el.querySelector<HTMLElement>('.ol-popup-content');
         this._pt_image =           el.querySelector<HTMLElement>('.pt-image');
         this._pt_trk =             el.querySelector<HTMLElement>('.pt-trk');
+        this._pt_trk_tool =        el.querySelector<HTMLElement>('.pt-trk-tool');
         this._pt_trk_name =        el.querySelector<HTMLElement>('.pt-trk-name');
         this._pt_trk_desc =        el.querySelector<HTMLElement>('.pt-trk-desc');
         this._pt_trk_seg_sn =      el.querySelector<HTMLElement>('.pt-trk-seg-sn');
@@ -225,10 +236,10 @@ export default class PtPopupOverlay extends Overlay{
     // reset to initial display status
     private resetDisplay(image){
         //colorboard
-        showElem(this._pt_colorboard, false);   //colorboard hidden, if any
+        displayElem(this._pt_colorboard, false);   //colorboard hidden, if any
 
         //symboard
-        showElem(this._pt_symboard, false);     //symboard hidden, if any
+        displayElem(this._pt_symboard, false);     //symboard hidden, if any
         this.resetSymboardFilter();         //symboard filter reset
 
         //resizer
@@ -453,7 +464,7 @@ export default class PtPopupOverlay extends Overlay{
         if(is_changed){
             obj[key] = value;
             this._feature.set(key, value);       // TODO: we either modify TRK or PT at a time, so not need to check the feature kind... but be careful if need to support for trkpt edit or something like that.
-            this._feature.set('pseudo', false);  // pseudo -> real
+            this._feature.unset('pseudo');       // pseudo -> normal
             if(need_reset) this.setContent(this._data);
         }
         return is_changed;
@@ -523,29 +534,32 @@ export default class PtPopupOverlay extends Overlay{
         const {ele, is_est} = await getEleByCoord(pt.coord);
         const symbol = getSymbol(pt.sym);
 
-        //trk
-        showElem(this._pt_trk, trk);
+        //trk --------------------------------
+        displayElem(this._pt_trk, trk);
         if(trk){
             this.pt_trk_name = trk.name;
             this.pt_trk_desc = trk.desc;
             this.pt_trk_color = colorCode(trk.color || def_trk_color);
+            readonlyElem(this._pt_trk_name, readonly)
+            readonlyElem(this._pt_trk_desc, readonly)
+            readonlyElem(this._pt_trk_color, readonly)
+            displayElem(this._pt_trk_desc, trk.desc);   // show only if set. TODO: show the field on demand
             this.setTrackTools(this._feature, {trk, pt})
-            showElem(this._pt_trk_desc, trk.desc);   // show only if set. TODO: show the field on demand
         }
 
-        //wpt
-        showElem(this._pt_mk_wpt, !is_wpt);
-        showElem(this._pt_rm_wpt, is_wpt);
+        //wpt --------------------------------
+        displayElem(this._pt_mk_wpt, !readonly && !is_wpt);
+        displayElem(this._pt_rm_wpt, !readonly && is_wpt);
 
-        //pt
+        //pt --------------------------------
         this.pt_name = pt.name;
-        this._pt_name.contentEditable = readonly? 'false': 'true';
-        this._pt_sym.style.pointerEvents = readonly? 'none': '';
-        showElem(this._pt_header, is_wpt || pt.sym || pt.name);   // header contains sym & name
+        readonlyElem(this._pt_name, readonly);
+        readonlyElem(this._pt_sym, readonly);
+        displayElem(this._pt_header, is_wpt || pt.sym || pt.name);   // header contains sym & name
 
         this.pt_desc = pt.desc ;
-        this._pt_desc.contentEditable = readonly? 'false': 'true';
-        showElem(this._pt_desc, is_wpt || pt.desc);   // not show for trkpt if empty
+        readonlyElem(this._pt_desc, readonly);
+        displayElem(this._pt_desc, is_wpt || pt.desc);   // not show for trkpt if empty
 
         this.pt_coord = coordxy;
         this.pt_coord_title = coordsys;
@@ -555,12 +569,12 @@ export default class PtPopupOverlay extends Overlay{
         this.pt_ele = !ele? '-':
                     (readonly || !is_wpt)? fmtEle(ele):   // only formatting if readonly
                     ele;
-        this._pt_ele.contentEditable = (readonly || !is_wpt)? 'false': 'true';
-        showElem(this._pt_ele_est, is_est);
+        readonlyElem(this._pt_ele, (readonly || !is_wpt));
+        displayElem(this._pt_ele_est, is_est);
 
         this.pt_time = time? fmtTime(time): '-';
 
-        showElem(this._sym_copyright, is_wpt);
+        displayElem(this._sym_copyright, is_wpt);
         if(symbol){
             this.pt_sym = symbol.path(128);
             this.setUrlContent(this._sym_maker,    symbol.maker);
@@ -571,9 +585,15 @@ export default class PtPopupOverlay extends Overlay{
 
     private setTrackTools(track, {trk, pt}){
         if(track){
-            const endidx = getTrkptIndicesAtEnds(track.getGeometry().getCoordinates(), pt.coord);
-            showElem(this._pt_join_trk, endidx);
-            showElem(this._pt_split_trk, !endidx && !pt.is_virtual);
+            const readonly = track.get('readonly');
+            //tool
+            displayElem(this._pt_trk_tool, !readonly && !pt.is_virtual);
+            if(!readonly && !pt.is_virtual){
+                const endidx = getTrkptIndicesAtEnds(track.getGeometry().getCoordinates(), pt.coord);
+                displayElem(this._pt_join_trk,  endidx);
+                displayElem(this._pt_split_trk, !endidx);  // TODO: let a virtual pt can to split
+            }
+            //header
             this.pt_trk_seg_sn = this.getTrksegSnText();
         }
     }

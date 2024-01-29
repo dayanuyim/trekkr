@@ -6,7 +6,7 @@ import Graticule from 'ol/layer/Graticule';
 
 import BiMap from 'bidirectional-map';
 
-import { GpxLayer, GPXFormat } from './gpx';
+import { GpxLayer, GPXFormat, GPXStyle } from './gpx';
 import Confs from './data/layer-conf';
 
 const def_label_style = {
@@ -136,23 +136,14 @@ function jsonLayer(url, options?){
   }, options));
 }
 
-function gpxLayer(url, options?){
+function gpxLayer(url, layer_ops?, format_ops?, style_ops?){
   return new GpxLayer(Object.assign({
     source: new VectorSource({
       url,
-      format: new GPXFormat(),
+      format: new GPXFormat(format_ops),
     }),
-  }, options));
-
-  /*
-  return new VectorLayer(Object.assign({
-    source: new VectorSource({
-      url,
-      format: new GPXFormat(),
-    }),
-    style: gpx_style,
-  }, options));
-  */
+    style: GPXStyle(style_ops),
+  }, layer_ops));
 }
 
 function kmlLayer(url, options?){
@@ -164,7 +155,7 @@ function kmlLayer(url, options?){
   }, options));
 }
 
-function mkLayer({legend, type, url, layers})
+function mkLayer({type, url, legend, layers, readonly, filterable, hidden, scale})
 {
   const opt = legend? {transition: 0}: undefined;
   switch(type){
@@ -172,7 +163,7 @@ function mkLayer({legend, type, url, layers})
     case 'xyz': return xyzLayer(url, opt);
     case 'wms': return wmsLayer(url, layers);
     case 'json': return jsonLayer(url);
-    case 'gpx': return gpxLayer(url);
+    case 'gpx': return gpxLayer(url, undefined, {readonly}, {filterable, hidden, scale});
     case 'kml': return kmlLayer(url);
     case 'grid': return graticule(url);
     default: throw `unrecognize layer conf type: ${type}`;
