@@ -7,7 +7,7 @@ import RenderFeature from 'ol/render/Feature';
 import * as exif from 'exifreader'
 import { transform } from 'ol/proj';
 import { WGS84 } from '../../coord';
-import { olWptFeature } from '../layer/GPX';
+import { olWptFeature } from '../gpx-common';
 import { epochseconds } from '../../lib/utils';
 
 function toRenderFeature(feature){

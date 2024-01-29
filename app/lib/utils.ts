@@ -214,3 +214,22 @@ export function binsearchIndex(arr, compare_fn) {
     }
     return -1;
 }
+
+
+// given n predicates, split an array into (n + 1) arrays according to the predicate, testing by order.
+export function splitn(arr, ...predicates)
+{
+  const result = Array(predicates.length + 1).fill(0).map(()=>[]);
+
+  const test = v => {
+    const i = predicates.findIndex(p => p(v))
+    return i >= 0? i: predicates.length;
+  }
+
+  arr.forEach(v => {
+    const i = test(v);
+    result[i].push(v);
+  });
+
+  return result;
+}

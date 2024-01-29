@@ -101,8 +101,7 @@ function scaleDown({width, height}, max){
 const xy_equals = ([x1, y1], [x2, y2]) => (x1 === x2 && y1 === y2);
 const xy_approximate = ([x1, y1], [x2, y2]) => Math.abs(x2-x1) < 0.000001 && Math.abs(y2-y1) < 0.000001;
 
-//TODO: convert this to typescript
-export default class PtPopupOverlay extends Overlay{
+export class PtPopupOverlay extends Overlay{
     _closer: HTMLElement;
     _resizer: HTMLElement;
     _resizer_content: HTMLElement;

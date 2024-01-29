@@ -17,11 +17,12 @@ import { GPX as GPXLayer } from './ol/layer/GPX';
 import { GPX as GPXFormat} from './ol/format/GPX';
 
 import Opt from './opt';
+import { splitn } from './lib/utils';
 import { saveTextAsFile } from './lib/dom-utils';
 import { gmapUrl} from './common';
 import { CtxMenu } from './ctx-menu';
 import * as LayerRepo from './layer-repo';
-import PtPopupOverlay from './pt-popup';
+import { PtPopupOverlay } from './pt-popup';
 import { matchRules } from './sym'
 
 /*
@@ -258,11 +259,17 @@ export class AppMap{
   };
 
   private _getFeatures(e) {
-    const isTrk = f => f.getGeometry().getType() == 'MultiLineString';
-    const isPt = f => f.getGeometry().getType() === 'Point';
+    const hasFeatures = (f, predicate) => {
+      const features = f.get('features');
+      return features && features.find(predicate);
+    }
+    const isTrk =      f => f.getGeometry().getType() == 'MultiLineString';
+    const isPt =       f => f.getGeometry().getType() === 'Point';
+    const isTrkpt =    f => isPt(f) && hasFeatures(f, isTrk);
+    const isHiddenPt = f => isPt(f) && hasFeatures(f, isPt);    // when a wpt is not visible or covered by other wpts
     const hasWptProp = f => f.get('name') || f.get('desc') || f.get('sym');
-    const isWpt = f => isPt(f) && hasWptProp(f);
-    const isTrkpt = f => isPt(f) && !hasWptProp(f);
+    const isWpt      = f => isPt(f) && hasWptProp(f);
+    const isRoWpt    = f => isWpt(f) && f.get('readonly');
 
     const pixel = e.map.getEventPixel(e.originalEvent); // TODO: what is the diff between 'originalevent' and 'event'?
 
@@ -271,8 +278,11 @@ export class AppMap{
     //e.map.getTargetElement().style.cursor = hit? 'pointer': '';
 
     const features = e.map.getFeaturesAtPixel(pixel, { hitTolerance: 2 });
-    //return features.some(isWpt)? features.filter(f => !isTrkpt(f)): features;  //filter out trkpts if wpt exists
-    return features.some(isWpt) ? features.filter(isWpt) : features.filter(isTrkpt);  //either wpt or trk/trkpt
+    if(features.length == 0)
+      return features;
+
+    const [h, r, w, t, _] = splitn(features, isHiddenPt, isRoWpt, isWpt, isTrkpt);
+    return [w, t, r, h].find(pts => pts.length > 0) || [];   //priority: wpt > trkpt > ro_wpt > hidden_wpt > track;
   };
 
 ////////////////////////////////////////////////////////////////
