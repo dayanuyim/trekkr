@@ -245,10 +245,17 @@ const gpx_style = (feature, options?) => {
 
 export function GPX(options?){
   // default options
+  /*
   options = Object.assign({
     hidden: false,
     filterable: true,
     scale: 1,
-  }, options)
+  }, options);
+  /*/
+  options = options || {};
+  options.hidden     = options.hidden || false;
+  options.filterable = options.filterable || true;
+  options.scale      = options.scale || 1;
+  //*/
   return (feature) => gpx_style(feature, options);
 }

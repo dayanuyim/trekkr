@@ -5,6 +5,10 @@ import {toLonLat} from 'ol/proj';
 import {format} from 'ol/coordinate';
 import { gmapUrl, colorCode } from './common';
 
+Handlebars.registerHelper('isdefined', function (value) {
+  return value !== undefined;
+});
+
 Handlebars.registerHelper("mul", (val, mul, options) => {
     return Math.floor(val * mul);
 });
@@ -199,7 +203,8 @@ export const mkLayer = Handlebars.compile(`
         <input class="ly-checked" type="checkbox" {{#if checked}}checked{{/if}}><!--
      --><span class="ly-body"><!--
          --><span class="ly-desc">{{desc}}</span>
-            <span class="ly-spy"><i class="fas fa-crosshairs"></i></span>
+            <span class="ly-opt ly-opt-spy {{#if legend}}hidden{{/if}}"><i class="fas fa-crosshairs"></i></span>
+            <span class="ly-opt ly-opt-filter {{#unless (isdefined filterable)}}hidden{{/unless}}"><i class="fas fa-filter"></i></span>
         </span>
         <input class="ly-opacity" type="number" max="100" min="0" step="5" value="{{mul opacity 100}}">
         <i class="fas fa-percent"></i>
@@ -346,8 +351,10 @@ export const toolbarTop = Handlebars.compile(`
                 <p>The fitlers for tracks</p>
             </div>
             <div class="footer">
-                <input type="checkbox" id="filter-force"/>
-                <label for="filter-force" title="Filter all including system layers">all layers</label>
+                <div class="filter-force">
+                    <input type="checkbox" id="filter-force"/>
+                    <label for="filter-force" title="Filter all including system layers">all layers</label>
+                </div>
             </div>
         </div>
     </div>

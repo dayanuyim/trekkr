@@ -200,11 +200,18 @@ html, body {
     min-width: 14.5em;
 }
 
-#setting-layers li .ly-spy:not(.active) {
+#setting-layers li .ly-opt {
+    font-size: smaller;
+    color: lightgrey;
+}
+#setting-layers li:not(:hover) .ly-opt:not(.active) {
     display: none;
 }
-#setting-layers li .ly-spy {
-    font-size: small;
+#setting-layers li .ly-opt:not(.active):hover {
+    color: cornflowerblue;
+    cursor: pointer;
+}
+#setting-layers li .ly-opt.active {
     color: steelblue;
 }
 
@@ -347,8 +354,15 @@ html, body {
 }
 
 .filter-panel .footer{
-    padding: 2px 8px 0 0;
-    float: right;
+    background: #f8f8f8;
+    padding: 2px 0;
+    margin-top: 2px;
+    border-radius: 0 0 6px 6px;
+}
+
+.filter-panel .footer .filter-force{
+    text-align: right;
+    margin-right: 6px;
 }
 
 /*------------ Topbar / Goto -------------------*/

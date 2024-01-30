@@ -15,27 +15,42 @@ class Layer {
     static listenify = (fn) => { return (e) => fn(Layer.of(e.target.closest('li')), e.currentTarget, e); }
 
     _base: HTMLElement;
-    get _checkbox(){ return this._base.querySelector<HTMLInputElement>('.ly-checked');}
-    get _desc(){ return this._base.querySelector<HTMLSpanElement>('.ly-desc');}
-    get _opacity(){ return this._base.querySelector<HTMLInputElement>('.ly-opacity');}
-    get _spy(){ return this._base.querySelector('.ly-spy');}
-    get _body(){ return this._base.querySelector<HTMLElement>('.ly-body');}
+    get _checkbox()  { return this._base.querySelector<HTMLInputElement>('.ly-checked');}
+    get _desc()      { return this._base.querySelector<HTMLSpanElement>('.ly-desc');}
+    get _opacity()   { return this._base.querySelector<HTMLInputElement>('.ly-opacity');}
+    get _opt_spy()   { return this._base.querySelector<HTMLElement>('.ly-opt-spy');}
+    get _opt_filter(){ return this._base.querySelector<HTMLElement>('.ly-opt-filter');}
+    get _body()      { return this._base.querySelector<HTMLElement>('.ly-body');}
 
-    get legend(){ return this._base.parentElement.classList.contains('layer-legend');}
+    get legend()     { return this._base.parentElement.classList.contains('layer-legend');}
     get id(){ return this._base.dataset.layerId;}
     get type(){ return this._base.dataset.layerType;}
     get url(){ return this._base.dataset.layerUrl;}
     get desc(){ return this._desc.textContent.trim();}
     get opacity(){ return limit(Number(this._opacity.value)/100, 0, 1);}
-    get spy(){ return this._spy.classList.contains('active');}
-    set spy(value){ this._spy.classList.toggle('active', value)};
+    get is_spy(){ return this._opt_spy.classList.contains('active');}
+    set is_spy(value){ this._opt_spy.classList.toggle('active', value)};
 
-    set oncheck(listener){ this._checkbox.onchange = listener; }//Layer.listenify(cb)};
-    set onopacity(listener){ this._opacity.onchange = listener;} //Layer.listenify(cb)};
-    set onspy(listener){ this._body.ondblclick = e => { if (!this.spy) listener(e); }; }  // trigger only when changed
+    _listeners = {};
 
     constructor(el: HTMLElement){
         this._base = el;
+        this._checkbox.addEventListener('change', e => { console.log(`${this.id} checked`,this._listeners); this._listeners['check']?.(); });
+        this._opacity.onchange = e => { this._listeners['opacity']?.(); }
+        this._opt_spy.onclick = e => { if(!this.is_spy) this._listeners['spy']?.(); }  // trigger only when changed
+        this._opt_filter.onclick = e => {
+            const active = this._opt_filter.classList.toggle('active');
+            if (Opt.updateLayer(this.id, 'filterable', active))
+                this._listeners['filter']?.();
+        };
+
+        console.log('listeners', this._listeners);
+    }
+
+    public setListener(event, listener){
+        this._listeners[event] = listener;
+        //console.log('set listener', event, listener, this._listeners);
+        return this;
     }
 
     obj() {
@@ -104,7 +119,7 @@ export class Settings{
                 placeholderClass: 'ly-placeholder',
                 //placeholder: templates.layer(),
                 placeholder: '<li></li>',
-                /*hoverClass: 'ly-hover',*/
+                hoverClass: 'ly-hover',
             });
             sortable(selector)[0].addEventListener('sortupdate', () => {
                 this.updateLayers();
@@ -113,9 +128,13 @@ export class Settings{
 
         //layer events
         this.layers.forEach(layer => {
-            layer.oncheck = () => this.updateLayers();
-            layer.onopacity = () => this.updateLayerOpacity(layer.id, layer.opacity);
-            layer.onspy = () => this.updateSpy(layer.id);
+            console.log('to set layer', layer)
+            layer.setListener('check', () => this.updateLayers())
+                 .setListener('opacity', () => this.updateLayerOpacity(layer.id, layer.opacity))
+                 .setListener('spy', () => this.updateSpy(layer.id))
+                 .setListener('filter', () => {
+                    console.log('filter change'); //TODO:...
+                 });
         });
     }
 
@@ -137,7 +156,7 @@ export class Settings{
     }
 
     private updateSpy(id, update_opt=true){
-        this.layers.forEach(layer => layer.spy = (layer.id === id));  //ui
+        this.layers.forEach(layer => layer.is_spy = (layer.id === id));  //ui
         if(update_opt){
             Opt.update('spy.layer', id);   // option
         }
