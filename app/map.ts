@@ -362,7 +362,7 @@ export class AppMap{
             map_layers.remove(layer); //in case the layer is added but in the wrong place
             map_layers.insertAt(idx, layer);
             layer.setOpacity(cnf.opacity);
-            if(cnf.interactable)
+            if(layer.interactable)
               this.setInteraction(layer);
           }
         });

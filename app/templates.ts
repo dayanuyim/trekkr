@@ -195,7 +195,7 @@ export const symboard = Handlebars.compile(`
 
 export const mkLayer = Handlebars.compile(`
     {{#with layer}}
-    <li data-layer-id="{{id}}" data-layer-type="{{type}}" data-layer-url="{{url}}" {{#if interactable}}data-layer-interactable{{/if}}>
+    <li data-layer-id="{{id}}" data-layer-type="{{type}}" data-layer-url="{{url}}" >
         <input class="ly-checked" type="checkbox" {{#if checked}}checked{{/if}}><!--
      --><span class="ly-body"><!--
          --><span class="ly-desc">{{desc}}</span>

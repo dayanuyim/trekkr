@@ -146,12 +146,23 @@ function joinTrksegs(trk, begin, end){
 
 export class GPX extends VectorLayer<VectorSource>{
   _crosshair_wpt;
+  _interactable;
+
+  set interactable(v){ this._interactable = v; }
+  get interactable(){ return this._interactable; }
 
   public constructor(options?){
     options = options || {};
     options.style = options.style || GPXStyle();
     options.source = options.source || new VectorSource();
+
+    //subclass options
+    const interactable = options.interactable || false;
+    delete options.interactable;
+
     super(options);
+
+    this.interactable = interactable;
   }
 
   public addWaypoint(wpt)    { this.getSource().addFeature(wpt);}

@@ -25,7 +25,6 @@ class Layer {
     get id(){ return this._base.dataset.layerId;}
     get type(){ return this._base.dataset.layerType;}
     get url(){ return this._base.dataset.layerUrl;}
-    get interactable(){ return 'layerInteractable' in this._base.dataset;}
     get desc(){ return this._desc.textContent.trim();}
     get opacity(){ return limit(Number(this._opacity.value)/100, 0, 1);}
     get spy(){ return this._spy.classList.contains('active');}
@@ -46,7 +45,6 @@ class Layer {
             legend: this.legend,
             type: this.type,
             url: this.url,
-            interactable: this.interactable,
             checked: this._checkbox.checked,
             opacity: this.opacity,
         };
