@@ -1,7 +1,7 @@
 /*
-               |- layer-repo.ts
-layer-conf.js -|
-               |- opt.ts  <-> settings.ts
+                          | -> layer-repo.ts
+layer-conf.js -> opts.ts -|
+                          | <-> settings.ts
 */
 
 /* 

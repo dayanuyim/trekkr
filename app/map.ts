@@ -409,7 +409,7 @@ export class AppMap{
   }
 
   private createSpyLayer(layer_id) {
-    const spy_conf = Object.assign({}, LayerRepo.getConf(layer_id), { id: 'SPY' });
+    const spy_conf = Object.assign({}, Opt.getLayer(layer_id), { id: 'SPY' });
     const layer = LayerRepo.createByConf(spy_conf);
     this.setSpyEvents(layer);
     return layer;

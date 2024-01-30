@@ -80,11 +80,23 @@ class Opt{
         return undefined;
     }
 
+    public getLayer(id: string){
+        return this.layers.find(layer => layer.id == id);
+    }
+
+    public updateLayer(id, key, value){
+        const obj = this.getLayer(id);
+        return this._update(obj, key, value);
+    }
+
     public update(keypath: string, value){
         const keys = keypath.split('.');
         const key = keys.pop();
         const obj = keys.reduce((obj, key) => obj[key], this);
+        return this._update(obj, key, value);
+    }
 
+    private _update(obj, key, value){
         const is_changed = (obj[key] !== value);
         if(is_changed){
             obj[key] = value;
@@ -92,6 +104,7 @@ class Opt{
         }
         return is_changed;
     }
+
 
     private lazySave(){
         if(_cookies_save_timer) clearTimeout(_cookies_save_timer);
@@ -120,6 +133,7 @@ class Opt{
             const idx = defs.findIndex((layer) => layer.id === id);
             return idx >= 0? defs.splice(idx, 1)[0]: undefined;
         }
+
         const fill = layer => {
             const def = getDef(layer.id);
             return def? Object.assign(def, layer): undefined;   //discard the layer if its default not found

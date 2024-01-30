@@ -9,7 +9,7 @@ import BiMap from 'bidirectional-map';
 import { GPX as GPXLayer } from './ol/layer/GPX';
 import { GPX as GPXFormat } from './ol/format/GPX';
 import { GPX as GPXStyle } from './ol/style/GPX';
-import Confs from './data/layer-conf';
+import Opt from './opt';
 
 const def_label_style = {
   font: '15px Calibri,sans-serif',
@@ -189,7 +189,7 @@ export function get(id){
   if(layer) return layer;
 
   //try to get layer from conf
-  const conf = getConf(id);
+  const conf = Opt.getLayer(id);
   if(conf) return createByConf(conf);
 
   console.error(`get layer error: layer ${id} unconfiguration.`)
@@ -199,8 +199,3 @@ export function get(id){
 export function getId(layer){
   return _layers.getKey(layer);
 }
-
-export function getConf(id){
-  return Confs.find(conf => conf.id == id);
-}
-
