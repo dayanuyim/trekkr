@@ -105,7 +105,7 @@ const wpt_style = (feature, options?) => {
   options = options || {};
   if(!feature.get('pseudo')){  //normal wpt
     if(options.hidden) return null;
-    if((Opt.filter.force || options.filterable) && !filterWpt(feature)) return null;
+    if(options.filterable && !filterWpt(feature)) return null;
   }
 
   const name = feat_prop(feature, 'name');
@@ -248,14 +248,14 @@ export function GPX(options?){
   /*
   options = Object.assign({
     hidden: false,
-    filterable: true,
+    filterable: false,
     scale: 1,
   }, options);
   /*/
   options = options || {};
-  options.hidden     = options.hidden || false;
-  options.filterable = options.filterable || true;
-  options.scale      = options.scale || 1;
+  if(options.hidden     == undefined) options.hidden = false;
+  if(options.filterable == undefined) options.filterable = false;
+  options.scale = options.scale || 1;
   //*/
   return (feature) => gpx_style(feature, options);
 }

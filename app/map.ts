@@ -164,7 +164,6 @@ export class AppMap{
     }
   }
 
-
   private initEvents() {
     const map = this._map;
     map.on('pointermove', (e) =>{
@@ -373,10 +372,9 @@ export class AppMap{
   public setLayerOpacity(id, opacity)
   {
     const layer = LayerRepo.get(id);
-    if (layer)
-      layer.setOpacity(opacity);
-    else
-      console.error(`Set layer opacity error: layer ${id} not found`);
+    if (!layer)
+      return console.error(`Set layer opacity error: layer ${id} not found`);
+    layer.setOpacity(opacity);
   }
 
 ////////////////////////////////////////////////////////////////

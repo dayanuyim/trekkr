@@ -207,7 +207,7 @@ html, body {
 #setting-layers li:not(:hover) .ly-opt:not(.active) {
     display: none;
 }
-#setting-layers li .ly-opt:not(.active):hover {
+#setting-layers li .ly-opt:hover {
     color: cornflowerblue;
     cursor: pointer;
 }
@@ -354,7 +354,7 @@ html, body {
 }
 
 .filter-panel .footer{
-    background: #f8f8f8;
+    background: rgba(128,128,128,.1);
     padding: 2px 0;
     margin-top: 2px;
     border-radius: 0 0 6px 6px;

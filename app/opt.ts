@@ -25,7 +25,8 @@ class Opt{
     };
     filter = {
         visible: false,
-        force: false,
+        force: false,  //TODO: remove
+        filterable: true,  //default for the user layer
         wpt: {
             name:{ enabled: false, type: "contains", text: ""},
             desc:{ enabled: false, type: "contains", text: ""},
@@ -80,6 +81,8 @@ class Opt{
         return undefined;
     }
 
+    // ----------------------------------------------------------------
+
     public getLayer(id: string){
         return this.layers.find(layer => layer.id == id);
     }
@@ -88,6 +91,13 @@ class Opt{
         const obj = this.getLayer(id);
         return this._update(obj, key, value);
     }
+
+    //TODO:
+    public updateLayersOrder(ids: Array<string>){
+
+    }
+
+    // ----------------------------------------------------------------
 
     public update(keypath: string, value){
         const keys = keypath.split('.');
@@ -104,7 +114,6 @@ class Opt{
         }
         return is_changed;
     }
-
 
     private lazySave(){
         if(_cookies_save_timer) clearTimeout(_cookies_save_timer);

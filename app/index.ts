@@ -15,6 +15,7 @@ import * as templates from './templates';
 import { AppMap } from './map';
 import { Settings } from './settings';
 import { Sidebar, Topbar } from './toolbar';
+import Opt from './opt';
 
 (async () => {
   main(document.body);
@@ -47,9 +48,13 @@ function main(main_el: HTMLElement)
     .setListener('spychanged', (spy) => map.setSpyLayer(spy))
     .setListener('layerschanged', (layers_conf) => map.setLayers(layers_conf))
     .setListener('opacitychanged', (id, opacity) => map.setLayerOpacity(id, opacity))
+    .setListener('filterchanged', () => map.redrawText())
     .setListener('wptchanged', () => map.redrawText())
-    .setListener('trkchanged', () => map.redrawText())
-    .apply();
+    .setListener('trkchanged', () => map.redrawText());
+
+  //initialize
+  map.setLayers(Opt.layers);
+  map.setSpyLayer(Opt.spy.layer);  // !! init spy after configuring layers
 
   // set hotkey
   main_el.addEventListener('keydown', function (e) {

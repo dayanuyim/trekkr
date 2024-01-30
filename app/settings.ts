@@ -31,28 +31,41 @@ class Layer {
     get is_spy(){ return this._opt_spy.classList.contains('active');}
     set is_spy(value){ this._opt_spy.classList.toggle('active', value)};
 
-    _listeners = {};
+    //events
+    set oncheck(listener){
+        this._checkbox.onchange = e => {
+            if(Opt.updateLayer(this.id, 'checked', this.opacity))
+                listener();
+        };
+    }
 
+    set onopacity(listener){
+        this._opacity.onchange = e => {
+            if(Opt.updateLayer(this.id, 'opacity', this.opacity))
+                listener();
+        };
+    }
+
+    set onspy(listener){
+        this._opt_spy.onclick = e => {
+            if(Opt.update('spy.layer', this.id))
+                listener();
+        };
+    }
+
+    set onfilter(listener){
+            this._opt_filter.onclick = e => {
+                const active = this._opt_filter.classList.toggle('active');
+                if (Opt.updateLayer(this.id, 'filterable', active))
+                    listener();
+            };
+        }
+
+    //The class is used on-the-fly, only set base element only in the ctor
     constructor(el: HTMLElement){
         this._base = el;
-        this._checkbox.addEventListener('change', e => { console.log(`${this.id} checked`,this._listeners); this._listeners['check']?.(); });
-        this._opacity.onchange = e => { this._listeners['opacity']?.(); }
-        this._opt_spy.onclick = e => { if(!this.is_spy) this._listeners['spy']?.(); }  // trigger only when changed
-        this._opt_filter.onclick = e => {
-            const active = this._opt_filter.classList.toggle('active');
-            if (Opt.updateLayer(this.id, 'filterable', active))
-                this._listeners['filter']?.();
-        };
-
-        console.log('listeners', this._listeners);
     }
-
-    public setListener(event, listener){
-        this._listeners[event] = listener;
-        //console.log('set listener', event, listener, this._listeners);
-        return this;
-    }
-
+        
     obj() {
         return {
             id: this.id,
@@ -122,45 +135,36 @@ export class Settings{
                 hoverClass: 'ly-hover',
             });
             sortable(selector)[0].addEventListener('sortupdate', () => {
+                Opt.update('layers', this.layers.map(ly => ly.obj()));  //TODO: Some info drop, fit it
                 this.updateLayers();
             });
         });
 
         //layer events
         this.layers.forEach(layer => {
-            console.log('to set layer', layer)
-            layer.setListener('check', () => this.updateLayers())
-                 .setListener('opacity', () => this.updateLayerOpacity(layer.id, layer.opacity))
-                 .setListener('spy', () => this.updateSpy(layer.id))
-                 .setListener('filter', () => {
-                    console.log('filter change'); //TODO:...
-                 });
+            layer.oncheck   = () => this.updateLayers();
+            layer.onopacity = () => this.updateOpacity(layer.id, layer.opacity);
+            layer.onspy     = () => this.updateSpy(layer.id);
+            layer.onfilter  = () => this.updateFilter(layer.id);
         });
     }
 
-    private updateLayers(update_opt=true)
-    {
+    private updateLayers(){
         const layers = this.layers.map(ly => ly.obj());
-        if(update_opt){
-            Opt.update('layers', layers);
-        }
         this._listeners['layerschanged']?.(layers);
     }
 
-    private updateLayerOpacity(id, opacity, update_opt=true){
-        if(update_opt){
-            const layers = this.layers.map(ly => ly.obj());
-            Opt.update('layers', layers);
-        }
+    private updateOpacity(id, opacity){
         this._listeners['opacitychanged']?.(id, opacity);
     }
 
-    private updateSpy(id, update_opt=true){
+    private updateSpy(id){
         this.layers.forEach(layer => layer.is_spy = (layer.id === id));  //ui
-        if(update_opt){
-            Opt.update('spy.layer', id);   // option
-        }
-        this._listeners['spychanged']?.(Opt.spy);  // map
+        this._listeners['spychanged']?.(id);  // map
+    }
+
+    private updateFilter(id){
+        this._listeners['filterchanged']?.(id);
     }
 
     // ----------------------------------------------------------------
@@ -246,12 +250,6 @@ export class Settings{
     }
 
     // ----------------------------------------------------------------
-
-    public apply(){
-        this.updateLayers(false);
-        this.updateSpy(Opt.spy.layer, false);  // !! init spy after configurated layers
-        return this;
-    }
 
     public setListener(event, listener){
         this._listeners[event] = listener;
