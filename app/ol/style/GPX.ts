@@ -105,7 +105,7 @@ const wpt_style = (feature, options?) => {
   options = options || {};
   if(!feature.get('pseudo')){  //normal wpt
     if(options.hidden) return null;
-    if(options.filterable && !filterWpt(feature)) return null;
+    if((Opt.filter.force || options.filterable) && !filterWpt(feature)) return null;
   }
 
   const name = feat_prop(feature, 'name');

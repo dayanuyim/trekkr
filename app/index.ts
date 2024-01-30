@@ -14,7 +14,7 @@ import './coord';
 import * as templates from './templates';
 import { AppMap } from './map';
 import { Settings } from './settings';
-import { Sidebar, Topbar } from './sidebar';
+import { Sidebar, Topbar } from './toolbar';
 
 (async () => {
   main(document.body);

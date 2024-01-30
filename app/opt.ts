@@ -24,7 +24,8 @@ class Opt{
         layer: "NLSC_PHOTO_MIX",
     };
     filter = {
-        active: false,
+        visible: false,
+        force: false,
         wpt: {
             name:{ enabled: false, type: "contains", text: ""},
             desc:{ enabled: false, type: "contains", text: ""},
@@ -32,7 +33,7 @@ class Opt{
         }
     }
     goto = {
-        active: false,
+        visible: false,
         coordsys: 'wgs84',
     };
     waypoint = {

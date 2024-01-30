@@ -308,6 +308,13 @@ html, body {
     border-width: 0;
 }
 
+.filter-panel input:checked + label{
+    color: #404040;
+}
+.filter-panel input:not(:checked) + label{
+    color: #808080;
+}
+
 .filter-panel .filter-row {
     white-space: nowrap;
 }
@@ -315,7 +322,6 @@ html, body {
 .filter-panel .filter-row label{
     display: inline-block;
     width: 3em;
-    color: #404040;
 }
 .filter-panel .filter-row input{
     border-width: 0;
@@ -340,6 +346,10 @@ html, body {
     border: solid 1px lightskyblue;
 }
 
+.filter-panel .footer{
+    padding: 2px 8px 0 0;
+    float: right;
+}
 
 /*------------ Topbar / Goto -------------------*/
 

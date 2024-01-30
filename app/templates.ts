@@ -345,6 +345,10 @@ export const toolbarTop = Handlebars.compile(`
             <div class="tabcontent" id="filter-trk">
                 <p>The fitlers for tracks</p>
             </div>
+            <div class="footer">
+                <input type="checkbox" id="filter-force"/>
+                <label for="filter-force" title="Filter all including system layers">all layers</label>
+            </div>
         </div>
     </div>
     <div class="ol-control">

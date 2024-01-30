@@ -142,6 +142,7 @@ export class Topbar{
 
     _base: HTMLElement;
     _filter_btn: HTMLButtonElement;
+    _filter_force: HTMLInputElement
     /*
     _filter_wpt_name_en: HTMLInputElement;
     _filter_wpt_name: HTMLInputElement;
@@ -173,6 +174,7 @@ export class Topbar{
     private initElements(el: HTMLElement){
         this._base               = el;
         this._filter_btn         = el.querySelector<HTMLButtonElement>('button.ctrl-btn-filter');
+        this._filter_force       = el.querySelector<HTMLInputElement>('input#filter-force');
         this._goto_btn           = el.querySelector<HTMLButtonElement>('button.ctrl-btn-goto');
         this._goto_coordsys      = el.querySelector<HTMLSelectElement>('select.goto-coordsys');
         this._goto_coord_txt     = el.querySelector<HTMLInputElement>('input.goto-coord-txt');
@@ -182,10 +184,16 @@ export class Topbar{
     private init(){
         // filter -----------------------
         tablink('.filter-panel .tablink', '.filter-panel .tabcontent');  //init tab
-        this._filter_btn.classList.toggle('active', Opt.filter.active);  //init display
+        this._filter_btn.classList.toggle('active', Opt.filter.visible); //init display
         this._filter_btn.onclick = e =>{
             const active = this._filter_btn.classList.toggle('active');
-            Opt.update('filter.active', active);
+            Opt.update('filter.visible', active);
+        };
+
+        this._filter_force.checked = Opt.filter.force;
+        this._filter_force.onchange = e => {
+            if(Opt.update('filter.force', this._filter_force.checked))
+                this._listeners['filterchanged']?.();
         };
 
         this.initFilterRow('name');
@@ -193,10 +201,10 @@ export class Topbar{
         this.initFilterRow('sym');
 
         // goto -----------------------
-        this._goto_btn.classList.toggle('active', Opt.goto.active);  //init
+        this._goto_btn.classList.toggle('active', Opt.goto.visible);  //init
         this._goto_btn.onclick = e =>{
             const active = this._goto_btn.classList.toggle('active');
-            Opt.update('goto.active', active);
+            Opt.update('goto.visible', active);
         };
 
         const set_coord_panel = (coordsys) => {
