@@ -3,6 +3,7 @@ import { Point } from 'ol/geom';
 
 import ArrowHead from './ArrowHead';
 import { def_trk_color } from '../gpx-common';
+import { ExtensibleFunction } from '../../lib/utils';
 import { def_symbol, getSymbol } from '../../sym'
 import { colorCode, matchRule } from '../../common';
 
@@ -243,19 +244,42 @@ const gpx_style = (feature, options?) => {
   }
 };
 
-export function GPX(options?){
+// The Closure Function Version =================================
+//  The function accepts a options object, and then generate a style function
+//  (A style function is a function feeded a feature object and returns a style object)
+function GPX_closure_version(options?){
   // default options
-  /*
   options = Object.assign({
     hidden: false,
     filterable: false,
     scale: 1,
   }, options);
-  /*/
-  options = options || {};
-  if(options.hidden     == undefined) options.hidden = false;
-  if(options.filterable == undefined) options.filterable = false;
-  options.scale = options.scale || 1;
-  //*/
   return (feature) => gpx_style(feature, options);
+}
+
+// The Cllable Object Version
+// The object a accepts a options object, and then it itself is callable as a style function
+//  (A style function is a function feeded a feature object and returns a style object)
+export class GPX extends ExtensibleFunction {
+
+  get filterable(){ return this._options.filterable; }
+  set filterable(v){ this._options.filterable = v; }
+
+  private _options;
+
+  constructor(options?) {
+    // make a copy of the options
+    options = Object.assign({
+      hidden: false,
+      filterable: false,
+      scale: 1,
+    }, options);
+
+    super(function(feature){
+      return gpx_style(feature, options);
+    });
+
+    // keeping the options
+    this._options = options;
+  }
 }

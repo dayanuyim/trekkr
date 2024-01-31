@@ -144,7 +144,7 @@ function gpxLayer(url, layer_ops?, format_ops?, style_ops?){
       url,
       format: new GPXFormat(format_ops),
     }),
-    style: GPXStyle(style_ops),
+    style: new GPXStyle(style_ops),
   }, layer_ops));
 }
 
@@ -157,15 +157,14 @@ function kmlLayer(url, options?){
   }, options));
 }
 
-function mkLayer(options)
+function mkLayer({type, url, legend, layers, interactable, readonly, filterable, hidden, scale})
 {
-  const {type, url, legend, layers, interactable, readonly, filterable, hidden, scale} = options;
   switch(type){
     case 'osm': return osmLayer();
     case 'xyz': return xyzLayer(url, legend? {transition: 0}: undefined);
     case 'wms': return wmsLayer(url, layers);
     case 'json': return jsonLayer(url);
-    case 'gpx': return gpxLayer(url, {interactable}, {readonly}, options/*{filterable, hidden, scale}*/);
+    case 'gpx': return gpxLayer(url, {interactable}, {readonly}, {filterable, hidden, scale});
     case 'kml': return kmlLayer(url);
     case 'grid': return graticule(url);
     default: throw `unrecognize layer conf type: ${type}`;

@@ -48,7 +48,7 @@ function main(main_el: HTMLElement)
     .setListener('spychanged', (spy) => map.setSpyLayer(spy))
     .setListener('layerschanged', (layers_conf) => map.setLayers(layers_conf))
     .setListener('opacitychanged', (id, opacity) => map.setLayerOpacity(id, opacity))
-    .setListener('filterchanged', () => map.redrawText())
+    .setListener('filterchanged', (id, filterable) => map.setLayerFilterable(id, filterable))
     .setListener('wptchanged', () => map.redrawText())
     .setListener('trkchanged', () => map.redrawText());
 

@@ -373,8 +373,17 @@ export class AppMap{
   {
     const layer = LayerRepo.get(id);
     if (!layer)
-      return console.error(`Set layer opacity error: layer ${id} not found`);
+      return console.error(`setLayerOpacity() error: layer ${id} not found`);
     layer.setOpacity(opacity);
+  }
+
+  public setLayerFilterable(id, filterable)
+  {
+    const layer = LayerRepo.get(id);
+    if (!layer)
+      return console.error(`setLayerFilterable() error: layer ${id} not found`);
+    layer.getStyle().filterable = filterable;
+    layer.changed();
   }
 
 ////////////////////////////////////////////////////////////////

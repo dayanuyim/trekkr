@@ -153,7 +153,7 @@ export class GPX extends VectorLayer<VectorSource>{
 
   public constructor(options?){
     options = options || {};
-    options.style = options.style || GPXStyle();
+    options.style = options.style || new GPXStyle();
     options.source = options.source || new VectorSource();
 
     //subclass options

@@ -1,3 +1,10 @@
+export class ExtensibleFunction extends Function {
+  constructor(f) {
+    super();
+    return Object.setPrototypeOf(f, new.target.prototype);
+  }
+}
+
 export const stripext = (filename) => {
     if (!filename) return filename;
     let p = filename.lastIndexOf('.');
