@@ -832,6 +832,10 @@ select::-ms-expand {
     margin-top: 3px;
 }
 
+.sym-license {
+    white-space: nowrap;
+}
+
 /********************** PT-Image Active *****************/
 .pt-image.active {
     height: 300px;
