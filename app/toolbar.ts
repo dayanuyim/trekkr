@@ -24,10 +24,10 @@ export class Sidebar{
 
     private init(){
         //init spy
-        this._spy_btn.classList.toggle('active', Opt.spy.enabled);
+        this._spy_btn.classList.toggle('enabled', Opt.spy.enabled);
         this._spy_btn.title = Opt.tooltip.btn_spy;
         this._spy_btn.addEventListener('click', e =>{
-            const enabled = this._spy_btn.classList.toggle('active');
+            const enabled = this._spy_btn.classList.toggle('enabled');
             Opt.update('spy.enabled', enabled);
             this._listeners['spyenabled']?.(Opt.spy);
         });
@@ -143,17 +143,15 @@ export class Topbar{
     _base: HTMLElement;
     _filter_btn: HTMLButtonElement;
     _filter_force: HTMLInputElement
-    /*
-    _filter_wpt_name_en: HTMLInputElement;
-    _filter_wpt_name: HTMLInputElement;
-    _filter_wpt_name_regex: HTMLButtonElement;
-    _filter_wpt_desc_en: HTMLInputElement;
-    _filter_wpt_desc: HTMLInputElement;
-    _filter_wpt_desc_regex: HTMLButtonElement;
-    _filter_wpt_sym_en: HTMLInputElement;
-    _filter_wpt_sym: HTMLInputElement;
-    _filter_wpt_sym_regex: HTMLButtonElement;
-    */
+    //_filter_wpt_name_en: HTMLInputElement;
+    //_filter_wpt_name: HTMLInputElement;
+    //_filter_wpt_name_regex: HTMLButtonElement;
+    //_filter_wpt_desc_en: HTMLInputElement;
+    //_filter_wpt_desc: HTMLInputElement;
+    //_filter_wpt_desc_regex: HTMLButtonElement;
+    //_filter_wpt_sym_en: HTMLInputElement;
+    //_filter_wpt_sym: HTMLInputElement;
+    //_filter_wpt_sym_regex: HTMLButtonElement;
     _goto_btn: HTMLButtonElement;
     _goto_coordsys: HTMLSelectElement;
     _goto_coord_txt: HTMLInputElement;
@@ -162,6 +160,7 @@ export class Topbar{
     _listeners = {}
 
     get filter_force(){ return this._filter_force.checked; }
+    get is_filter_enabled(){ return !!Object.values(Opt.filter.wpt).find((rule: any)=>rule.enabled); } // viewed as enabled if any rule is enabled.
     get goto_coordsys(){ return this._goto_coordsys.value; }
     set goto_coordsys(v){ this._goto_coordsys.value = v; }
     get goto_coord_txt(){ return this._goto_coord_txt.value.trim(); }
@@ -175,7 +174,10 @@ export class Topbar{
     private initElements(el: HTMLElement){
         this._base               = el;
         this._filter_btn         = el.querySelector<HTMLButtonElement>('button.ctrl-btn-filter');
-        this._filter_force       = el.querySelector<HTMLInputElement>('input#filter-force');
+        this._filter_force       = el.querySelector<HTMLInputElement>('#filter-force');
+        //this._filter_wpt_name_en = el.querySelector<HTMLInputElement>('#filter-wpt-name-en');
+        //this._filter_wpt_desc_en = el.querySelector<HTMLInputElement>('#filter-wpt-desc-en');
+        //this._filter_wpt_sym_en  = el.querySelector<HTMLInputElement>('#filter-wpt-sym-en');
         this._goto_btn           = el.querySelector<HTMLButtonElement>('button.ctrl-btn-goto');
         this._goto_coordsys      = el.querySelector<HTMLSelectElement>('select.goto-coordsys');
         this._goto_coord_txt     = el.querySelector<HTMLInputElement>('input.goto-coord-txt');
@@ -185,11 +187,10 @@ export class Topbar{
     private init(){
         // filter -----------------------
         tablink('.filter-panel .tablink', '.filter-panel .tabcontent');  //init tab
-        this._filter_btn.classList.toggle('active', Opt.filter.visible); //init display
-        this._filter_btn.onclick = e =>{
-            const active = this._filter_btn.classList.toggle('active');
-            Opt.update('filter.visible', active);
-        };
+
+        this.initFilterRow('name');
+        this.initFilterRow('desc');
+        this.initFilterRow('sym');
 
         this._filter_force.checked = Opt.filter.force;
         this._filter_force.onchange = e => {
@@ -197,9 +198,12 @@ export class Topbar{
                 this._listeners['filterchanged']?.(this.filter_force);
         };
 
-        this.initFilterRow('name');
-        this.initFilterRow('desc');
-        this.initFilterRow('sym');
+        this._filter_btn.classList.toggle('enabled', this.is_filter_enabled);
+        this._filter_btn.classList.toggle('active', Opt.filter.visible);      // show panel or not
+        this._filter_btn.onclick = e =>{
+            const active = this._filter_btn.classList.toggle('active');
+            Opt.update('filter.visible', active);
+        };
 
         // goto -----------------------
         this._goto_btn.classList.toggle('active', Opt.goto.visible);  //init
@@ -255,6 +259,8 @@ export class Topbar{
         en.onchange = e => {
             if(Opt.update(`filter.wpt.${kind}.enabled`, en.checked))
                 this._listeners['filterrulechanged']?.();
+            // set button state after Opt updated
+            this._filter_btn.classList.toggle('enabled', this.is_filter_enabled);
         };
 
         keyEnterToBlur(text);

@@ -273,9 +273,13 @@ html, body {
     display: inline-block;
 }
 
+.toolbar .ctrl-btn.enabled {
+    color: steelblue
+}
+
 .toolbar .ctrl-btn:not(.active){
     /*background: rgba(64, 64, 64, .5);*/
-    color: lightgray;
+    /*color: lightgray;*/
 }
 
 /*============ Sidebar ==================*/
