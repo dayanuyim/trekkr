@@ -382,7 +382,12 @@ export class PtPopupOverlay extends Overlay{
                 sym: "City (Small)",
             });
             */
-            const wpt = olWptFeature(this._data.pt.coord, {sym: "City (Small)"});
+            const {name, desc, sym, coord} = this._data.pt
+            const wpt = olWptFeature(coord, {
+                name: name || "WPT",
+                desc,
+                sym: sym || "City (Small)",
+            });
             this.popContent(wpt);
             this._listeners['mkwpt']?.(wpt);
         };
@@ -547,7 +552,7 @@ export class PtPopupOverlay extends Overlay{
         }
 
         //wpt --------------------------------
-        displayElem(this._pt_mk_wpt, !readonly && !is_wpt);
+        displayElem(this._pt_mk_wpt, readonly || !is_wpt);
         displayElem(this._pt_rm_wpt, !readonly && is_wpt);
 
         //pt --------------------------------
