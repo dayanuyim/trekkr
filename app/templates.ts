@@ -203,7 +203,7 @@ export const mkLayer = Handlebars.compile(`
         <input class="ly-checked" type="checkbox" {{#if checked}}checked{{/if}}><!--
      --><span class="ly-body"><!--
          --><span class="ly-desc">{{desc}}</span>
-            <span class="ly-opt ly-opt-spy {{#if legend}}hidden{{/if}}"><i class="fas fa-crosshairs"></i></span>
+            <span class="ly-opt ly-opt-spy {{#if legend}}hidden{{/if}}"><i class="fa-solid fa-earth-asia"></i></span>
             <span class="ly-opt ly-opt-filter {{#unless (isdefined filterable)}}hidden{{/unless}} {{#if filterable}}active{{/if}}"><i class="fas fa-filter"></i></span>
         </span>
         <input class="ly-opacity" type="number" max="100" min="0" step="5" value="{{mul opacity 100}}">
@@ -315,7 +315,7 @@ export const settings = Handlebars.compile(`
 
 export const toolbarSide = Handlebars.compile(`
     <div class="ol-control">
-        <button class="ctrl-btn spy-btn" title="Spy Mode"><i class="fas fa-crosshairs"></i></button>
+        <button class="ctrl-btn spy-btn" title="Spy Mode"><i class="fa-solid fa-earth-asia"></i></button>
     </div>
 `);
 Handlebars.registerHelper("toolbarSide", ()=>{
@@ -359,11 +359,11 @@ export const toolbarTop = Handlebars.compile(`
         </div>
     </div>
     <div class="ol-control">
-        <button class="ctrl-btn ctrl-btn-goto" title="Goto..."><i class="fas fa-person-walking"></i></button>
+        <button class="ctrl-btn ctrl-btn-goto" title="Goto..."><i class="fa-solid fa-crosshairs"></i></button>
         <span class="goto-panel">
             {{coordsysMenu "goto-coordsys"}}<!--
          --><input type="text" class="goto-coord-txt" placeholder="X, Y"/><!--
-         --><button class="goto-coord-go"><i class="fas fa-person-walking-arrow-right"></i></button>
+         --><button class="goto-coord-go"><i class="fa-solid fa-arrow-right"></i></button>
         </span>
     </div>
 `);

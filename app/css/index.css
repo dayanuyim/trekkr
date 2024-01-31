@@ -417,11 +417,11 @@ html, body {
     margin-left: 0px;
     border-radius: 16px;
     position: absolute;   /* use 'absolute', which help ol-control to fit its width */
-    right: -8px;
-    top: 0px;
+    right: -6px;
+    top: -1px;
     border: solid 1px lightgray;
-    padding: 2px;
-    font-size: 16px;
+    padding: 0px;
+    font-size: 17px;
 }
 
 .toolbar-top .goto-panel .goto-coord-go svg{
