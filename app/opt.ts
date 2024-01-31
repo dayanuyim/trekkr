@@ -21,7 +21,7 @@ class Opt{
     spy = {
         enabled: false,
         radius: 75,
-        layer: "NLSC_PHOTO_MIX",
+        id: "NLSC_PHOTO_MIX",
     };
     filter = {
         visible: false,

@@ -412,7 +412,7 @@ export class AppMap{
       layers.removeAt(idx);
 
     if(spy.enabled)
-      layers.insertAt(idx, this.createSpyLayer(spy.layer));
+      layers.insertAt(idx, this.createSpyLayer(spy.id));
   }
 
   private createSpyLayer(layer_id) {

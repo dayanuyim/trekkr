@@ -35,7 +35,7 @@ class Layer {
     //events
     set onspy(listener){
         this._opt_spy.onclick = e => {
-            if(Opt.update('spy.layer', this.id)) // update opt
+            if(Opt.update('spy.id', this.id)) // update opt
                 if(listener) listener(this.id);
         };
     }
@@ -148,7 +148,7 @@ export class Settings{
 
         //layer events
         this.layers.forEach(layer => {
-            layer.is_spy = (layer.id == Opt.spy.layer);  //init
+            layer.is_spy = (layer.id == Opt.spy.id);  //init
             layer.onspy = (id) => {
                 this.layers.forEach(layer => layer.is_spy = (layer.id == id));   // here we re-create 'layers', this is not necessary. but beware that layers vary in their order.
                 this._listeners['spychanged']?.(Opt.spy);

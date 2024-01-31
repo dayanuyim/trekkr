@@ -54,7 +54,7 @@ function main(main_el: HTMLElement)
 
   //initialize
   map.setLayers(Opt.layers);
-  map.setSpyLayer(Opt.spy.layer);  // !! init spy after configuring layers
+  map.setSpyLayer(Opt.spy);  // !! init spy after configuring layers
 
   // set hotkey
   main_el.addEventListener('keydown', function (e) {
