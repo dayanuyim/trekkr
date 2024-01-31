@@ -377,9 +377,10 @@ export class AppMap{
     layer.setOpacity(opacity);
   }
 
+  // if no layer id provided, means the user's gpx layer;
   public setLayerFilterable(id, filterable)
   {
-    const layer = LayerRepo.get(id);
+    const layer = id? LayerRepo.get(id): this._gpx_layer;
     if (!layer)
       return console.error(`setLayerFilterable() error: layer ${id} not found`);
     layer.getStyle().filterable = filterable;

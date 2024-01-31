@@ -40,7 +40,8 @@ function main(main_el: HTMLElement)
     .setListener('spyenabled', (spy) => map.setSpyLayer(spy));
 
   const topbar = new Topbar(main_el.querySelector('.toolbar-top'))
-    .setListener('filterchanged', () => map.redrawText())
+    .setListener('filterchanged', (filterable) => map.setLayerFilterable(null, filterable))
+    .setListener('filterrulechanged', () => map.redrawText())
     .setListener('getcenter', () => map.getView().getCenter())
     .setListener('goto', (coord) => map.setCrosshairWpt(coord));
 

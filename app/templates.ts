@@ -353,7 +353,7 @@ export const toolbarTop = Handlebars.compile(`
             <div class="footer">
                 <div class="filter-force">
                     <input type="checkbox" id="filter-force"/>
-                    <label for="filter-force" title="Filter all including system layers">all layers</label>
+                    <label for="filter-force" title="Filter all including the user layer">all layers</label>
                 </div>
             </div>
         </div>

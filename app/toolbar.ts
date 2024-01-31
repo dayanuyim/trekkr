@@ -161,6 +161,7 @@ export class Topbar{
 
     _listeners = {}
 
+    get filter_force(){ return this._filter_force.checked; }
     get goto_coordsys(){ return this._goto_coordsys.value; }
     set goto_coordsys(v){ this._goto_coordsys.value = v; }
     get goto_coord_txt(){ return this._goto_coord_txt.value.trim(); }
@@ -192,8 +193,8 @@ export class Topbar{
 
         this._filter_force.checked = Opt.filter.force;
         this._filter_force.onchange = e => {
-            if(Opt.update('filter.force', this._filter_force.checked))
-                this._listeners['filterchanged']?.();
+            if(Opt.update('filter.force', this.filter_force))
+                this._listeners['filterchanged']?.(this.filter_force);
         };
 
         this.initFilterRow('name');
@@ -253,21 +254,21 @@ export class Topbar{
 
         en.onchange = e => {
             if(Opt.update(`filter.wpt.${kind}.enabled`, en.checked))
-                this._listeners['filterchanged']?.();
+                this._listeners['filterrulechanged']?.();
         };
 
         keyEnterToBlur(text);
         text.onchange = e => {
             if(Opt.update(`filter.wpt.${kind}.text`, text.value.toLowerCase()) &&  // saving lower, for caseignore
                Opt.filter.wpt[kind].enabled)
-                this._listeners['filterchanged']?.();
+                this._listeners['filterrulechanged']?.();
         };
 
         regex.onclick = e => {
             const active = regex.classList.toggle('active');
             if(Opt.update(`filter.wpt.${kind}.type`, active?"regex":"contains") &&
                Opt.filter.wpt[kind].enabled)
-                this._listeners['filterchanged']?.();
+                this._listeners['filterrulechanged']?.();
         };
     }
 

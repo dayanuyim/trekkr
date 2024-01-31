@@ -25,8 +25,7 @@ class Opt{
     };
     filter = {
         visible: false,
-        force: false,  //TODO: remove
-        filterable: true,  //default for the user layer
+        force: false,  // if true, also filter the user's gpx layer
         wpt: {
             name:{ enabled: false, type: "contains", text: ""},
             desc:{ enabled: false, type: "contains", text: ""},
@@ -128,8 +127,12 @@ class Opt{
 
     public strip(){
         const obj = Object.assign({}, this, {
-            layers: this.layers.map(({id, checked, opacity}) => ({id, checked, opacity}))
-        })
+            layers: this.layers.map(({id, checked, opacity, filterable}) => {
+                const layer = {id, checked, opacity};
+                if(filterable != undefined) layer['filterable'] = filterable;  // not set undefined properties
+                return layer;
+            })
+        });
         delete obj.mousepos;
         delete obj.googleMapKey;
         delete obj.tooltip;
