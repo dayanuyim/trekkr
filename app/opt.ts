@@ -1,6 +1,7 @@
 'use strict';
 import layer_conf from './data/layer-conf';
 import Cookies from 'js-cookie';
+import { arrayCompare } from './lib/utils';
 
 let _cookies_save_timer = null;
 
@@ -91,9 +92,15 @@ class Opt{
         return this._update(obj, key, value);
     }
 
-    //TODO:
     public updateLayersOrder(ids: Array<string>){
+        const pos_idx = ids.reduce((dict, id, i) => (dict[id] = i, dict), {}); // id -> index
 
+        const is_changed = !!this.layers.find(({id}, i) => pos_idx[id] != i);
+        if(is_changed){
+            this.layers.sort((a, b) => pos_idx[a.id] - pos_idx[b.id]);
+            this.lazySave();
+        }
+        return is_changed;
     }
 
     // ----------------------------------------------------------------
@@ -122,7 +129,7 @@ class Opt{
             if(value.length >= 4096)
                 console.warn(`The cookie size is larger 4096: ${value.length}`)
             Cookies.set("maps", value, {sameSite: 'strict'});
-        }, 500);
+        }, 1000);
     }
 
     public strip(){
