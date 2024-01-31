@@ -1,7 +1,7 @@
 'use strict';
 import layer_conf from './data/layer-conf';
 import Cookies from 'js-cookie';
-import { arrayCompare } from './lib/utils';
+import { copyIfKeyDefined } from './lib/utils';
 
 let _cookies_save_timer = null;
 
@@ -61,7 +61,7 @@ class Opt{
     private constructor(){
         const saved = this.load();
         if(saved && saved._version && saved._version === this._version)
-            Object.assign(this, this.recover(saved));
+            Object.assign(this, this.restore(saved));
 
         //reset properties
         this.spy.enabled = false;
@@ -134,11 +134,10 @@ class Opt{
 
     public strip(){
         const obj = Object.assign({}, this, {
-            layers: this.layers.map(({id, checked, opacity, filterable}) => {
-                const layer = {id, checked, opacity};
-                if(filterable != undefined) layer['filterable'] = filterable;  // not set undefined properties
-                return layer;
-            })
+            layers: this.layers.map(layer => copyIfKeyDefined(layer, [
+                'id', 'checked', 'opacity',
+                'filterable', 'invisible',
+            ])),
         });
         delete obj.mousepos;
         delete obj.googleMapKey;
@@ -146,7 +145,7 @@ class Opt{
         return obj;
     }
 
-    public recover(orig){
+    private restore(orig){
         const defs = this.layers.slice();
         const getDef = id => {
             const idx = defs.findIndex((layer) => layer.id === id);
@@ -158,7 +157,7 @@ class Opt{
             return def? Object.assign(def, layer): undefined;   //discard the layer if its default not found
         }
 
-        orig.layers = orig.layers.map(fill)         //recover by def
+        orig.layers = orig.layers.map(fill)         //restore by def
                                  .filter(ly => ly)  //discard unfilled 
                                  .concat(defs);     //append the rest
         return orig;

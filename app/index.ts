@@ -50,6 +50,7 @@ function main(main_el: HTMLElement)
     .setListener('layerschanged', (layers_conf) => map.setLayers(layers_conf))
     .setListener('opacitychanged', (id, opacity) => map.setLayerOpacity(id, opacity))
     .setListener('filterchanged', (id, filterable) => map.setLayerFilterable(id, filterable))
+    .setListener('invisiblechanged', (id, invisible) => map.setLayerInvisible(id, invisible))
     .setListener('wptchanged', () => map.redrawText())
     .setListener('trkchanged', () => map.redrawText());
 

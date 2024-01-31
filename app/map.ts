@@ -387,6 +387,15 @@ export class AppMap{
     layer.changed();
   }
 
+  public setLayerInvisible(id, invisible)
+  {
+    console.log({invisible});
+    const layer = LayerRepo.get(id);
+    if (!layer)
+      return console.error(`setLayerInvisible() error: layer ${id} not found`);
+    layer.getStyle().invisible = invisible;
+    layer.changed();
+  }
 ////////////////////////////////////////////////////////////////
 
   // to eanble:             add the layer

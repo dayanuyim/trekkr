@@ -9,6 +9,10 @@ Handlebars.registerHelper('isdefined', function (value) {
   return value !== undefined;
 });
 
+Handlebars.registerHelper('undefined', function (value) {
+  return value === undefined;
+});
+
 Handlebars.registerHelper("mul", (val, mul, options) => {
     return Math.floor(val * mul);
 });
@@ -204,7 +208,8 @@ export const mkLayer = Handlebars.compile(`
      --><span class="ly-body"><!--
          --><span class="ly-desc">{{desc}}</span>
             <span class="ly-opt ly-opt-spy {{#if legend}}hidden{{/if}}"><i class="fa-solid fa-earth-asia"></i></span>
-            <span class="ly-opt ly-opt-filter {{#unless (isdefined filterable)}}hidden{{/unless}} {{#if filterable}}active{{/if}}"><i class="fas fa-filter"></i></span>
+            <span class="ly-opt ly-opt-filter {{#if (undefined filterable)}}hidden{{/if}} {{#if filterable}}active{{/if}}"><i class="fa-solid fa-filter"></i></span>
+            <span class="ly-opt ly-opt-invisible {{#if (undefined invisible)}}hidden{{/if}} {{#if invisible}}active{{/if}}"><i class="fa-solid fa-eye-slash"></i></span>
         </span>
         <input class="ly-opacity" type="number" max="100" min="0" step="5" value="{{mul opacity 100}}">
         <i class="fas fa-percent"></i>

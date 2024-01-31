@@ -279,6 +279,7 @@ export default
         interactable: true,
         readonly: true,
         filterable: false,
+        invisible: false,
         scale: 0.375,
     },
     //--------------------------------------------------------------------------------------

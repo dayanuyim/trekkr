@@ -205,7 +205,7 @@ html, body {
     color: lightgrey;
 }
 #setting-layers li:not(:hover) .ly-opt:not(.active) {
-    display: none;
+    visibility: hidden;
 }
 #setting-layers li .ly-opt:hover {
     color: cornflowerblue;

@@ -15,14 +15,15 @@ class Layer {
     static listenify = (fn) => { return (e) => fn(Layer.of(e.target.closest('li')), e.currentTarget, e); }
 
     _base: HTMLElement;
-    get _checkbox()  { return this._base.querySelector<HTMLInputElement>('.ly-checked');}
-    get _desc()      { return this._base.querySelector<HTMLSpanElement>('.ly-desc');}
-    get _opacity()   { return this._base.querySelector<HTMLInputElement>('.ly-opacity');}
-    get _opt_spy()   { return this._base.querySelector<HTMLElement>('.ly-opt-spy');}
-    get _opt_filter(){ return this._base.querySelector<HTMLElement>('.ly-opt-filter');}
-    get _body()      { return this._base.querySelector<HTMLElement>('.ly-body');}
+    get _checkbox()     { return this._base.querySelector<HTMLInputElement>('.ly-checked');}
+    get _desc()         { return this._base.querySelector<HTMLSpanElement>('.ly-desc');}
+    get _opacity()      { return this._base.querySelector<HTMLInputElement>('.ly-opacity');}
+    get _opt_spy()      { return this._base.querySelector<HTMLElement>('.ly-opt-spy');}
+    get _opt_filter()   { return this._base.querySelector<HTMLElement>('.ly-opt-filter');}
+    get _opt_invisible(){ return this._base.querySelector<HTMLElement>('.ly-opt-invisible');}
+    get _body()         { return this._base.querySelector<HTMLElement>('.ly-body');}
 
-    get legend()     { return this._base.parentElement.classList.contains('layer-legend');}
+    get legend(){ return this._base.parentElement.classList.contains('layer-legend');}
     get id(){ return this._base.dataset.layerId;}
     get type(){ return this._base.dataset.layerType;}
     get url(){ return this._base.dataset.layerUrl;}
@@ -56,13 +57,22 @@ class Layer {
         };
     }
 
+    // TODO: fix duplicated code blocks
     set onfilter(listener){
-            this._opt_filter.onclick = e => {
-                const active = this._opt_filter.classList.toggle('active');
-                if (Opt.updateLayer(this.id, 'filterable', active)) // update opt
-                    if(listener) listener(this.id, active);
-            };
-        }
+        this._opt_filter.onclick = e => {
+            const active = this._opt_filter.classList.toggle('active');
+            if (Opt.updateLayer(this.id, 'filterable', active)) // update opt
+                if(listener) listener(this.id, active);
+        };
+    }
+
+    set oninvisible(listener){
+        this._opt_invisible.onclick = e => {
+            const active = this._opt_invisible.classList.toggle('active');
+            if (Opt.updateLayer(this.id, 'invisible', active)) // update opt
+                if(listener) listener(this.id, active);
+        };
+    }
 
     //The class is used on-the-fly, only set base element only in the ctor
     constructor(el: HTMLElement){
@@ -156,6 +166,7 @@ export class Settings{
             layer.oncheck = (id) => this._listeners['layerschanged']?.(Opt.layers);
             layer.onopacity = (id, opacity) => this._listeners['opacitychanged']?.(id, opacity);
             layer.onfilter = (id, filterable) => this._listeners['filterchanged']?.(id, filterable);
+            layer.oninvisible = (id, invisible) => this._listeners['invisiblechanged']?.(id, invisible);
         });
     }
 

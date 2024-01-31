@@ -105,7 +105,7 @@ const feat_prop = (feature, key, def_value?) => {
 const wpt_style = (feature, options?) => {
   options = options || {};
   if(!feature.get('pseudo')){  //normal wpt
-    if(options.hidden) return null;
+    if(options.invisible) return null;
     if(options.filterable && !filterWpt(feature)) return null;
   }
 
@@ -250,7 +250,7 @@ const gpx_style = (feature, options?) => {
 function GPX_closure_version(options?){
   // default options
   options = Object.assign({
-    hidden: false,
+    invisible: false,
     filterable: false,
     scale: 1,
   }, options);
@@ -264,13 +264,15 @@ export class GPX extends ExtensibleFunction {
 
   get filterable(){ return this._options.filterable; }
   set filterable(v){ this._options.filterable = v; }
+  get invisible(){ return this._options.invisible; }
+  set invisible(v){ this._options.invisible = v; }
 
   private _options;
 
   constructor(options?) {
     // make a copy of the options
     options = Object.assign({
-      hidden: false,
+      invisible: false,
       filterable: false,
       scale: 1,
     }, options);

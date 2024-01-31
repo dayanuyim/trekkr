@@ -5,6 +5,15 @@ export class ExtensibleFunction extends Function {
   }
 }
 
+export function copyIfKeyDefined(obj, keys){
+    const ret = {};
+    keys.forEach((key) => {
+        if(obj[key] != undefined)
+            ret[key] = obj[key];
+    });
+    return ret;
+}
+
 export const stripext = (filename) => {
     if (!filename) return filename;
     let p = filename.lastIndexOf('.');
