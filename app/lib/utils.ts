@@ -6,12 +6,11 @@ export class ExtensibleFunction extends Function {
 }
 
 export function copyIfKeyDefined(obj, keys){
-    const ret = {};
-    keys.forEach((key) => {
+    return keys.reduce((obj2, key) => {
         if(obj[key] != undefined)
-            ret[key] = obj[key];
-    });
-    return ret;
+            obj2[key] = obj[key];
+        return obj2;
+    }, {});
 }
 
 export const stripext = (filename) => {
