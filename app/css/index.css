@@ -188,34 +188,38 @@ html, body {
     background: #e8e8e8;
     cursor: grab;
 }
-#setting-layers li .ly-checked:checked ~ *{
+#setting-layers li .ly-opt-checked:checked ~ *{
     color: #202020;
 }
-#setting-layers li .ly-checked ~ *{
+#setting-layers li .ly-opt-checked ~ *{
     color: #808080;
 }
 
 #setting-layers li .ly-body {
     display: inline-block;
-    min-width: 14.5em;
+    min-width: 15.5em;
 }
 
-#setting-layers li .ly-opt {
+#setting-layers li button.ly-ctrl {
     font-size: smaller;
+    border: none;
+    background: transparent;
+    padding: 0;
+    margin: 0;
     color: lightgrey;
 }
-#setting-layers li:not(:hover) .ly-opt:not(.active) {
+#setting-layers li:not(:hover) button.ly-ctrl:not(.enabled) {
     visibility: hidden;
 }
-#setting-layers li .ly-opt:hover {
+#setting-layers li button.ly-ctrl:hover {
     color: cornflowerblue;
     cursor: pointer;
 }
-#setting-layers li .ly-opt.active {
+#setting-layers li button.ly-ctrl.enabled {
     color: steelblue;
 }
 
-#setting-layers li .ly-opacity{
+#setting-layers li .ly-opt-opacity{
     transform: scale(1.2) translate(4px, -1px);
     text-align: right;
     margin-right: 3px;
@@ -223,10 +227,10 @@ html, body {
     border: none;
     background-color: transparent;
 }
-#setting-layers li .ly-opacity:hover{
+#setting-layers li .ly-opt-opacity:hover{
     background-color: white;
 }
-#setting-layers li .ly-opacity+i{
+#setting-layers li .ly-opt-opacity+i{
     transform: scale(0.8);
 }
 
@@ -277,7 +281,7 @@ html, body {
     color: steelblue
 }
 
-.toolbar .ctrl-btn:not(.active){
+.toolbar .ctrl-btn:not(.enabled){
     /*background: rgba(64, 64, 64, .5);*/
     /*color: lightgray;*/
 }

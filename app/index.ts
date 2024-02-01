@@ -46,11 +46,12 @@ function main(main_el: HTMLElement)
     .setListener('goto', (coord) => map.setCrosshairWpt(coord));
 
   const settings = new Settings(main_el.querySelector('.settings'))
-    .setListener('spychanged', (spy) => map.setSpyLayer(spy))
-    .setListener('layerschanged', (layers_conf) => map.setLayers(layers_conf))
-    .setListener('opacitychanged', (id, opacity) => map.setLayerOpacity(id, opacity))
-    .setListener('filterchanged', (id, filterable) => map.setLayerFilterable(id, filterable))
-    .setListener('invisiblechanged', (id, invisible) => map.setLayerInvisible(id, invisible))
+    .setListener('layers_reorder',   (ids) => map.setLayers(Opt.layers))
+    .setListener('layer_checked',    (id, checked) => map.setLayers(Opt.layers))
+    .setListener('layer_opacity',    (id, opacity) => map.setLayerOpacity(id, opacity))
+    .setListener('layer_filterable', (id, filterable) => map.setLayerFilterable(id, filterable))
+    .setListener('layer_invisible',  (id, invisible) => map.setLayerInvisible(id, invisible))
+    .setListener('spy',              (id) => map.setSpyLayer(Opt.spy))
     .setListener('wptchanged', () => map.redrawText())
     .setListener('trkchanged', () => map.redrawText());
 

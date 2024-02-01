@@ -24,6 +24,7 @@ import { CtxMenu } from './ctx-menu';
 import * as LayerRepo from './layer-repo';
 import { PtPopupOverlay } from './pt-popup';
 import { matchRules } from './sym'
+import opt from './opt';
 
 /*
 //TODO: better way to do this?
@@ -369,33 +370,52 @@ export class AppMap{
 
 ////////////////////////////////////////////////////////////////
 
-  public setLayerOpacity(id, opacity)
-  {
-    const layer = LayerRepo.get(id);
-    if (!layer)
-      return console.error(`setLayerOpacity() error: layer ${id} not found`);
-    layer.setOpacity(opacity);
-  }
-
   // if no layer id provided, means the user's gpx layer;
-  public setLayerFilterable(id, filterable)
+  private _getLayer(id)
   {
     const layer = id? LayerRepo.get(id): this._gpx_layer;
     if (!layer)
-      return console.error(`setLayerFilterable() error: layer ${id} not found`);
-    layer.getStyle().filterable = filterable;
-    layer.changed();
+      console.error(`_getLayer() error: layer ${id} not found`);
+    return layer;
+  }
+
+
+  public setLayerOpacity(id, opacity)
+  {
+    this._getLayer(id)?.setOpacity(opacity);
+  }
+
+  public setLayerFilterable(id, filterable)
+  {
+    const layer = this._getLayer(id);
+    if(layer){
+      layer.getStyle().filterable = filterable;
+      layer.changed();
+    }
   }
 
   public setLayerInvisible(id, invisible)
   {
-    console.log({invisible});
-    const layer = LayerRepo.get(id);
+    const layer = this._getLayer(id);
+    if(layer){
+      layer.getStyle().invisible = invisible;
+      layer.changed();
+    }
+  }
+
+  /*
+  private _setLayerStyleOptions(id, options){
+    const layer = id? LayerRepo.get(id): this._gpx_layer;
     if (!layer)
-      return console.error(`setLayerInvisible() error: layer ${id} not found`);
-    layer.getStyle().invisible = invisible;
+      return console.error(`setLayerStyleOption() error: layer ${id} not found`, options);
+
+    for(const [key, value] of Object.entries(options))
+      layer.getStyle()[key] = value;
+
     layer.changed();
   }
+  */
+
 ////////////////////////////////////////////////////////////////
 
   // to eanble:             add the layer

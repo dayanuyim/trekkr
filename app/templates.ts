@@ -201,17 +201,20 @@ export const symboard = Handlebars.compile(`
     </div>
 `);
 
+// ly-opt: the option for each layer
+// ly-attr: the attribute shared by all layers
+// ly-ctrl: the interactive ctonrol
 export const mkLayer = Handlebars.compile(`
     {{#with layer}}
     <li data-layer-id="{{id}}" data-layer-type="{{type}}" data-layer-url="{{url}}" >
-        <input class="ly-checked" type="checkbox" {{#if checked}}checked{{/if}}><!--
+        <input type="checkbox" class="ly-ctrl ly-opt ly-opt-checked" {{#if checked}}checked{{/if}}><!--
      --><span class="ly-body"><!--
-         --><span class="ly-desc">{{desc}}</span>
-            <span class="ly-opt ly-opt-spy {{#if legend}}hidden{{/if}}"><i class="fa-solid fa-earth-asia"></i></span>
-            <span class="ly-opt ly-opt-filter {{#if (undefined filterable)}}hidden{{/if}} {{#if filterable}}active{{/if}}"><i class="fa-solid fa-filter"></i></span>
-            <span class="ly-opt ly-opt-invisible {{#if (undefined invisible)}}hidden{{/if}} {{#if invisible}}active{{/if}}"><i class="fa-solid fa-eye-slash"></i></span>
+         --><span class="ly-opt ly-opt-desc">{{desc}}</span>
+            <button class="ly-ctrl ly-attr ly-attr-spy      {{#if legend}}hidden{{/if}}"><i class="fa-solid fa-earth-asia"></i></button>
+            <button class="ly-ctrl ly-opt ly-opt-filterable {{#if (undefined filterable)}}hidden{{/if}} {{#if filterable}}enabled{{/if}}"><i class="fa-solid fa-filter"></i></button>
+            <button class="ly-ctrl ly-opt ly-opt-invisible  {{#if (undefined invisible )}}hidden{{/if}} {{#if invisible }}enabled{{/if}}"><i class="fa-solid fa-eye-slash"></i></button>
         </span>
-        <input class="ly-opacity" type="number" max="100" min="0" step="5" value="{{mul opacity 100}}">
+        <input type="number" class="ly-ctrl ly-opt ly-opt-opacity" max="100" min="0" step="5" value="{{mul opacity 100}}">
         <i class="fas fa-percent"></i>
     </li>
     {{/with}}
