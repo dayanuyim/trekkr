@@ -15,40 +15,40 @@ class Layer {
     static listenify = (fn) => { return (e) => fn(Layer.of(e.target.closest('li')), e.currentTarget, e); }
 
     _base: HTMLElement;
-    get _desc()      { return this._base.querySelector<HTMLSpanElement>('.ly-opt-desc');}
-    get _checked()   { return this._base.querySelector<HTMLInputElement>('.ly-opt-checked');}
-    get _opacity()   { return this._base.querySelector<HTMLInputElement>('.ly-opt-opacity');}
-    get _filterable(){ return this._base.querySelector<HTMLElement>('.ly-opt-filterable');}
-    get _invisible() { return this._base.querySelector<HTMLElement>('.ly-opt-invisible');}
-    get _spy()       { return this._base.querySelector<HTMLElement>('.ly-attr-spy');}
-    get _body()      { return this._base.querySelector<HTMLElement>('.ly-body');}
+    _desc: HTMLElement;
+    _checked: HTMLInputElement;
+    _opacity: HTMLInputElement;
+    _filterable: HTMLElement;
+    _invisible: HTMLElement;
+    _spy: HTMLElement;
+
+    private _listeners = {};
 
     get legend(){ return this._base.parentElement.classList.contains('layer-legend');}
     get id(){ return this._base.dataset.layerId;}
     get url(){ return this._base.dataset.layerUrl;}
     get type(){ return this._base.dataset.layerType;}
     get desc(){ return this._desc.textContent.trim();}
-
-    get is_spy(){ return this._spy.classList.contains('enabled');}
-    set is_spy(v){ this._spy.classList.toggle('enabled', v)};
     get opacity(){ return limit(Number(this._opacity.value)/100, 0, 1);}
     get checked(){ return this._checked.checked;}
     get filterable(){ return this._filterable.classList.contains('enabled');}
     get invisible(){ return this._invisible.classList.contains('enabled');}
-
-    private _listeners = {};
+    get is_spy(){ return this._spy.classList.contains('enabled');}
+    set is_spy(v){ this._spy.classList.toggle('enabled', v)};
 
     constructor(el: HTMLElement){
-        this._base = el;
+        this._base =       el;
+        this._desc =       el.querySelector<HTMLElement>('.ly-opt-desc');
+        this._checked =    el.querySelector<HTMLInputElement>('.ly-opt-checked');
+        this._opacity =    el.querySelector<HTMLInputElement>('.ly-opt-opacity');
+        this._filterable = el.querySelector<HTMLElement>('.ly-opt-filterable');
+        this._invisible =  el.querySelector<HTMLElement>('.ly-opt-invisible');
+        this._spy =        el.querySelector<HTMLElement>('.ly-attr-spy')
+
         this.init();
     }
 
     private init(){
-        this._spy.onclick = e => {
-            if(Opt.update('spy.id', this.id)) // update opt
-                this._listeners['spy']?.(this.id);
-        };
-
         //this._initOption(this._checked, 'checked');
         //this._initOption(this._opacity, 'opacity');
         //this._initOption(this._filterable, 'filterable');
@@ -58,6 +58,11 @@ class Layer {
             const name = el.classList.value.split(' ').find(c => c.startsWith(prefix))?.substring(prefix.length);
             this._initOption(el, name);
         });
+
+        this._spy.onclick = e => {
+            if(Opt.update('spy.id', this.id)) // update opt
+                this._listeners['spy']?.(this.id);
+        };
     }
 
     private _initOption(el, name){
@@ -156,7 +161,7 @@ export class Settings{
                 hoverClass: 'ly-hover',
             });
             sortable(selector)[0].addEventListener('sortupdate', () => {
-                const ids = this._layers.map(el => Layer.of(el).id);  // Not use the order of this.layers
+                const ids = this._layers.map(el => el.dataset.layerId);  // Not use the order of `this.layers`, recapture the order
                 Opt.updateLayersOrder(ids);  
                 this._listeners['layers_reorder']?.(ids);
             });

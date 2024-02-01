@@ -204,12 +204,13 @@ export const symboard = Handlebars.compile(`
 // ly-opt: the option for each layer
 // ly-attr: the attribute shared by all layers
 // ly-ctrl: the interactive ctonrol
+// NOTE: ly-body is used to keep the width of desc, and ly-opt-checked is used to css for the whole layer. So, ly-opt-checked and ly-opt-desc do NOT in the same layer.
 export const mkLayer = Handlebars.compile(`
     {{#with layer}}
     <li data-layer-id="{{id}}" data-layer-type="{{type}}" data-layer-url="{{url}}" >
-        <input type="checkbox" class="ly-ctrl ly-opt ly-opt-checked" {{#if checked}}checked{{/if}}><!--
+        <input type="checkbox" class="ly-ctrl ly-opt ly-opt-checked" id="ly-{{id}}" {{#if checked}}checked{{/if}}><!--
      --><span class="ly-body"><!--
-         --><span class="ly-opt ly-opt-desc">{{desc}}</span>
+         --><label class="ly-opt ly-opt-desc" for="ly-{{id}}">{{desc}}</label>
             <button class="ly-ctrl ly-attr ly-attr-spy      {{#if legend}}hidden{{/if}}"><i class="fa-solid fa-earth-asia"></i></button>
             <button class="ly-ctrl ly-opt ly-opt-filterable {{#if (undefined filterable)}}hidden{{/if}} {{#if filterable}}enabled{{/if}}"><i class="fa-solid fa-filter"></i></button>
             <button class="ly-ctrl ly-opt ly-opt-invisible  {{#if (undefined invisible )}}hidden{{/if}} {{#if invisible }}enabled{{/if}}"><i class="fa-solid fa-eye-slash"></i></button>
