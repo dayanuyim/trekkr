@@ -211,7 +211,7 @@ export const mkLayer = Handlebars.compile(`
         <input type="checkbox" class="ly-ctrl ly-opt ly-opt-checked" id="ly-{{id}}" {{#if checked}}checked{{/if}}><!--
      --><span class="ly-body"><!--
          --><label class="ly-opt ly-opt-desc" for="ly-{{id}}">{{desc}}</label>
-            <button class="ly-ctrl ly-attr ly-attr-spy      {{#if legend}}hidden{{/if}}"><i class="fa-solid fa-earth-asia"></i></button>
+            <button class="ly-ctrl ly-attr ly-attr-spy      {{#if legend}}hidden{{/if}} {{#if spy}}enabled{{/if}}"><i class="fa-solid fa-earth-asia"></i></button>
             <button class="ly-ctrl ly-opt ly-opt-filterable {{#if (undefined filterable)}}hidden{{/if}} {{#if filterable}}enabled{{/if}}"><i class="fa-solid fa-filter"></i></button>
             <button class="ly-ctrl ly-opt ly-opt-invisible  {{#if (undefined invisible )}}hidden{{/if}} {{#if invisible }}enabled{{/if}}"><i class="fa-solid fa-eye-slash"></i></button>
         </span>
@@ -221,7 +221,8 @@ export const mkLayer = Handlebars.compile(`
     {{/with}}
 `);
 
-Handlebars.registerHelper("mkLayer", (layer, options) => {
+Handlebars.registerHelper("mkLayer", (layer, spy, options) => {
+    layer.spy = (spy.id == layer.id);   // set the attribute(virtual option) to the layer
     return new Handlebars.SafeString(mkLayer({layer}));
 });
 /*
@@ -259,7 +260,7 @@ export const settings = Handlebars.compile(`
             <ul class="layer-base">
                 {{#each layers}}
                     {{#unless legend}}
-                        {{mkLayer this}}
+                        {{mkLayer this ../spy}}
                     {{/unless}}
                 {{/each}}
             </ul>

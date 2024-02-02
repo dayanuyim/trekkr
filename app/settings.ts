@@ -14,6 +14,21 @@ class Layer {
     }
     static listenify = (fn) => { return (e) => fn(Layer.of(e.target.closest('li')), e.currentTarget, e); }
 
+
+    // Observer a key change
+    private static _observers = {};
+
+    // Notify when a key is changed to value
+    private static notifyObservers(key, value){
+       this._observers[key]?.forEach(observer => observer(value));
+    }
+
+    // Add a observer for a key
+    private static addObserver(key, observer){
+        if(!this._observers[key]?.push(observer))  // if push is called, it will return the array length, which should >= 1
+            this._observers[key] = [observer];
+    }
+
     _base: HTMLElement;
     _desc: HTMLElement;
     _checked: HTMLInputElement;
@@ -33,8 +48,8 @@ class Layer {
     get checked(){ return this._checked.checked;}
     get filterable(){ return this._filterable.classList.contains('enabled');}
     get invisible(){ return this._invisible.classList.contains('enabled');}
-    get is_spy(){ return this._spy.classList.contains('enabled');}
-    set is_spy(v){ this._spy.classList.toggle('enabled', v)};
+    get spy(){ return this._spy.classList.contains('enabled');}
+    set spy(v){ this._spy.classList.toggle('enabled', v)};
 
     constructor(el: HTMLElement){
         this._base =       el;
@@ -59,7 +74,9 @@ class Layer {
             this._initOption(el, name);
         });
 
+        Layer.addObserver('spyid', (id) => this.spy = (this.id == id) );
         this._spy.onclick = e => {
+            Layer.notifyObservers('spyid', this.id);
             if(Opt.update('spy.id', this.id)) // update opt
                 this._listeners['spy']?.(this.id);
         };
@@ -77,6 +94,8 @@ class Layer {
                 this._listeners[name]?.(this.id, value);
         })
     }
+
+
 
 
     public setListener(event, listener){
@@ -122,7 +141,7 @@ export class Settings{
     layers: Array<Layer>;
 
     constructor(el: HTMLElement){
-        el.innerHTML = templates.settings({ layers: Opt.layers });
+        el.innerHTML = templates.settings(Opt);
         this.initElements(el);
         this.initLayers();
         this.initOpts();
@@ -167,23 +186,14 @@ export class Settings{
             });
         });
 
-        // spy is like a push button from a interlocking switch
-        const set_spy_enabled = (id) => {
-            this.layers.forEach((layer) => layer.is_spy = (layer.id == id));
-        }
-
-        set_spy_enabled(Opt.spy.id);
         //layer events
-        this.layers.forEach(layer => {
-            layer.setListener('spy', (id) => {
-                set_spy_enabled(id);
-                this._listeners['spy']?.(id);
-            })
-            .setListener('checked',    (id, checked)    => this._listeners['layer_checked']?.(id, checked))
-            .setListener('opacity',    (id, opacity)    => this._listeners['layer_opacity']?.(id, opacity))
-            .setListener('filterable', (id, filterable) => this._listeners['layer_filterable']?.(id, filterable))
-            .setListener('invisible',  (id, invisible)  => this._listeners['layer_invisible']?.(id, invisible));
-        });
+        this.layers.forEach(layer =>
+            layer.setListener('spy',        (id)             => this._listeners['spy']?.(id))
+                 .setListener('checked',    (id, checked)    => this._listeners['layer_checked']?.(id, checked))
+                 .setListener('opacity',    (id, opacity)    => this._listeners['layer_opacity']?.(id, opacity))
+                 .setListener('filterable', (id, filterable) => this._listeners['layer_filterable']?.(id, filterable))
+                 .setListener('invisible',  (id, invisible)  => this._listeners['layer_invisible']?.(id, invisible))
+        );
     }
 
     // ----------------------------------------------------------------
