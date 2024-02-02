@@ -72,12 +72,12 @@ function _wpt_style(name, sym, scale=1)
 
   return new Style({
     image: new IconStyle({
-      src: getSymbol(sym).path(64),
+      src: getSymbol(sym).path(128),  //should the same as pt-popup to reduce the need to download
       //rotateWithView: true,
       //size: toSize([32, 32]),
       //opacity: 0.8,
       //anchor: sym.anchor,
-      scale: 0.5 * scale,
+      scale: 0.25 * scale,
     }),
     text: wpt_name_style(name),
     zIndex: 9,
