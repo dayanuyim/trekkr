@@ -391,13 +391,13 @@ export class PtPopupOverlay extends Overlay{
             this._listeners['mkwpt']?.(wpt);
         };
 
-        delayToEnable(this._tool_rm_wpt, 1000); // delay to enable button, prevent from click by mistake
+        delayToEnable(this._tool_rm_wpt, 1000, ()=>Opt.rt.shiftdown); // delay to enable button, prevent from click by mistake
         this._tool_rm_wpt.onclick = e => {
             this._listeners['rmwpt']?.(this._feature);
             this.hide();
         };
 
-        delayToEnable(this._tool_rm_trk, 1000); // delay to enable button, prevent from click by mistake
+        delayToEnable(this._tool_rm_trk, 1000, ()=>Opt.rt.shiftdown); // delay to enable button, prevent from click by mistake
         this._tool_rm_trk.onclick = e => {
             this._listeners['rmtrk']?.(this._feature);
             this.hide();

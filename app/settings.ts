@@ -168,7 +168,7 @@ export class Settings{
         tablink('.settings-main .tablink', '.settings-main .tabcontent');
 
         this._toggle_btn.onclick = () => this._base.classList.toggle('collapsed');
-        this._toggle_btn.title = Opt.tooltip.btn_settings;
+        this._toggle_btn.title = Opt.data.tooltip.btn_settings;
 
         //set layers sortable
         ['.layer-legend', '.layer-base'].forEach(selector =>{

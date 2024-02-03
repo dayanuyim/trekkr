@@ -196,12 +196,12 @@ export class AppMap{
 
     // record the pixel position with every move
     document.addEventListener('mousemove', (e) =>{
-      Opt.mousepos = map.getEventPixel(e);
+      Opt.rt.mousepos = map.getEventPixel(e);
       map.render();
     });
 
     document.addEventListener('mouseout', () => {
-      Opt.mousepos = null;
+      Opt.rt.mousepos = null;
       map.render();
     });
 
@@ -461,17 +461,17 @@ export class AppMap{
       ctx.beginPath();
       
       const spy = Opt.spy;
-      const mousepos = Opt.mousepos;
+      const mousepos = Opt.rt.mousepos;
       if (spy.enabled && mousepos) {
         // only show a circle around the mouse
-        var pixel = getRenderPixel(event, mousepos);
+        var [px, py] = getRenderPixel(event, mousepos);
 
         //@why the sample code so complexed ??
         //var offset = getRenderPixel(event, [mousepos[0] + spy.radius, mousepos[1]]);
-        //var canvasRadius = Math.sqrt(Math.pow(offset[0] - pixel[0], 2) + Math.pow(offset[1] - pixel[1], 2));
-        //ctx.arc(pixel[0], pixel[1], canvasRadius, 0, 2 * Math.PI);
+        //var canvasRadius = Math.sqrt(Math.pow(offset[0] - px, 2) + Math.pow(offset[1] - py, 2));
+        //ctx.arc(px, py, canvasRadius, 0, 2 * Math.PI);
         //ctx.lineWidth = 5 * canvasRadius / spy.radius;
-        ctx.arc(pixel[0], pixel[1], spy.radius, 0, 2 * Math.PI);
+        ctx.arc(px, py, spy.radius, 0, 2 * Math.PI);
         ctx.lineWidth = 1;
 
         ctx.strokeStyle = 'rgba(0,0,0,0.5)';

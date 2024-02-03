@@ -25,7 +25,7 @@ export class Sidebar{
     private init(){
         //init spy
         this._spy_btn.classList.toggle('enabled', Opt.spy.enabled);
-        this._spy_btn.title = Opt.tooltip.btn_spy;
+        this._spy_btn.title = Opt.data.tooltip.btn_spy;
         this._spy_btn.addEventListener('click', e =>{
             const enabled = this._spy_btn.classList.toggle('enabled');
             Opt.update('spy.enabled', enabled);

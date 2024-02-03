@@ -50,13 +50,20 @@ class Opt{
         }
     }
 
-    //runtime options
-    googleMapKey = 'AIzaSyDoRAou_pmXgeqexPAUlX3Xkg0eKJ_FMhg';
-    mousepos = null;
-    tooltip = {
-        btn_settings: "Settings (Ctrl+S)",
-        btn_spy:  "Spy Mode (Ctrl+X)\n啟用後上下鍵調整大小",
-    }
+    //const info
+    data = {
+        gmapkey: 'AIzaSyDoRAou_pmXgeqexPAUlX3Xkg0eKJ_FMhg',
+        tooltip: {
+            btn_settings: "Settings (Ctrl+S)",
+            btn_spy:  "Spy Mode (Ctrl+X)\n啟用後上下鍵調整大小",
+        }
+    };
+
+    //runtime info
+    rt = {
+        mousepos: null,
+        shiftdown: false,
+    };
 
     private constructor(){
         const saved = this.load();
@@ -139,9 +146,8 @@ class Opt{
                 'filterable', 'invisible',
             ])),
         });
-        delete obj.mousepos;
-        delete obj.googleMapKey;
-        delete obj.tooltip;
+        delete obj.rt;     // not saving runtime
+        delete obj.data;   // not saving constant data
         return obj;
     }
 

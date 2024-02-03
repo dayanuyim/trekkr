@@ -62,13 +62,17 @@ function main(main_el: HTMLElement)
 
   // set hotkey
   main_el.addEventListener('keydown', function (e) {
-      if (e.ctrlKey && e.key === 's')
-          settings.toggle();
-      else if (e.ctrlKey && e.key === 'x')
-          sidebar.toggleSpy();
-      else if (e.ctrlKey && e.key === 'f') {
-          main_el.requestFullscreen();
-      }
+    Opt.rt.shiftdown = e.shiftKey;
+    if (e.ctrlKey && e.key === 's')
+      settings.toggle();
+    else if (e.ctrlKey && e.key === 'x')
+      sidebar.toggleSpy();
+    else if (e.ctrlKey && e.key === 'f') {
+      main_el.requestFullscreen();
+    }
+  });
+  main_el.addEventListener('keyup', function (e) {
+    Opt.rt.shiftdown = e.shiftKey;
   });
 
   // default data

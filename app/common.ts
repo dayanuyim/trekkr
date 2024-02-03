@@ -89,7 +89,7 @@ function googleElevation(lat, lon)
 {
   return new Promise((resolve, reject)=>{
     elevationApi({
-      key: Opt.googleMapKey,
+      key: Opt.data.gmapkey,
       locations: [
         [lat, lon],
       ]
