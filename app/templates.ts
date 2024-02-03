@@ -44,9 +44,9 @@ Handlebars.registerHelper("colorcode", (color, options)=>{
 });
 
 export const colorboardItems = Handlebars.compile(`
-    <div class="pt-colorboard-items">
+    <div class="pop-colorboard-items">
     {{#each colors}}
-        <div class="pt-colorboard-item color-item" style="background-color:{{colorcode this}}" title="{{this}}"></div>
+        <div class="pop-colorboard-item color-item" style="background-color:{{colorcode this}}" title="{{this}}"></div>
     {{/each}}
     </div>
 `);
@@ -78,66 +78,66 @@ Handlebars.registerHelper("coordsysMenu", (cls, options)=>{
     return new Handlebars.SafeString(coordsysMenu({cls}));
 });
 
-export const ptPopup = Handlebars.compile(`
-    <div class="pt-trk">
-        <fieldset class="pt-trk-tool">
+export const popContent = Handlebars.compile(`
+    <div class="pop-trk">
+        <fieldset class="pop-trk-tool">
             <!--<legend>track</legend>-->
             <legend>
-            <button class="pt-tool-rm-trk" title="Remove Track"><i class="fa-solid fa-trash-can"></i></button>
-            <button class="pt-tool-split-trk" title="Split Track"><i class="fa-solid fa-scissors"></i></button>
-            <button class="pt-tool-join-trk" title="Join Track"><i class="fa-solid fa-link"></i></button>
+            <button class="pop-tool-rm-trk" title="Remove Track"><i class="fa-solid fa-trash-can"></i></button>
+            <button class="pop-tool-split-trk" title="Split Track"><i class="fa-solid fa-scissors"></i></button>
+            <button class="pop-tool-join-trk" title="Join Track"><i class="fa-solid fa-link"></i></button>
             </legend>
         </fieldset>
-        <div class="pt-trk-header">
-            <div class="pt-trk-color color-item"></div><!--
-         --><span class="pt-trk-name" contenteditable="true" data-placeholder="NAME"></span>
-            <span class="pt-trk-seg-sn"></span>
+        <div class="pop-trk-header">
+            <div class="pop-trk-color color-item"></div><!--
+         --><span class="pop-trk-name" contenteditable="true" data-placeholder="NAME"></span>
+            <span class="pop-trk-seg-sn"></span>
         </div>
-        <div class="pt-row">
+        <div>
             <span class="pop-desc pop-trk-desc" contenteditable="true" data-placeholder="Description for the track">{{desc}}</span>
         </div>
     </div>
-    <div class="pt-colorboard glassmophism hidden">
+    <div class="pop-colorboard glassmophism hidden">
         {{colorboardItems}}
     </div>
 
     <!-------------- Wpt or Trkpt -------------->
-    <div class="pt-content">
-        <fieldset class="pt-wpt-tool">
-            <button class="pt-tool-mk-wpt" title="Make Wpt"><i class="fas fa-map-pin"></i></button>
-            <button class="pt-tool-rm-wpt" title="Delete Wpt"><i class="fas fa-trash-can"></i></button>
+    <div class="pop-pt">
+        <fieldset class="pop-pt-tool">
+            <button class="pop-tool-mk-wpt" title="Make Wpt"><i class="fas fa-map-pin"></i></button>
+            <button class="pop-tool-rm-wpt" title="Delete Wpt"><i class="fas fa-trash-can"></i></button>
         </fieldset>
 
-        <div class="pt-header">
-            <img class="pt-sym" width="24" heigh="24" src="{{sym}}"><!--
-        --><span class="pt-name" contenteditable="true" data-placeholder="NAME">{{name}}</span>
-            <!--<input type="text" class="pt-name" value="{{name}}">-->
+        <div class="pop-pt-header">
+            <img class="pop-pt-sym" width="24" heigh="24" src="{{sym}}"><!--
+        --><span class="pop-pt-name" contenteditable="true" data-placeholder="NAME">{{name}}</span>
+            <!--<input type="text" class="pop-pt-name" value="{{name}}">-->
         </div>
-        <div class="pt-symboard glassmophism hidden"></div>
+        <div class="pop-symboard glassmophism hidden"></div>
 
         <div>
             <span class="pop-desc pop-pt-desc" contenteditable="true" data-placeholder="Description for the pt">{{desc}}</span>
         </div>
 
-        <div class="pt-coord" data-pt-coord="{{coordinate}}">
-            {{coordsysMenu "pt-coord-title"}}
-            <span class="pt-coord-value">N/A</span>
-            <a class="pt-gmap" href="{{gmap coordinate}}" target="_blank">
+        <div class="pop-pt-coord" data-pt-coord="{{coordinate}}">
+            {{coordsysMenu "pop-pt-coord-title"}}
+            <span class="pop-pt-coord-value">N/A</span>
+            <a class="pop-pt-gmap" href="{{gmap coordinate}}" target="_blank">
                 <img src="./images/googleg.png" alt="Google G">
                 <!--<i class="fab fa-google"></i>-->
             </a>
         </div>
 
-        <div class="pt-ele">
-            <span class="pt-ele-title">ELE.</span>
-            <span class="pt-ele-value" contenteditable="true" data-placeholder="0.0">{{fmtEle ele.value}}</span> m
-            <!--<input type="text" class="pt-ele-value" pattern="[0-9]+([\.][0-9]+)?" value="{{fmtEle ele.value}}"> m-->
-            <span class="pt-ele-est">(est.)</span>
+        <div class="pop-pt-ele">
+            <span class="pop-pt-ele-title">ELE.</span>
+            <span class="pop-pt-ele-value" contenteditable="true" data-placeholder="0.0">{{fmtEle ele.value}}</span> m
+            <!--<input type="text" class="pop-pt-ele-value" pattern="[0-9]+([\.][0-9]+)?" value="{{fmtEle ele.value}}"> m-->
+            <span class="pop-pt-ele-est">(est.)</span>
         </div>
 
-        <div class="pt-time">
-            <span class="pt-time-title">TIME</span>
-            <span class="pt-time-value">{{fmtTime time}}</span>
+        <div class="pop-pt-time">
+            <span class="pop-pt-time-title">TIME</span>
+            <span class="pop-pt-time-value">{{fmtTime time}}</span>
         </div>
 
         <footer class="sym-copyright">&copy; The icon made by
@@ -158,7 +158,7 @@ export const license_cc_by_sa= Handlebars.compile(`
     <i class="fa-brands fa-creative-commons"></i><i class="fa-brands fa-creative-commons-by"></i><i class="fa-brands fa-creative-commons-sa"></i>
 `);
 
-Handlebars.registerHelper("ptPopup", (data, options)=>{
+Handlebars.registerHelper("popContent", (data, options)=>{
     data = Object.assign({
         name: '',
         desc: '',
@@ -175,13 +175,13 @@ Handlebars.registerHelper("ptPopup", (data, options)=>{
             license: { title: '', url: '' },
         }
     }, data);
-    return new Handlebars.SafeString(ptPopup(data));
+    return new Handlebars.SafeString(popContent(data));
 });
 
 export const symboardItem = Handlebars.compile(`
     {{#each symbols}}
-        <div class="pt-symboard-item {{#if ../offset}}extra{{/if}}" title="{{name}}">
-            <div class="pt-symboard-item-img" style="background-position-x:-{{sympos ../offset @index}}px"></div>
+        <div class="pop-symboard-item {{#if ../offset}}extra{{/if}}" title="{{name}}">
+            <div class="pop-symboard-item-img" style="background-position-x:-{{sympos ../offset @index}}px"></div>
         </div>
     {{/each}}
 `);
@@ -191,13 +191,13 @@ Handlebars.registerHelper("symboardItem", (offset, symbols, options) => {
 });
 
 export const symboard = Handlebars.compile(`
-    <div class="pt-symboard-items">
+    <div class="pop-symboard-items">
         {{symboardItem             0 basics}}
         {{symboardItem basics.length extras}}
     </div>
-    <div class="pt-symboard-footer">
-        <label for="pt-symboard-filter"><i class="fas fa-magnifying-glass"></i></label>
-        <input type="text" id="pt-symboard-filter" placeholder="Search...">
+    <div class="pop-symboard-footer">
+        <label for="pop-symboard-filter"><i class="fas fa-magnifying-glass"></i></label>
+        <input type="text" id="pop-symboard-filter" class="pop-symboard-filter" placeholder="Search...">
     </div>
 `);
 
@@ -383,11 +383,11 @@ Handlebars.registerHelper("toolbarTop", ()=>{
 
 export const main = Handlebars.compile(`
     <div id="pt-popup" class="ol-popup">
-        <div class="popup-resizer">
-            <div class="pt-image popup-resizer-content">
-                <a href="#" class="ol-popup-closer"></a>
-                <div class="ol-popup-content">
-                    {{ptPopup}}
+        <div class="pop-resizer">
+            <div class="pop-resizer-content pop-image">
+                <a href="#" class="pop-closer"></a>
+                <div class="pop-content">
+                    {{popContent}}
                 </div>
             </div>
         </div>

@@ -4,6 +4,7 @@ import 'ol/ol.css';
 import './css/index.css';
 import './css/tab.css';
 import './css/ctx-menu.css';
+import './css/popup.css';
 
 import '@fortawesome/fontawesome-free/js/fontawesome';
 import '@fortawesome/fontawesome-free/js/solid';

@@ -105,19 +105,19 @@ export class PtPopupOverlay extends Overlay{
     _closer: HTMLElement;
     _resizer: HTMLElement;
     _resizer_content: HTMLElement;
-    _content: HTMLElement;
-    _pt_image: HTMLElement;
-    _pt_trk: HTMLElement;
-    _pt_trk_tool: HTMLElement;
-    _pt_trk_name: HTMLElement;
-    _pt_trk_desc: HTMLElement;
-    _pt_trk_seg_sn: HTMLElement;
-    _pt_trk_color: HTMLElement;
-    _pt_colorboard: HTMLElement;
+    _image: HTMLElement;
+    _trk: HTMLElement;
+    _trk_tool: HTMLElement;
+    _trk_name: HTMLElement;
+    _trk_desc: HTMLElement;
+    _trk_seg_sn: HTMLElement;
+    _trk_color: HTMLElement;
+    _colorboard: HTMLElement;
     _pt_header: HTMLElement;
     _pt_sym: HTMLImageElement;
-    _pt_symboard: HTMLElement;
-    _pt_symboard_filter: HTMLInputElement;
+    _symboard: HTMLElement;
+    _symboard_filter: HTMLInputElement;
+    _symboard_items: Array<HTMLElement>;
     _pt_name: HTMLElement;
     _pt_desc: HTMLElement;
     _pt_coord: HTMLElement;
@@ -127,11 +127,11 @@ export class PtPopupOverlay extends Overlay{
     _pt_ele: HTMLElement;
     _pt_ele_est: HTMLElement;
     _pt_time: HTMLElement;
-    _pt_mk_wpt: HTMLButtonElement;
-    _pt_rm_wpt: HTMLButtonElement;
-    _pt_split_trk: HTMLButtonElement;
-    _pt_join_trk: HTMLButtonElement;
-    _pt_rm_trk: HTMLButtonElement;
+    _tool_split_trk: HTMLButtonElement;
+    _tool_join_trk: HTMLButtonElement;
+    _tool_rm_trk: HTMLButtonElement;
+    _tool_mk_wpt: HTMLButtonElement;
+    _tool_rm_wpt: HTMLButtonElement;
     _sym_copyright: HTMLElement;
     _sym_maker: HTMLAnchorElement;
     _sym_provider: HTMLAnchorElement;
@@ -142,14 +142,14 @@ export class PtPopupOverlay extends Overlay{
     _resize_observer;
     _listeners = {};
 
-    get pt_trk_name() { return this._pt_trk_name.textContent; }
-    set pt_trk_name(value) { this._pt_trk_name.textContent = value; }
-    get pt_trk_desc() { return this._pt_trk_desc.textContent.trim(); }
-    set pt_trk_desc(value) { this._pt_trk_desc.textContent = value?.trim(); }
-    get pt_trk_seg_sn() { return this._pt_trk_seg_sn.textContent; }
-    set pt_trk_seg_sn(value) { this._pt_trk_seg_sn.textContent = value; }
-    get pt_trk_color() { return this._pt_trk_color.style.backgroundColor; }
-    set pt_trk_color(value) { this._pt_trk_color.style.backgroundColor = value; }
+    get pt_trk_name() { return this._trk_name.textContent; }
+    set pt_trk_name(value) { this._trk_name.textContent = value; }
+    get pt_trk_desc() { return this._trk_desc.textContent.trim(); }
+    set pt_trk_desc(value) { this._trk_desc.textContent = value?.trim(); }
+    get pt_trk_seg_sn() { return this._trk_seg_sn.textContent; }
+    set pt_trk_seg_sn(value) { this._trk_seg_sn.textContent = value; }
+    get pt_trk_color() { return this._trk_color.style.backgroundColor; }
+    set pt_trk_color(value) { this._trk_color.style.backgroundColor = value; }
     get pt_sym() { return this._pt_sym.src; }
     set pt_sym(src) { this._pt_sym.src = src;}
     get pt_name() { return this._pt_name.textContent; }
@@ -192,40 +192,39 @@ export class PtPopupOverlay extends Overlay{
 
     private initProperties(){
         const el = this.getElement();
-        this._closer =             el.querySelector<HTMLElement>('.ol-popup-closer');
-        this._resizer =            el.querySelector<HTMLElement>('.popup-resizer');
-        this._resizer_content =    this._resizer.querySelector<HTMLElement>('.popup-resizer-content');
-        this._content =            el.querySelector<HTMLElement>('.ol-popup-content');
-        this._pt_image =           el.querySelector<HTMLElement>('.pt-image');
-        this._pt_trk =             el.querySelector<HTMLElement>('.pt-trk');
-        this._pt_trk_tool =        el.querySelector<HTMLElement>('.pt-trk-tool');
-        this._pt_trk_name =        el.querySelector<HTMLElement>('.pt-trk-name');
-        this._pt_trk_desc =        el.querySelector<HTMLElement>('.pop-trk-desc');
-        this._pt_trk_seg_sn =      el.querySelector<HTMLElement>('.pt-trk-seg-sn');
-        this._pt_trk_color =       el.querySelector<HTMLElement>('.pt-trk-color');
-        this._pt_colorboard =      el.querySelector<HTMLElement>('.pt-colorboard');
-        this._pt_header =          el.querySelector<HTMLElement>('.pt-header');
-        this._pt_sym =             el.querySelector<HTMLImageElement>('.pt-sym');
-        this._pt_symboard =        el.querySelector<HTMLElement>('.pt-symboard');
-        //this._pt_symboard_filter = ... //DONT DO THIS since symboard is lazy initailized
-        this._pt_name =            el.querySelector<HTMLElement>('.pt-name');
-        this._pt_desc =            el.querySelector<HTMLElement>('.pop-pt-desc');
-        this._pt_coord =           el.querySelector<HTMLElement>('.pt-coord');
-        this._pt_coord_title =     this._pt_coord.querySelector<HTMLSelectElement>('.pt-coord-title');
-        this._pt_coord_value =     this._pt_coord.querySelector<HTMLElement>('.pt-coord-value');
-        this._pt_gmap =            el.querySelector<HTMLAnchorElement>('a.pt-gmap');
-        this._pt_ele =             el.querySelector<HTMLElement>('.pt-ele-value');
-        this._pt_ele_est =         el.querySelector<HTMLElement>('.pt-ele-est');
-        this._pt_time =            el.querySelector<HTMLElement>('.pt-time-value');
-        this._pt_mk_wpt =          el.querySelector<HTMLButtonElement>('.pt-tool-mk-wpt');
-        this._pt_rm_wpt =          el.querySelector<HTMLButtonElement>('.pt-tool-rm-wpt');
-        this._pt_split_trk =       el.querySelector<HTMLButtonElement>('.pt-tool-split-trk');
-        this._pt_join_trk =        el.querySelector<HTMLButtonElement>('.pt-tool-join-trk');
-        this._pt_rm_trk =          el.querySelector<HTMLButtonElement>('.pt-tool-rm-trk');
-        this._sym_copyright =      el.querySelector<HTMLElement>('.sym-copyright');
-        this._sym_maker =          this._sym_copyright.querySelector<HTMLAnchorElement>('.sym-maker');
-        this._sym_provider =       this._sym_copyright.querySelector<HTMLAnchorElement>('.sym-provider');
-        this._sym_license =        this._sym_copyright.querySelector<HTMLAnchorElement>('.sym-license');
+        this._closer =          el.querySelector<HTMLElement>('.pop-closer');
+        this._resizer =         el.querySelector<HTMLElement>('.pop-resizer');
+        this._resizer_content = this._resizer.querySelector<HTMLElement>('.pop-resizer-content');
+        this._image =           el.querySelector<HTMLElement>('.pop-image');
+        this._colorboard =      el.querySelector<HTMLElement>('.pop-colorboard');
+        this._symboard =        el.querySelector<HTMLElement>('.pop-symboard');
+        this._tool_split_trk =  el.querySelector<HTMLButtonElement>('.pop-tool-split-trk');
+        this._tool_join_trk =   el.querySelector<HTMLButtonElement>('.pop-tool-join-trk');
+        this._tool_rm_trk =     el.querySelector<HTMLButtonElement>('.pop-tool-rm-trk');
+        this._tool_mk_wpt =     el.querySelector<HTMLButtonElement>('.pop-tool-mk-wpt');
+        this._tool_rm_wpt =     el.querySelector<HTMLButtonElement>('.pop-tool-rm-wpt');
+        this._trk =             el.querySelector<HTMLElement>('.pop-trk');
+        this._trk_tool =        el.querySelector<HTMLElement>('.pop-trk-tool');
+        this._trk_name =        el.querySelector<HTMLElement>('.pop-trk-name');
+        this._trk_desc =        el.querySelector<HTMLElement>('.pop-trk-desc');
+        this._trk_seg_sn =      el.querySelector<HTMLElement>('.pop-trk-seg-sn');
+        this._trk_color =       el.querySelector<HTMLElement>('.pop-trk-color');
+        this._pt_header =       el.querySelector<HTMLElement>('.pop-pt-header');
+        this._pt_sym =          el.querySelector<HTMLImageElement>('.pop-pt-sym');
+        //this._symboard_filter = ... //DONT DO THIS since symboard is lazy initailized
+        this._pt_name =         el.querySelector<HTMLElement>('.pop-pt-name');
+        this._pt_desc =         el.querySelector<HTMLElement>('.pop-pt-desc');
+        this._pt_coord =        el.querySelector<HTMLElement>('.pop-pt-coord');
+        this._pt_coord_title =  this._pt_coord.querySelector<HTMLSelectElement>('.pop-pt-coord-title');
+        this._pt_coord_value =  this._pt_coord.querySelector<HTMLElement>('.pop-pt-coord-value');
+        this._pt_gmap =         el.querySelector<HTMLAnchorElement>('a.pop-pt-gmap');
+        this._pt_ele =          el.querySelector<HTMLElement>('.pop-pt-ele-value');
+        this._pt_ele_est =      el.querySelector<HTMLElement>('.pop-pt-ele-est');
+        this._pt_time =         el.querySelector<HTMLElement>('.pop-pt-time-value');
+        this._sym_copyright =   el.querySelector<HTMLElement>('.sym-copyright');
+        this._sym_maker =       this._sym_copyright.querySelector<HTMLAnchorElement>('.sym-maker');
+        this._sym_provider =    this._sym_copyright.querySelector<HTMLAnchorElement>('.sym-provider');
+        this._sym_license =     this._sym_copyright.querySelector<HTMLAnchorElement>('.sym-license');
     }
 
     public hide(){
@@ -235,10 +234,10 @@ export class PtPopupOverlay extends Overlay{
     // reset to initial display status
     private resetDisplay(image){
         //colorboard
-        displayElem(this._pt_colorboard, false);   //colorboard hidden, if any
+        displayElem(this._colorboard, false);   //colorboard hidden, if any
 
         //symboard
-        displayElem(this._pt_symboard, false);     //symboard hidden, if any
+        displayElem(this._symboard, false);     //symboard hidden, if any
         this.resetSymboardFilter();         //symboard filter reset
 
         //resizer
@@ -253,10 +252,10 @@ export class PtPopupOverlay extends Overlay{
         //image
         const {url, size} = image || {};
         const {width, height} = size? scaleDown(size, 400): {width: undefined, height: undefined};
-        this._pt_image.classList.toggle('active', !!image);
-        this._pt_image.style.backgroundImage = url? `url('${url}')`: '';
-        this._pt_image.style.width = width? `${width}px`: '';
-        this._pt_image.style.height = height? `${height}px`: '';
+        this._image.classList.toggle('active', !!image);
+        this._image.style.backgroundImage = url? `url('${url}')`: '';
+        this._image.style.width = width? `${width}px`: '';
+        this._image.style.height = height? `${height}px`: '';
     }
 
     private initEvents(){
@@ -291,7 +290,7 @@ export class PtPopupOverlay extends Overlay{
         new IntersectionObserver((entries) => {
             const visible = entries[0].intersectionRatio > 0;
             this._resizer.classList.toggle('disabled', visible);
-        }).observe(this._pt_symboard);
+        }).observe(this._symboard);
 
         //lazy init symboard
         this._pt_sym.addEventListener('mousedown', () => {
@@ -302,16 +301,16 @@ export class PtPopupOverlay extends Overlay{
         // colorboard
         setSubBoardEvents(
             this.getElement(),
-            this._pt_trk_color,
-            this._pt_colorboard,
-            this._pt_colorboard.querySelectorAll<HTMLElement>('.pt-colorboard-item'), (item) => {
+            this._trk_color,
+            this._colorboard,
+            this._colorboard.querySelectorAll<HTMLElement>('.pop-colorboard-item'), (item) => {
                 const color = item.getAttribute("title");
                 this._updateData('trk.color', color);
             });
 
         // change trk name
-        this._pt_trk_name.onkeydown = enter_to_blur_listener;
-        this._pt_trk_name.onblur = e => {
+        this._trk_name.onkeydown = enter_to_blur_listener;
+        this._trk_name.onblur = e => {
             const name = this.pt_trk_name.trim();
             if(!name)
                 return this.pt_trk_name = this._data.trk.name;
@@ -319,8 +318,8 @@ export class PtPopupOverlay extends Overlay{
         }
 
         // change trk desc
-        this._pt_trk_desc.onkeydown = enter_to_blur_listener;
-        this._pt_trk_desc.onblur = e => {
+        this._trk_desc.onkeydown = enter_to_blur_listener;
+        this._trk_desc.onblur = e => {
             const desc = this.pt_trk_desc.trim();
             this._updateData('pt.desc', desc, false);
         }
@@ -373,7 +372,7 @@ export class PtPopupOverlay extends Overlay{
         };
 
         // make wpt from trkpt
-        this._pt_mk_wpt.onclick = e => {
+        this._tool_mk_wpt.onclick = e => {
             /*
             //sometimes coordiantes changed when getting it from feature again. Why??
             const wpt = this._feature.clone();
@@ -392,66 +391,66 @@ export class PtPopupOverlay extends Overlay{
             this._listeners['mkwpt']?.(wpt);
         };
 
-        delayToEnable(this._pt_rm_wpt, 1000); // delay to enable button, prevent from click by mistake
-        this._pt_rm_wpt.onclick = e => {
+        delayToEnable(this._tool_rm_wpt, 1000); // delay to enable button, prevent from click by mistake
+        this._tool_rm_wpt.onclick = e => {
             this._listeners['rmwpt']?.(this._feature);
             this.hide();
         };
 
-        delayToEnable(this._pt_rm_trk, 1000); // delay to enable button, prevent from click by mistake
-        this._pt_rm_trk.onclick = e => {
+        delayToEnable(this._tool_rm_trk, 1000); // delay to enable button, prevent from click by mistake
+        this._tool_rm_trk.onclick = e => {
             this._listeners['rmtrk']?.(this._feature);
             this.hide();
         };
 
-        this._pt_split_trk.onclick = e => {
+        this._tool_split_trk.onclick = e => {
             this._listeners['splittrk']?.(this._feature, this._data.pt.coord);
             this.setTrackTools(this._feature, this._data);  // just refresh ui
         };
 
-        this._pt_join_trk.onclick = e => {
+        this._tool_join_trk.onclick = e => {
             const trk_suckedup = this._listeners['jointrk']?.(this._feature, this._data.pt.coord); // the trk is removed after the join
             trk_suckedup? this.hide(): this.setTrackTools(this._feature, this._data);
         }
     }
 
     private initSymboard(){
-        if(this._pt_symboard.childElementCount) // already initialized
+        if(this._symboard.childElementCount) // already initialized
             return;
-        this._pt_symboard.innerHTML = templates.symboard(symbol_inv);
+
+        this._symboard.innerHTML = templates.symboard(symbol_inv);
+        this._symboard_filter = this._symboard.querySelector<HTMLInputElement>('.pop-symboard-filter');
+        this._symboard_items = Array.from(this._symboard.querySelectorAll<HTMLElement>('.pop-symboard-item'));
 
         // show the board and pick
         setSubBoardEvents(
             this.getElement(),
             this._pt_sym,
-            this._pt_symboard,
-            this._pt_symboard.querySelectorAll<HTMLElement>('.pt-symboard-item'), (item) => {
+            this._symboard,
+            this._symboard_items, (item) => {
                 const sym = item.getAttribute("title");
                 this._updateData('pt.sym', sym);
             });
 
         // filter
-        this._pt_symboard_filter = this._pt_symboard.querySelector<HTMLInputElement>('#pt-symboard-filter');
-        let filter_orig;
-        this._pt_symboard_filter.onkeydown= e => { filter_orig = this._pt_symboard_filter.value; }
-        this._pt_symboard_filter.onkeyup = e => {
-            if (filter_orig == this._pt_symboard_filter.value)
+        let filter_value_orig;
+        this._symboard_filter.onkeydown= e => { filter_value_orig = this._symboard_filter.value; }
+        this._symboard_filter.onkeyup = e => {
+            if (filter_value_orig == this._symboard_filter.value)   // filter out those key that dont alter text, like arrow keys
                 return;
-            const val = this._pt_symboard_filter.value.toLowerCase();
-            this._pt_symboard.querySelectorAll<HTMLElement>('.pt-symboard-item').forEach(el => {
-                const name = el.getAttribute('title').toLowerCase();
-                el.style.visibility = name.includes(val) ? "unset" : "hidden";
+            const val = this._symboard_filter.value.toLowerCase();
+            this._symboard_items.forEach(item => {
+                const name = item.getAttribute('title').toLowerCase();
+                item.style.visibility = name.includes(val) ? "" : "hidden";
             });
         };
     }
 
     private resetSymboardFilter(){
-        if(!this._pt_symboard_filter)
+        if(!this._symboard_filter)
             return;
-        this._pt_symboard_filter.value = '';
-        this._pt_symboard.querySelectorAll<HTMLElement>('.pt-symboard-item').forEach(el => {
-            el.style.visibility = "unset";
-        });
+        this._symboard_filter.value = '';
+        this._symboard_items.forEach(item => item.style.visibility = "");
     }
 
     // Update the cached data and feature, and redraw UI if needed
@@ -539,21 +538,21 @@ export class PtPopupOverlay extends Overlay{
         const symbol = getSymbol(pt.sym);
 
         //trk --------------------------------
-        displayElem(this._pt_trk, trk);
+        displayElem(this._trk, trk);
         if(trk){
             this.pt_trk_name = trk.name;
             this.pt_trk_desc = trk.desc;
             this.pt_trk_color = colorCode(trk.color || def_trk_color);
-            readonlyElem(this._pt_trk_name, readonly)
-            readonlyElem(this._pt_trk_desc, readonly)
-            readonlyElem(this._pt_trk_color, readonly)
-            displayElem(this._pt_trk_desc, trk.desc);   // show only if set. TODO: show the field on demand
+            readonlyElem(this._trk_name, readonly)
+            readonlyElem(this._trk_desc, readonly)
+            readonlyElem(this._trk_color, readonly)
+            displayElem(this._trk_desc, trk.desc);   // show only if set. TODO: show the field on demand
             this.setTrackTools(this._feature, {trk, pt})
         }
 
         //wpt --------------------------------
-        displayElem(this._pt_mk_wpt, readonly || !is_wpt);
-        displayElem(this._pt_rm_wpt, !readonly && is_wpt);
+        displayElem(this._tool_mk_wpt, readonly || !is_wpt);
+        displayElem(this._tool_rm_wpt, !readonly && is_wpt);
 
         //pt --------------------------------
         this.pt_name = pt.name;
@@ -563,7 +562,7 @@ export class PtPopupOverlay extends Overlay{
 
         this.pt_desc = pt.desc ;
         readonlyElem(this._pt_desc, readonly);
-        displayElem(this._pt_desc, is_wpt || pt.desc);   // not show for trkpt if empty
+        displayElem(this._pt_desc, is_wpt || pt.desc);   // not show for trkpt if empty. TODO: show the field on demand
 
         this.pt_coord = coordxy;
         this.pt_coord_title = coordsys;
@@ -591,11 +590,11 @@ export class PtPopupOverlay extends Overlay{
         if(track){
             const readonly = track.get('readonly');
             //tool
-            displayElem(this._pt_trk_tool, !readonly && !pt.is_virtual);
+            displayElem(this._trk_tool, !readonly && !pt.is_virtual);
             if(!readonly && !pt.is_virtual){
                 const endidx = getTrkptIndices(track.getGeometry().getCoordinates(), {coord: pt.coord, atends: true } );
-                displayElem(this._pt_join_trk,  endidx);
-                displayElem(this._pt_split_trk, !endidx);  // TODO: let a virtual pt can to split
+                displayElem(this._tool_join_trk,  endidx);
+                displayElem(this._tool_split_trk, !endidx);  // TODO: let a virtual pt can to split
             }
             //header
             this.pt_trk_seg_sn = this.getTrksegSnText();
