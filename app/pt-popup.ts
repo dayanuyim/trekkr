@@ -144,8 +144,8 @@ export class PtPopupOverlay extends Overlay{
 
     get pt_trk_name() { return this._pt_trk_name.textContent; }
     set pt_trk_name(value) { this._pt_trk_name.textContent = value; }
-    get pt_trk_desc() { return this._pt_trk_desc.textContent; }
-    set pt_trk_desc(value) { this._pt_trk_desc.textContent = value; }
+    get pt_trk_desc() { return this._pt_trk_desc.textContent.trim(); }
+    set pt_trk_desc(value) { this._pt_trk_desc.textContent = value?.trim(); }
     get pt_trk_seg_sn() { return this._pt_trk_seg_sn.textContent; }
     set pt_trk_seg_sn(value) { this._pt_trk_seg_sn.textContent = value; }
     get pt_trk_color() { return this._pt_trk_color.style.backgroundColor; }
@@ -154,8 +154,8 @@ export class PtPopupOverlay extends Overlay{
     set pt_sym(src) { this._pt_sym.src = src;}
     get pt_name() { return this._pt_name.textContent; }
     set pt_name(value) { this._pt_name.textContent = value; }
-    get pt_desc() { return this._pt_desc.textContent; }
-    set pt_desc(value) { this._pt_desc.textContent = value; }
+    get pt_desc() { return this._pt_desc.textContent.trim(); }
+    set pt_desc(value) { this._pt_desc.textContent = value?.trim(); }
     get pt_coord() { return this._pt_coord.getAttribute('data-pt-coord').split(',').map(Number); }
     set pt_coord(value) { this._pt_coord.setAttribute('data-pt-coord', value.join(',')); }
     get pt_coord_title() { return this._pt_coord_title.value; }
@@ -200,7 +200,7 @@ export class PtPopupOverlay extends Overlay{
         this._pt_trk =             el.querySelector<HTMLElement>('.pt-trk');
         this._pt_trk_tool =        el.querySelector<HTMLElement>('.pt-trk-tool');
         this._pt_trk_name =        el.querySelector<HTMLElement>('.pt-trk-name');
-        this._pt_trk_desc =        el.querySelector<HTMLElement>('.pt-trk-desc');
+        this._pt_trk_desc =        el.querySelector<HTMLElement>('.pop-trk-desc');
         this._pt_trk_seg_sn =      el.querySelector<HTMLElement>('.pt-trk-seg-sn');
         this._pt_trk_color =       el.querySelector<HTMLElement>('.pt-trk-color');
         this._pt_colorboard =      el.querySelector<HTMLElement>('.pt-colorboard');
@@ -209,7 +209,7 @@ export class PtPopupOverlay extends Overlay{
         this._pt_symboard =        el.querySelector<HTMLElement>('.pt-symboard');
         //this._pt_symboard_filter = ... //DONT DO THIS since symboard is lazy initailized
         this._pt_name =            el.querySelector<HTMLElement>('.pt-name');
-        this._pt_desc =            el.querySelector<HTMLElement>('.pt-desc-value');
+        this._pt_desc =            el.querySelector<HTMLElement>('.pop-pt-desc');
         this._pt_coord =           el.querySelector<HTMLElement>('.pt-coord');
         this._pt_coord_title =     this._pt_coord.querySelector<HTMLSelectElement>('.pt-coord-title');
         this._pt_coord_value =     this._pt_coord.querySelector<HTMLElement>('.pt-coord-value');

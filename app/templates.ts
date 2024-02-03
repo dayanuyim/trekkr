@@ -94,7 +94,7 @@ export const ptPopup = Handlebars.compile(`
             <span class="pt-trk-seg-sn"></span>
         </div>
         <div class="pt-row">
-            <span class="pt-trk-desc" contenteditable="true" data-placeholder="Description for the track">{{desc}}</span>
+            <span class="pop-desc pop-trk-desc" contenteditable="true" data-placeholder="Description for the track">{{desc}}</span>
         </div>
     </div>
     <div class="pt-colorboard glassmophism hidden">
@@ -115,8 +115,8 @@ export const ptPopup = Handlebars.compile(`
         </div>
         <div class="pt-symboard glassmophism hidden"></div>
 
-        <div class="pt-desc">
-            <span class="pt-desc-value" contenteditable="true" data-placeholder="Description for the wpt">{{desc}}</span>
+        <div>
+            <span class="pop-desc pop-pt-desc" contenteditable="true" data-placeholder="Description for the pt">{{desc}}</span>
         </div>
 
         <div class="pt-coord" data-pt-coord="{{coordinate}}">

@@ -561,6 +561,13 @@ select::-ms-expand {
     padding: 4px 32px 4px 4px;  /* right space for tool buttons */
 }
 
+.pop-desc:not(.hidden) {
+    display: inline-block;
+    white-space: break-spaces;
+    color: gray;
+    font-size: smaller;
+}
+
 /*----------------------------------------------------------------*/
 
 .pt-trk {
@@ -625,12 +632,6 @@ select::-ms-expand {
     right: -25px;
     color: gray;
     font-size: small;
-}
-
-.pt-trk-desc {
-    color: gray;
-    white-space: nowrap;
-    font-size: smaller;
 }
 
 .pt-colorboard {
@@ -780,13 +781,6 @@ select::-ms-expand {
     /*font-weight: bold;*/
     font-size: 20px;
     /*width: 9em;*/
-}
-
-.pt-desc {
-    margin: 1px 0;
-    color: gray;
-    white-space: nowrap;
-    font-size: smaller;
 }
 
 .pt-coord, .pt-ele, .pt-time{
