@@ -19,7 +19,7 @@ export function colorCode(color){
 }
 
 export function gmapUrl(coord){
-    return fmtCoordinate(toLonLat(coord), `https://www.google.com.tw/maps/@{y},{x},${Opt.zoom}z?hl=zh-TW`, 7);
+    return fmtCoordinate(toLonLat(coord), `https://www.google.com.tw/maps/place/{y}+{x}/@{y},{x},${Opt.zoom}z?hl=zh-TW`, 7);
 }
 
 export function getLayoutOfCoord(coord){
