@@ -189,22 +189,20 @@ export function tablink(tab_q, content_q, init_idx=0)
 }
 
 export function saveTextAsFile(textToWrite, fileNameToSaveAs, fileType) {
-    let textFileAsBlob = new Blob([textToWrite], { type: fileType });
-    let downloadLink = document.createElement('a');
-    downloadLink.download = fileNameToSaveAs;
-    downloadLink.innerHTML = 'Download File';
-
-    if (window.webkitURL != null) {
-        downloadLink.href = window.webkitURL.createObjectURL(
-            textFileAsBlob
-        );
-    } else {
-        downloadLink.href = window.URL.createObjectURL(textFileAsBlob);
-        downloadLink.style.display = 'none';
-        document.body.appendChild(downloadLink);
-    }
-
-    downloadLink.click();
+    const textFileAsBlob = new Blob([textToWrite], { type: fileType });
+    const anchor = document.createElement('a');
+    anchor.download = fileNameToSaveAs;
+    //anchor.href = window.webkitURL ?
+    //    window.webkitURL.createObjectURL(textFileAsBlob) :
+    //    window.URL.createObjectURL(textFileAsBlob);
+    anchor.href = window.URL.createObjectURL(textFileAsBlob);
+    anchor.style.display = 'none';
+    document.body.appendChild(anchor);
+    anchor.click();
+    setTimeout(()=>{
+        window.URL.revokeObjectURL(anchor.href);
+        document.body.removeChild(anchor);
+    })
 }
 
 // Delay to enable button
