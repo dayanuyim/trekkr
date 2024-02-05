@@ -314,12 +314,19 @@ export class AppMap{
   */
 
   private setInteraction(layer) {
-    if(!layer.isInteractionSet){
-      layer.isInteractionSet = true;
-      this._map.addInteraction(new Modify({    //let trkpt feature as 'Point', instead of 'MultiLineString'
+    if(!layer._interaction){
+      layer._interaction = new Modify({    //let trkpt feature as 'Point', instead of 'MultiLineString'
         source: layer.getSource(),
         condition: platformModifierKeyOnly,
-      }));
+      });
+      this._map.addInteraction(layer._interaction);
+    }
+  }
+
+  private unsetInteraction(layer) {
+    if(layer._interaction){
+      this._map.removeInteraction(layer._interaction);
+      layer._interaction = null;
     }
   }
 
@@ -338,20 +345,13 @@ export class AppMap{
   {
     const in_right_pos = (arr, idx, elem) => arr.getLength() > idx && arr.item(idx) === elem;
 
-    const id_conf = {};
-    conf.forEach(cnf => id_conf[cnf.id] = cnf)
-
     const map_layers = this._map.getLayers();
 
-    // remove map layers, which disable in conf
-    const rm_idx = [];
-    map_layers.forEach((layer, idx) => {
-      const id = LayerRepo.getId(layer);
-      const cnf = id? id_conf[id]: undefined;
-      if(cnf && !cnf.checked)
-        rm_idx.unshift(idx);  //insert to first
-    });
-    rm_idx.forEach(idx => map_layers.removeAt(idx));
+    // remove map layers disabled in conf
+    const disableds = new Set(conf.filter(({checked})=>!checked).map(({id})=>id));
+    map_layers.getArray()                                         // do not manipulate the underly array directly!
+      .filter((layer) => disableds.has(LayerRepo.getId(layer)))   // a copy of layers needed to remove
+      .forEach((layer) => this.unsetInteraction(map_layers.remove(layer)));   //remove and then unset its interaction
 
     // add enabled layers in the same order of cnf
     conf.filter(cnf => cnf.checked)
