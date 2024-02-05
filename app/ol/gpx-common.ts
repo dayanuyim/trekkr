@@ -75,12 +75,14 @@ function getTrkptIndicesAtEnds(trksegs, value, eq)
     return null;
 }
 
+// TODO: seems no efficient way...should get the info from ol...
+// cannot use binary search here, because the track may go to and back...
 function getTrkptIndicesByCoord(trksegs, coord)
 {
-  for(let i = 0; i < trksegs.length; ++i){
+  for (let i = 0; i < trksegs.length; ++i) {
     const trkseg = trksegs[i];
     const j = trkseg.findIndex(c => xy_eq(c, coord));
-    if(j >= 0)
+    if (j >= 0)
       return [i, j];
   }
   return null;
@@ -94,12 +96,12 @@ function getTrkptIndicesByTime(trksegs, time)
     if(!(time_of(trkseg[0]) <= time && time <= time_of(trkseg[trkseg.length-1])))
       continue;
 
-    const idx = binsearchIndex(trkseg, (coord, i, arr) => {
+    const j = binsearchIndex(trkseg, (coord, idx, arr) => {
       const t = time_of(coord);
-      return (time >= t) ? (time - t) :
-        (time > time_of(arr[i - 1])) ? 0 : -1; // i should be larger than 0 here
+      return (time >= t) ? (time - t) :             // return 0 if time == time_of(coord)
+             (time > time_of(arr[idx - 1])) ? 0 : -1; // return 0 if time < time_of(coord) and time > time_of(the-last-coord)
     });
-    return [i, idx];
+    return [i, j];
   }
   return null;
 }

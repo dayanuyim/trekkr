@@ -230,6 +230,26 @@ export function binsearchIndex(arr, compare_fn) {
     return -1;
 }
 
+export function binsearchMin(arr, weight_fn) {
+    let m = 0;
+    let n = arr.length - 1;
+    while (m <= n) {
+        const i = (n + m) >> 1;
+        const j = i + 1;
+        if(j > n)   // no other elements
+            return i;
+
+        const wi = weight_fn(arr[i], i, arr);
+        const wj = weight_fn(arr[j], j, arr);
+        if (wi >= wj) {
+            m = j;
+        } else {
+            n = i;
+        }
+    }
+    return -1;
+}
+
 
 // given n predicates, split an array into (n + 1) arrays according to the predicate, testing by order.
 export function splitn(arr, ...predicates)

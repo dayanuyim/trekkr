@@ -85,20 +85,16 @@ function splitTrack(track, coord)
   const layout = track.getGeometry().getLayout();
   const trksegs = track.getGeometry().getCoordinates();
 
-  const point = (time && layout.endsWith('M'))?
-      getTrkptIndices(trksegs, {time}):
-      getTrkptIndices(trksegs, {coord});
-  if(!point){
-    console.error('cannot find the split point by coord', coord);
-    return null;
-  }
-  const [i, j] = point;
-  if(j == 0 || j == trksegs[i].length -1){
-    console.error('cannot split at the first or the last of a trkseg');
-    return null;
-  }
+  const split_by = (time && layout.endsWith('M'))? {time}: {coord};
+  const point = getTrkptIndices(trksegs, split_by);
+  if(!point)
+    return console.error('cannot find the split point by coord', coord);
 
-  const [trksegs1, trksegs2] = splitTrksegs(trksegs, point);
+  const [i, j] = point;
+  if(j == 0 || j == trksegs[i].length -1)
+    return console.error('cannot split at the first or the last of a trkseg');
+
+  const [trksegs1, trksegs2] = splitTrksegs(trksegs, point, coord);
   track.getGeometry().setCoordinates(trksegs1); // reset the current track
   return olTrackFeature({                      // create the split-out track
     coordinates: trksegs2,
@@ -109,12 +105,22 @@ function splitTrack(track, coord)
   })
 }
 
-function splitTrksegs(trksegs, point){
+//@coord may be a virtual trkpt, not in the trksegs[i]
+function splitTrksegs(trksegs, point, coord){
   const [i, j] = point;
-  const trksegs1 = trksegs.slice(0, i);
-  const trksegs2 = trksegs.slice(i+1);
-  trksegs1.push(trksegs[i].slice(0, j+1));
-  trksegs2.unshift(trksegs[i].slice(j));   // duplicate the trkpt
+  const trksegs1 = trksegs.slice(0, i);   // for track1
+  const trksegs2 = trksegs.slice(i+1);    // for track2
+
+  const seg1 = trksegs[i].slice(0, j);
+  if(!xy_equals(seg1[seg1.length-1], coord))
+    seg1.push(coord);
+
+  const seg2 = trksegs[i].slice(j);
+  if(!xy_equals(seg2[0], coord))
+    seg2.unshift(coord);
+
+  trksegs1.push(seg1);
+  trksegs2.unshift(seg2);
   return [trksegs1, trksegs2];
 }
 

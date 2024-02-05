@@ -543,9 +543,9 @@ export class PtPopupOverlay extends Overlay{
             this.pt_trk_name = trk.name;
             this.pt_trk_desc = trk.desc;
             this.pt_trk_color = colorCode(trk.color || def_trk_color);
-            readonlyElem(this._trk_name, readonly)
-            readonlyElem(this._trk_desc, readonly)
-            readonlyElem(this._trk_color, readonly)
+            readonlyElem(this._trk_name, readonly);
+            readonlyElem(this._trk_desc, readonly);
+            //readonlyElem(this._trk_color, readonly);  it seems ok to edit the color even readonly
             displayElem(this._trk_desc, trk.desc);   // show only if set. TODO: show the field on demand
             this.setTrackTools(this._feature, {trk, pt})
         }
@@ -590,11 +590,11 @@ export class PtPopupOverlay extends Overlay{
         if(track){
             const readonly = track.get('readonly');
             //tool
-            displayElem(this._trk_tool, !readonly && !pt.is_virtual);
-            if(!readonly && !pt.is_virtual){
+            displayElem(this._trk_tool, !readonly /*&& !pt.is_virtual*/);
+            if(!readonly /*&& !pt.is_virtual*/){
                 const endidx = getTrkptIndices(track.getGeometry().getCoordinates(), {coord: pt.coord, atends: true } );
                 displayElem(this._tool_join_trk,  endidx);
-                displayElem(this._tool_split_trk, !endidx);  // TODO: let a virtual pt can to split
+                displayElem(this._tool_split_trk, !endidx && (!pt.is_virtual || track.getGeometry().getLayout().endsWith('M'))); // virtual trkpt with time is ok
             }
             //header
             this.pt_trk_seg_sn = this.getTrksegSnText();
