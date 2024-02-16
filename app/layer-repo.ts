@@ -6,9 +6,9 @@ import Graticule from 'ol/layer/Graticule';
 
 import BiMap from 'bidirectional-map';
 
-import { GPX as GPXLayer } from './ol/layer/GPX';
-import { GPX as GPXFormat } from './ol/format/GPX';
-import { GPX as GPXStyle } from './ol/style/GPX';
+import GPXLayer from './ol/layer/GPX';
+import GPXFormat from './ol/format/GPX';
+import GPXStyle from './ol/style/GPX';
 import Opt from './opt';
 
 const def_label_style = {

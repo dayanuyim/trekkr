@@ -195,9 +195,8 @@ const arrow_head_style_generator = (color, shaft_width) => {
   });
 }
 
-const track_arrow_styles = (linestrings, color, width) => {
+const track_arrow_styles = (linestrings, {trackColor: color, trackWidth: width, trackArrowNum: arrow_num}) => {
   //let { interval, max_num: arrow_num } = Opt.track.arrow;
-  const arrow_num = Opt.track.arrow.max_num;
   const begin = 15;   // show arrows in the very ends seems useless, so skip it.
   const min_step = 20;
 
@@ -212,7 +211,7 @@ const track_arrow_styles = (linestrings, color, width) => {
   });
 }
 
-const track_line_styles = (color, width) => {
+const track_line_styles = ({trackColor: color, trackWidth: width}) => {
   return [
     new Style({
       stroke: new Stroke({
@@ -231,11 +230,10 @@ const track_line_styles = (color, width) => {
   ];
 }
 
-const track_styles = (feature, options?) => {
-  const color = (feature.get('color') || def_trk_color).toLowerCase();
-  const width = 3;
-  return track_line_styles(color, width).concat(
-    track_arrow_styles(feature.getGeometry().getLineStrings(), color, width)
+const track_styles = (feature, options) => {
+  options.trackColor = (feature.get('color') || def_trk_color).toLowerCase();
+  return track_line_styles(options).concat(
+         track_arrow_styles(feature.getGeometry().getLineStrings(), options),
   );
 }
 
@@ -279,7 +277,7 @@ function GPX_closure_version(options?){
 // The Cllable Object Version
 // The object a accepts a options object, and then it itself is callable as a style function
 //  (A style function is a function feeded a feature object and returns a style object)
-export class GPX extends ExtensibleFunction {
+class GPX extends ExtensibleFunction {
 
   get filterable(){ return this._options.filterable; }
   set filterable(v){ this._options.filterable = v; }
@@ -294,6 +292,8 @@ export class GPX extends ExtensibleFunction {
       invisible: false,
       filterable: false,
       scale: 1,
+      trackWidth: 3,
+      trackArrowNum: 0,
     }, options);
 
     super(function(feature){
@@ -304,3 +304,5 @@ export class GPX extends ExtensibleFunction {
     this._options = options;
   }
 }
+
+export default GPX;

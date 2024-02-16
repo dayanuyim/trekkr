@@ -13,8 +13,9 @@ import * as Extent from 'ol/extent';
 import { GeoJSON, IGC, KML, TopoJSON } from 'ol/format';
 
 import PhotoFormat from './ol/format/Photo';
-import { GPX as GPXLayer } from './ol/layer/GPX';
-import { GPX as GPXFormat} from './ol/format/GPX';
+import GPXLayer from './ol/layer/GPX';
+import GPXFormat from './ol/format/GPX';
+import GPXStyle from './ol/style/GPX';
 
 import Opt from './opt';
 import { splitn } from './lib/utils';
@@ -103,7 +104,11 @@ export class AppMap{
     });
 
     // pseudo gpx layer
-    this._gpx_layer = new GPXLayer();
+    this._gpx_layer = new GPXLayer({
+      style: new GPXStyle({
+        trackArrowNum: Opt.track.arrow.max_num,
+      }),
+    });
     this._map.addLayer(this._gpx_layer);
     this.setInteraction(this._gpx_layer);
 

@@ -20,7 +20,7 @@ function getNodeContent(node, ...names)
 }
 
 // GPX format which reads extensions node
-export class GPX extends _GPX {
+class GPX extends _GPX {
   _readonly: boolean;
   constructor(options?){
     super(Object.assign({
@@ -47,3 +47,5 @@ export class GPX extends _GPX {
     return features;
   }
 }
+
+export default GPX;

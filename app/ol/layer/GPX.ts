@@ -5,7 +5,7 @@ import { MultiLineString, Point } from 'ol/geom';
 import { toLonLat } from 'ol/proj';
 import { create as createXML } from 'xmlbuilder2';
 
-import { GPX as GPXStyle } from '../style/GPX';
+import GPXStyle from '../style/GPX';
 import { def_trk_color, isTrkFeature, isWptFeature, olWptFeature, olTrackFeature, getTrkptIndices } from '../gpx-common';
 
 import { getSymbol } from '../../sym'
@@ -150,7 +150,7 @@ function joinTrksegs(trk, begin, end){
  *      2) features (manually created or parsed by GPX Format)
  ***************************************************************/
 
-export class GPX extends VectorLayer<VectorSource>{
+class GPX extends VectorLayer<VectorSource>{
   _crosshair_wpt;
   _interactable;
 
@@ -531,3 +531,5 @@ function addGpxTracks(node, trks) {
   });
   return node;
 }
+
+export default GPX;
