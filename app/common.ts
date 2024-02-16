@@ -99,20 +99,15 @@ function googleElevation(lat, lon)
     });
   });
 }
-export const getEleByCoord = async (coord) => {
-  const ele = getEleOfCoord(coord);
-  if(ele)
-    return {ele, is_est: false};
 
-  //get est. elevation from google
+export const getEstElevation = async (coord) => {
   const [lon, lat] = toLonLat(coord);
   try{
-    const ele = await googleElevation(lat, lon);
-    return {ele, is_est: true}
+    return await googleElevation(lat, lon);
   }
   catch(err){
     console.log(`Google Elevation Error: ${err}`);
-    return {};
+    return undefined;
   }
 };
 

@@ -8,7 +8,7 @@ import {toTWD97, toTWD67, toTaipowerCoord} from './coord';
 
 //import * as moment from 'moment-timezone';
 import { getSymbol, matchRules, symbol_inv } from './sym'
-import { getEleByCoord, getEleOfCoord, setEleOfCoord, getLocalTimeByCoord, gmapUrl, colorCode } from './common'
+import { getEstElevation, getEleOfCoord, setEleOfCoord, getLocalTimeByCoord, gmapUrl, colorCode } from './common'
 import { olWptFeature, def_trk_color, getTrkptIndices, isTrkFeature, isWptFeature} from './ol/gpx-common';
 import { delayToEnable } from './lib/dom-utils';
 import Opt from './opt';
@@ -512,7 +512,7 @@ export class PtPopupOverlay extends Overlay{
         this._data = {trk, pt};                 // for creating/updating
 
         this.resetDisplay(pt.image);
-        await this.setContent(this._data);
+        this.setContent(this._data);
         this.setPosition(pt.coord);
     }
 
@@ -526,7 +526,7 @@ export class PtPopupOverlay extends Overlay{
         return features ? features.find(isWptFeature) : undefined;
     }
 
-    private async setContent({trk, pt})
+    private setContent({trk, pt})
     {
         const readonly = this._feature.get('readonly');
 
@@ -534,7 +534,7 @@ export class PtPopupOverlay extends Overlay{
         const coordsys = Opt.coordsys;
         const coordxy = pt.coord.slice(0, 2);
         const time = getLocalTimeByCoord(pt.coord);
-        const {ele, is_est} = await getEleByCoord(pt.coord);
+        const ele = getEleOfCoord(pt.coord);
         const symbol = getSymbol(pt.sym);
 
         //trk --------------------------------
@@ -569,11 +569,21 @@ export class PtPopupOverlay extends Overlay{
         this.pt_coord_value = toXY[coordsys](coordxy);  //to web xy
         this.pt_gmap = gmapUrl(coordxy);
 
-        this.pt_ele = !ele? '-':
-                    (readonly || !is_wpt)? fmtEle(ele):   // only formatting if readonly
-                    ele;
-        readonlyElem(this._pt_ele, (readonly || !is_wpt));
-        displayElem(this._pt_ele_est, is_est);
+        const set_ele_content = (value, estimated) =>{
+            const ro = readonly || !is_wpt;    // trkpt is viewed as readonly
+            this.pt_ele = !value? '-':
+                        ro? fmtEle(value):
+                        value;
+            readonlyElem(this._pt_ele, ro);
+            displayElem(this._pt_ele_est, estimated);
+        }
+
+        set_ele_content(ele, false);
+        if(!ele){ // second chance to get the elevation
+            getEstElevation(pt.coord).then(ele => {
+                if(ele) set_ele_content(ele, true);
+            });
+        }
 
         this.pt_time = time? fmtTime(time): '-';
 
