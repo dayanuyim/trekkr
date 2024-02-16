@@ -18,14 +18,13 @@ import GPXFormat from './ol/format/GPX';
 import GPXStyle from './ol/style/GPX';
 
 import Opt from './opt';
-import { splitn } from './lib/utils';
+import { splitn, mapFind } from './lib/utils';
 import { saveTextAsFile } from './lib/dom-utils';
 import { gmapUrl} from './common';
 import { CtxMenu } from './ctx-menu';
 import * as LayerRepo from './layer-repo';
 import { PtPopupOverlay } from './pt-popup';
 import { matchRules } from './sym'
-import opt from './opt';
 
 /*
 //TODO: better way to do this?
@@ -141,25 +140,19 @@ export class AppMap{
   {
     const text = new TextDecoder().decode(arrbuf);
 
-    for(let i = 0; i < this._formats.length; ++i){
-      //get format obj
-      const format = this._formats[i];
-      const formater = (typeof format === 'function')?  new format(): format;
-      const data = (formater.getType() == 'arraybuffer')? arrbuf: text;
-
-      // try to get features
-      const features = this.tryReadFeatures_(formater, data, {
-        featureProjection: this._map.getView().getProjection(),
+    const features = mapFind(this._formats, format => {
+        const formater = (typeof format === 'function') ? new format() : format;
+        const data = (formater.getType() == 'arraybuffer') ? arrbuf : text;
+        //console.log(`to parse '${formater.constructor.name}' format`);
+        return this.tryReadFeatures_(formater, data, {
+          featureProjection: this._map.getView().getProjection(),
+        });
+      }, features => {
+        return features && features.length > 0;
       });
 
-      //test the next format
-      if(!features || features.length == 0)
-        continue;
-
-      // got features and stop
+    if(features)
       this.addGpxFeatures(features);
-      break;
-    }
   }
 
   private tryReadFeatures_(format, text, options) {
