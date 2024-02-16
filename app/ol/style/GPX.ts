@@ -13,6 +13,36 @@ function lowercase(val){
   return val? val.toLowerCase(): val;
 }
 
+// generate integer sequence from [begin, end)
+// @end-1, the last index, should be picked if @num is greater than 0
+// @begin, @end, @num should be all integers
+function genSequence(begin, end, num, min_step)
+{
+  const last = end - 1;
+  if(num <= 0) return [];
+  if(num == 1) return [last];
+  if(last < begin) return [last];   // !! special case
+
+  const seq = [];
+  const step = Math.max(1, Math.max(min_step, (last - begin) / (num - 1)));  // step >= min_step >= 1
+  for(let i = begin; i < end; i += step)   // !! may have float number round-off error, use '< end', not '<= last'
+    seq.push(Math.min(Math.round(i), last));
+
+  // correct the tail:
+  //  1. one less than @last, due to the float number round-off error.
+  //  2. @last is not picked due to huge @min_step.
+  const diff = last - seq[seq.length - 1];
+  if(diff > 0){
+    if(diff <= 1 || seq.length >= num)
+      seq[seq.length - 1] = last;
+    else
+      seq.push(last);
+  }
+
+  return seq;
+}
+
+
 // Waypoint Style ----------------------------------------------------------------
 
 function wpt_name_style(text)
@@ -135,19 +165,20 @@ const arrow_head_rad = (start, end) => {
   return Math.PI/2 - rotation;
 }
 
-const arrow_head_style_gen = (color) => {
-  const sqrt3 = 1.7320508075688772;
-  const shaft_width = 3;                                 // this is the width of track line
+const arrow_head_style_generator = (color, shaft_width) => {
+  const SQRT3 = 1.7320508075688772;
+  const shaft_roof = (shaft_width + 1) / SQRT3;          // plus 1 to reduce the outline override
   const radius = Math.max(1, Math.round(Opt.zoom/1.5));  // enlarge when zoom in
 
   const fill =  new Fill({
     color: colorCode(color),
   });
 
+  // add outline, except the part to join the shaft
   const stroke = new Stroke({
     color: colorCode(outline_color(color)),
     width: 1,
-    lineDash: [(sqrt3+1)*radius - (shaft_width/sqrt3), 2*sqrt3], // add outline, except the part to join the shaft
+    lineDash: [(SQRT3+1)*radius - shaft_roof, 2*shaft_roof],
   });
 
   return (start, end) => new Style({
@@ -164,61 +195,49 @@ const arrow_head_style_gen = (color) => {
   });
 }
 
-const track_line_style = color => {
-  return new Style({
-    stroke: new Stroke({
-      color: colorCode(color),
-      width: 3
-    }),
-    zIndex: 3,
-  });
-}
-
-const track_styles = (feature, options?) => {
-  const color = (feature.get('color') || def_trk_color).toLowerCase();
-  const styles = [track_line_style(color)];
-
+const track_arrow_styles = (linestrings, color, width) => {
   //let { interval, max_num: arrow_num } = Opt.track.arrow;
   const arrow_num = Opt.track.arrow.max_num;
   const begin = 15;   // show arrows in the very ends seems useless, so skip it.
   const min_step = 20;
-  if(arrow_num > 0){
-    const arrow_head_style = arrow_head_style_gen(color);
-    feature.getGeometry().getLineStrings().forEach(trkseg => {
-      const coords = trkseg.getCoordinates();
-      for(let i of genSequence(begin, coords.length, arrow_num, min_step))
-        styles.push(arrow_head_style(coords[i-1], coords[i]));
-    });
-  }
-  return styles;
+
+  if(arrow_num <= 0)
+    return [];
+
+  const style_gen = arrow_head_style_generator(color, width);
+  return linestrings.flatMap(linestr => {
+    const coords = linestr.getCoordinates();
+    return genSequence(begin, coords.length, arrow_num, min_step)
+            .map(idx => style_gen(coords[idx - 1], coords[idx]));
+  });
 }
 
-// generate integer sequence from [first, end)
-// if possible, pick the ends at first.
-// @first, @end, @num should be integer
-function genSequence(first, end, num, min_step)
-{
-  const last = end - 1;
-  if(num <= 0) return [];
-  if(num == 1) return [last];
-  if(last < first) return [last];   // !! special case
-
-  const seq = [];
-  const step = Math.max(1, Math.max(min_step, (last - first) / (num - 1)));  // step >= 1
-  for(let i = first; i < end; i += step)   // !! may have float number round-off error, use '< end', not '<= last'
-    seq.push(Math.min(Math.round(i), last));
-
-  // correct the last, may be caused by float number round-off error
-  const diff = last - seq[seq.length - 1];
-  if(diff > 0){
-    if(diff <= 1 || seq.length >= num)
-      seq[seq.length - 1] = last;
-    else
-      seq.push(last);
-  }
-  return seq;
+const track_line_styles = (color, width) => {
+  return [
+    new Style({
+      stroke: new Stroke({
+        color: colorCode(outline_color(color)),
+        width: width + 2,
+      }),
+      zIndex: 2,
+    }),
+    new Style({
+      stroke: new Stroke({
+        color: colorCode(color),
+        width,
+      }),
+      zIndex: 3,
+    }),
+  ];
 }
 
+const track_styles = (feature, options?) => {
+  const color = (feature.get('color') || def_trk_color).toLowerCase();
+  const width = 3;
+  return track_line_styles(color, width).concat(
+    track_arrow_styles(feature.getGeometry().getLineStrings(), color, width)
+  );
+}
 
 // ----------------------------------------------------------------------------
 // @not really use, just for in case
