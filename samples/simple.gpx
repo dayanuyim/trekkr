@@ -39,6 +39,7 @@
 	</wpt>
 	<trk>
 		<name>Track 0 (08:57:55)</name>
+        <desc>取水路</desc>
 		<extensions>
 			<gpxx:TrackExtension xmlns:gpxx="http://www.garmin.com/xmlschemas/GpxExtensions/v3">
 				<gpxx:DisplayColor>DarkMagenta</gpxx:DisplayColor>
