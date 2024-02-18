@@ -63,6 +63,7 @@ class Opt{
     rt = {
         mousepos: null,
         shiftdown: false,
+        gpx_filename: null,
     };
 
     private constructor(){

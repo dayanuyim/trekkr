@@ -138,3 +138,9 @@ export function matchRule({enabled, type, text}, str: string){
       default:           return false;
   };
 }
+
+export function saveGpxFilename(path: string, overwrite: boolean = false){
+  const filename = path?.split(/[\\/]/).pop();
+  if(filename && filename.toLowerCase().endsWith(".gpx") && (overwrite || !Opt.rt.gpx_filename))
+    Opt.rt.gpx_filename = filename;
+}

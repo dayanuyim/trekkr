@@ -17,6 +17,7 @@ import { AppMap } from './map';
 import { Settings } from './settings';
 import { Sidebar, Topbar } from './toolbar';
 import Opt from './opt';
+import { saveGpxFilename } from './common';
 
 (async () => {
   main(document.body);
@@ -81,10 +82,14 @@ function main(main_el: HTMLElement)
 
 async function loadQueryData(map){
   const params = new URLSearchParams(window.location.search);
-  if(!params.has('data')) return;
-  if(!params.get('data')) return;
+  const url = params.get('data');
+  if(!url) return;
+
+  // this is a side effect to rec the basename if a gpx is loaded
+  saveGpxFilename(url);
+
+  // fetch and parse
   try{
-    const url = params.get('data');
     const data = await fetchData(url);
     if(data) map.parseFeatures(data);
   }
