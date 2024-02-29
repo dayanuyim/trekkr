@@ -76,18 +76,17 @@ function main(main_el: HTMLElement)
     Opt.rt.shiftdown = e.shiftKey;
   });
 
-  // default data
-  loadQueryData(map);
-}
-
-async function loadQueryData(map){
+  // load initial data
   const params = new URLSearchParams(window.location.search);
   const url = params.get('data');
-  if(!url) return;
+  if(url){
+    document.title += ` [${url}]`; // prompt in the title
+    saveGpxFilename(url);          // rec the basename for gpx output if any
+    loadQueryData(map, url);
+  }
+}
 
-  // this is a side effect to rec the basename if a gpx is loaded
-  saveGpxFilename(url);
-
+async function loadQueryData(map, url){
   // fetch and parse
   try{
     const data = await fetchData(url);
