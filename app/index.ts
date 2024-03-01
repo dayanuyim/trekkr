@@ -17,7 +17,7 @@ import { AppMap } from './map';
 import { Settings } from './settings';
 import { Sidebar, Topbar } from './toolbar';
 import Opt from './opt';
-import { saveGpxFilename } from './common';
+import { setGpxFilename } from './common';
 
 (async () => {
   main(document.body);
@@ -78,11 +78,11 @@ function main(main_el: HTMLElement)
 
   // load initial data
   const params = new URLSearchParams(window.location.search);
-  const url = params.get('data');
-  if(url){
-    document.title += ` [${url}]`; // prompt in the title
-    saveGpxFilename(url);          // rec the basename for gpx output if any
-    loadQueryData(map, url);
+  const data_url = params.get('data');
+  const filename = params.get('filename');
+  if(data_url){
+    setGpxFilename(filename || data_url);          // rec the basename for gpx output if any
+    loadQueryData(map, data_url);
   }
 }
 

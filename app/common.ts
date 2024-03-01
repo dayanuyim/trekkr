@@ -139,8 +139,10 @@ export function matchRule({enabled, type, text}, str: string){
   };
 }
 
-export function saveGpxFilename(path: string, overwrite: boolean = false){
+export function setGpxFilename(path: string, overwrite: boolean = false){
   const filename = path?.split(/[\\/]/).pop();
-  if(filename && filename.toLowerCase().endsWith(".gpx") && (overwrite || !Opt.rt.gpx_filename))
+  if(filename && filename.toLowerCase().endsWith(".gpx") && (overwrite || !Opt.rt.gpx_filename)){
     Opt.rt.gpx_filename = filename;
+    document.title += ` [${filename}]`;  //also prompt in the title
+  }
 }

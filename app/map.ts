@@ -20,7 +20,7 @@ import GPXStyle from './ol/style/GPX';
 import Opt from './opt';
 import { splitn, mapFind } from './lib/utils';
 import { saveTextAsFile } from './lib/dom-utils';
-import { gmapUrl, saveGpxFilename } from './common';
+import { gmapUrl, setGpxFilename } from './common';
 import { CtxMenu } from './ctx-menu';
 import * as LayerRepo from './layer-repo';
 import { PtPopupOverlay } from './pt-popup';
@@ -113,7 +113,7 @@ export class AppMap{
 
     //create layer from features, and add it to the map
     drag_interaciton.on('addfeatures', (e) => {
-      saveGpxFilename(e.file.name); // to rec the basename if a gpx is loaded
+      setGpxFilename(e.file.name); // to rec the basename if a gpx is loaded
       this.addGpxFeatures(e.features);
     });
   };
