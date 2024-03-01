@@ -58,8 +58,7 @@ function main(main_el: HTMLElement)
     .setListener('trkchanged', () => map.redrawText());
 
   //initialize
-  map.setLayers(Opt.layers);
-  map.setSpyLayer(Opt.spy);  // !! init spy after configuring layers
+  map.initLayers(Opt.layers, Opt.spy);
 
   // set hotkey
   main_el.addEventListener('keydown', function (e) {
@@ -80,20 +79,18 @@ function main(main_el: HTMLElement)
   const params = new URLSearchParams(window.location.search);
   const data_url = params.get('data');
   const filename = params.get('filename');
-  if(data_url){
-    setGpxFilename(filename || data_url);          // rec the basename for gpx output if any
-    loadQueryData(map, data_url);
-  }
+  if(data_url)
+    loadQueryData(map, data_url, filename);
 }
 
-async function loadQueryData(map, url){
+async function loadQueryData(map, url, filename=undefined){
   // fetch and parse
   try{
-    const data = await fetchData(url);
-    if(data) map.parseFeatures(data);
+    const resp = await fetchData(url);
+    map.readFileFeatures(filename || resp.url, resp);
   }
   catch(e){
-    alert(`parse data error: ${e.message}`);
+    alert(`fetch data error: ${e.message}`);
   }
 }
 
@@ -108,7 +105,7 @@ async function fetchData(url){
     if(!resp.ok)
       throw new Error(`${resp.status} ${resp.statusText}`)
 
-    return await resp.arrayBuffer();
+    return resp;
   }
   catch(e){
     alert(`fetch data error: ${e.message}`);

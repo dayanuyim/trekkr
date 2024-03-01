@@ -403,6 +403,9 @@ export const main = Handlebars.compile(`
 `);
 
 const ctxMenuItems = Handlebars.compile(`
+    <input type="file" id="open-files" multiple hidden>
+    <div class="ctx-item"><a class="item-open-files"><i class="fas fa-file-circle-plus"></i>匯入檔案...</a></div>
+    <div class="ctx-item-bar"></div>
     <div class="ctx-item"><a class="item-gmap" target="_blank"><i class="fab fa-google"></i>GoogleMap&nbsp;Here</a></div>
     <div class="ctx-item"><a class="item-add-wpt"><i class="fas fa-location-dot"></i>新增航點</a></div>
     <div class="ctx-item"><a class="item-apply-sym"><i></i>套用&nbsp;Symbol&nbsp;規則</a></div>

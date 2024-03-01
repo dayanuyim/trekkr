@@ -58,11 +58,18 @@ export class AppMap{
     new PhotoFormat()
       .setListener('featureexists', (time) => this._gpx_layer.findWaypoint(time))
       .setListener('lookupcoords',  (time) => this._gpx_layer.estimateCoord(time)),
-    GeoJSON,
-    IGC,
     KML,
+    GeoJSON,
     TopoJSON,
-  ]
+    IGC,
+  ];
+  _formats_types = [
+    ".gpx",                // GPX                (application/gpx+xml)
+    ".jpg", ".jpeg",       // Photo with EXIF    (image/jpeg)
+    ".kml",                // KML                (application/vnd.google-earth.kml+xml)
+    ".json", ".geojson",   // GeoJSON & TopoJSON (application/geo+json)
+    ".igc",                // IGC
+  ];
 
   public constructor(target){
     this.init(target);
@@ -113,56 +120,76 @@ export class AppMap{
 
     //create layer from features, and add it to the map
     drag_interaciton.on('addfeatures', (e) => {
-      setGpxFilename(e.file.name); // to rec the basename if a gpx is loaded
-      this.addGpxFeatures(e.features);
+      this.addFileFeatures(e.file.name, e.features);
     });
   };
 
+  // ----------------------------------------------------------------
+
+  // for input file or http response
+  public async readFileFeatures(filename, blob: Blob|File|Response){
+    try{
+      const arraybuf = await blob.arrayBuffer();
+      const features = this.readFeatures(arraybuf);
+      this.addFileFeatures(filename, features);
+    }
+    catch(e){
+      console.error(`read '${filename}' array buffer error`, e);
+    }
+  }
+
+  private addFileFeatures(filename, features){
+    setGpxFilename(filename); // to rec the basename if a gpx is loaded
+    this.addGpxFeatures(features);
+  }
+
   private addGpxFeatures(features: FeatureLike[]): void {
-      const real_features = features.filter(f => f instanceof Feature)  // filter out RenderFeature
-                                 .map(f => f as Feature);
-      //*
-      // add to the gpx layer
-      this._gpx_layer.getSource().addFeatures(real_features);                       // add only 'filtered' features
-      const extent = unionExtents(features.map(f => f.getGeometry().getExtent()));  // extent of 'original' features
-      this._map.getView().fit(extent, { maxZoom: 16 });
-      /*/
-      // create new layer
-      const layer = olLayer({real_features});
-      this._map.addLayer(layer);
-      this.setInteraction(layer);
-      this._map.getView().fit(layer.getSource().getExtent(), { maxZoom: 16 });
-      //*/
+    if(!features) return;
+    const real_features = features.filter(f => f instanceof Feature)  // filter out RenderFeature
+                                .map(f => f as Feature);
+    //*
+    // add to the gpx layer
+    this._gpx_layer.getSource().addFeatures(real_features);                       // add only 'filtered' features
+    const extent = unionExtents(features.map(f => f.getGeometry().getExtent()));  // extent of 'original' features
+    this._map.getView().fit(extent, { maxZoom: 16 });
+    /*/
+    // create new layer
+    const layer = olLayer({real_features});
+    this._map.addLayer(layer);
+    this.setInteraction(layer);
+    this._map.getView().fit(layer.getSource().getExtent(), { maxZoom: 16 });
+    //*/
   }
 
   // This function is much like the ability to read features from drag-and-drop files, but here the from file content.
   //    ref: ol/interaction/DragAndDrop.js
-  public parseFeatures(arrbuf: ArrayBuffer)
+  private readFeatures(arrbuf: ArrayBuffer)
   {
+    const try_to_read = (formatter, data, options) => {
+      try {
+        return formatter.readFeatures(data, options);
+      }
+      catch (e) {
+        // the error is normal in the try-and-error process
+        // console.debug(`'${formatter.constructor.name}' read features error: ${e.message}`);
+        return null;
+      }
+    };
+
     const text = new TextDecoder().decode(arrbuf);
 
-    const features = mapFind(this._formats, format => {
-        const formater = (typeof format === 'function') ? new format() : format;
-        const data = (formater.getType() == 'arraybuffer') ? arrbuf : text;
-        //console.log(`to parse '${formater.constructor.name}' format`);
-        return this.tryReadFeatures_(formater, data, {
-          featureProjection: this._map.getView().getProjection(),
-        });
-      }, features => {
-        return features && features.length > 0;
+    return mapFind(this._formats, format => {
+      const formatter = (typeof format === 'function') ? new format() : format;
+      const data = (formatter.getType() == 'arraybuffer') ? arrbuf : text;
+      return try_to_read(formatter, data, {
+        featureProjection: this._map.getView().getProjection(),
       });
-
-    if(features)
-      this.addGpxFeatures(features);
+    }, features => {
+      return features && features.length > 0;
+    });
   }
 
-  private tryReadFeatures_(format, text, options) {
-    try {
-      return format.readFeatures(text, options);
-    } catch (e) {
-      return null;
-    }
-  }
+  // ----------------------------------------------------------------
 
   private initEvents() {
     const map = this._map;
@@ -327,6 +354,11 @@ export class AppMap{
       this._map.removeInteraction(layer._interaction);
       layer._interaction = null;
     }
+  }
+
+  public initLayers(layers_conf, spy_conf){
+    this.setLayers(layers_conf);
+    this.setSpyLayer(spy_conf);  // !! init spy after configuring layers
   }
 
   //Note:
@@ -511,6 +543,16 @@ export class AppMap{
     });
 
     // set menu listeners ========
+    const openfiles = <HTMLInputElement> document.querySelector('input#open-files');
+    openfiles.accept = this._formats_types.join(",");
+    openfiles.addEventListener("change", (e: InputEvent) => {
+      Array.from(openfiles.files).forEach(file => {
+        this.readFileFeatures(file.name, file);
+      });
+    });
+    ctx.setItem(".item-open-files", (el) => {
+      openfiles.click();
+    });
 
     ctx.setItem(".item-gmap", (el) => {
       el.href = gmapUrl(this._ctxmenu_coord);
