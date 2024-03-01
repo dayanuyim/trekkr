@@ -139,10 +139,31 @@ export function matchRule({enabled, type, text}, str: string){
   };
 }
 
+function refreshDocTitle(){
+
+  const {title, gpx_filename: filename} = Opt.rt;
+
+  const titlestr = [
+    title,
+    filename,
+  ].filter(Boolean).join(":");
+
+  if(titlestr)
+    document.title = `Trekkr [${titlestr}]`;
+}
+
 export function setGpxFilename(path: string, overwrite: boolean = false){
   const filename = path?.split(/[\\/]/).pop();
   if(filename && filename.toLowerCase().endsWith(".gpx") && (overwrite || !Opt.rt.gpx_filename)){
     Opt.rt.gpx_filename = filename;
-    document.title += ` [${filename}]`;  //also prompt in the title
+    refreshDocTitle();
   }
+}
+
+export function setDocTitle(title){
+  if(title){
+    Opt.rt.title = title;
+    refreshDocTitle();
+  }
+
 }

@@ -130,7 +130,7 @@ export class AppMap{
   public async readFileFeatures(filename, blob: Blob|File|Response){
     try{
       const arraybuf = await blob.arrayBuffer();
-      const features = this.readFeatures(arraybuf);
+      const features = this._readFeatures(arraybuf);
       this.addFileFeatures(filename, features);
     }
     catch(e){
@@ -140,10 +140,10 @@ export class AppMap{
 
   private addFileFeatures(filename, features){
     setGpxFilename(filename); // to rec the basename if a gpx is loaded
-    this.addGpxFeatures(features);
+    this._addGpxFeatures(features);
   }
 
-  private addGpxFeatures(features: FeatureLike[]): void {
+  private _addGpxFeatures(features: FeatureLike[]): void {
     if(!features) return;
     const real_features = features.filter(f => f instanceof Feature)  // filter out RenderFeature
                                 .map(f => f as Feature);
@@ -163,7 +163,7 @@ export class AppMap{
 
   // This function is much like the ability to read features from drag-and-drop files, but here the from file content.
   //    ref: ol/interaction/DragAndDrop.js
-  private readFeatures(arrbuf: ArrayBuffer)
+  private _readFeatures(arrbuf: ArrayBuffer)
   {
     const try_to_read = (formatter, data, options) => {
       try {

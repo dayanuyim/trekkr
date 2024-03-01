@@ -16,8 +16,8 @@ import * as templates from './templates';
 import { AppMap } from './map';
 import { Settings } from './settings';
 import { Sidebar, Topbar } from './toolbar';
+import { setGpxFilename, setDocTitle } from './common';
 import Opt from './opt';
-import { setGpxFilename } from './common';
 
 (async () => {
   main(document.body);
@@ -77,17 +77,21 @@ function main(main_el: HTMLElement)
 
   // load initial data
   const params = new URLSearchParams(window.location.search);
-  const data_url = params.get('data');
+  const title = params.get('title');
   const filename = params.get('filename');
-  if(data_url)
-    loadQueryData(map, data_url, filename);
+  const data = params.get('data');          // data url
+
+  if(title) setDocTitle(title);
+  if(filename) setGpxFilename(filename, true);
+  if(data) loadQueryData(map, data);
 }
 
-async function loadQueryData(map, url, filename=undefined){
+
+async function loadQueryData(map, url){
   // fetch and parse
   try{
     const resp = await fetchData(url);
-    map.readFileFeatures(filename || resp.url, resp);
+    map.readFileFeatures(resp.url, resp);
   }
   catch(e){
     alert(`fetch data error: ${e.message}`);
