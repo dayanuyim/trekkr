@@ -99,6 +99,24 @@ function scaleDown({width, height}, max){
         return {width: width/height*max, height: max};
 }
 
+function setProgressBar(progbar: HTMLElement, value, total, color, formatter) {
+    const running  = progbar.querySelector<HTMLElement>(':scope > div');
+
+    const setting = (color_el: HTMLElement, text, color) => {
+        const text_el = color_el.querySelector<HTMLElement>(':scope > span');
+        color_el.style.backgroundColor = colorCode(color);
+        text_el.style.color = complementaryColor(color) || '#202020';
+        text_el.textContent = text && formatter? formatter(text): text;
+    }
+
+    let bcolor = "LightGray";
+    if(color == bcolor) bcolor = companionColor(bcolor);
+
+    setting(progbar, total, bcolor);
+    setting(running, value, color);
+    running.style.width = total? `${value*100/total}%`: '0';
+}
+
 const xy_equals = ([x1, y1], [x2, y2]) => (x1 === x2 && y1 === y2);
 const xy_approximate = ([x1, y1], [x2, y2]) => Math.abs(x2-x1) < 0.000001 && Math.abs(y2-y1) < 0.000001;
 
@@ -613,37 +631,18 @@ export class PtPopupOverlay extends Overlay{
                 displayElem(this._tool_split_trk, !at_end && (!pt.is_virtual || track.getGeometry().getLayout().endsWith('M'))); // virtual trkpt with time is ok
             }
             //header
-            this.pt_trk_seg_sn = (trksegs.length <= 1)? '':                    // only one trkseg
-                                               (i < 0)? `-/${length}`:         // virtual trkpt
-                                                        `${i + 1}/${length}`;  // multiple trksegs
+            this.pt_trk_seg_sn = (trksegs.length <= 1)? '':               // not show if only one trkseg
+                                 `${(i<0)? '-': i+1}/${trksegs.length}`;  // multiple trksegs (no index if virtual trkpt)
             //progress bar
             const seg = (i >= 0)? track.getGeometry().getLineString(i): null;
-            const seg_dist  = seg? getLength(seg): 1;
-            const frag_dist = seg? getLength(new LineString(seg.getCoordinates().slice(0, j+1))): 0;
-            this._setProgressBar(frag_dist, seg_dist, trk.color, (v) => {
+            const seg_dist  = seg? getLength(seg): null;
+            const frag_dist = seg? getLength(new LineString(seg.getCoordinates().slice(0, j+1))): null;
+            setProgressBar(this._trk_progbar, frag_dist, seg_dist, trk.color, (v) => {
                 v = Math.round(v).toString();
                 return (v.length <= 3)? v: `${v.slice(0,-3)},${v.slice(-3)}`;
             });
+            this._trk_progbar.classList.toggle('active', i>=0);
         }
-    }
-
-    private _setProgressBar(value, total, color, formatter) {
-        const _bar        = this._trk_progbar;
-        const _bar_label  = this._trk_progbar.querySelector<HTMLElement>(':scope > span');
-        const _prog       = this._trk_progbar.querySelector<HTMLElement>(':scope > div');
-        const _prog_label = this._trk_progbar.querySelector<HTMLElement>(':scope > div > span');
-
-        let bar_color = "LightGray";
-        if(color == bar_color) bar_color = companionColor(bar_color);
-
-        _bar.style.backgroundColor = bar_color;
-        _prog_label.style.color = complementaryColor(bar_color) || '#202020';
-        _bar_label.textContent = formatter(total);
-
-        _prog.style.backgroundColor = colorCode(color);
-        _prog.style.width = `${value*100/total}%`;
-        _prog_label.style.color = complementaryColor(color) || '#202020';
-        _prog_label.textContent = formatter(value);
     }
 
     private setUrlContent(el: HTMLAnchorElement, {url, title}, license_icon=false){

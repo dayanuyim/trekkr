@@ -1,10 +1,11 @@
 /* ============== .progbar ==========================*/
 .progbar {
-    font-size: 1px;
+    font-size: 12px;
 }
 
 .progbar {
     position: relative;
+    min-height: 1px;
     color: #202020;
     background-color: lightgray;
     border-radius: 8px;
@@ -23,11 +24,11 @@
     text-align: left;
     color: #202020;
     background-color: darkgray;
-    padding: 0 4px;
     border-radius: 8px;
 }
 
 .progbar>div>span {
+    padding-left: 4px;
 }
 
 /******************* Popup Overlay ********************/
@@ -222,8 +223,13 @@ select::-ms-expand {
     margin: 1px 0 4px 0;
 }
 
-.pop-trk:hover .pop-trk-progbar{
-    font-size: 12px;
+.pop-trk .pop-trk-progbar:not(.active),
+.pop-trk:not(:hover) .pop-trk-progbar {
+    font-size: 1px;
+}
+.pop-trk .pop-trk-progbar:not(.active) span,
+.pop-trk:not(:hover) .pop-trk-progbar span{
+    visibility: hidden;
 }
 
 .pop-colorboard {

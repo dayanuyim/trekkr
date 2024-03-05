@@ -96,9 +96,7 @@ export const popContent = Handlebars.compile(`
         <div>
             <span class="pop-desc pop-trk-desc" contenteditable="true" data-placeholder="Description for the track">{{desc}}</span>
         </div>
-        <div class="progbar pop-trk-progbar">
-            <div>&nbsp;<span></span></div><span></span>
-        </div>
+        <div class="progbar pop-trk-progbar"><div><span></span></div><span></span></div>
     </div>
     <div class="pop-colorboard glassmophism hidden">
         {{colorboardItems}}
