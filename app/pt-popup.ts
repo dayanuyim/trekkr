@@ -1,14 +1,15 @@
 'use strict';
-import { Feature } from 'ol';
-import { Point } from 'ol/geom';
+import {Feature} from 'ol';
+import {Point, LineString} from 'ol/geom';
 import Overlay from 'ol/Overlay';
 import {toStringXY} from 'ol/coordinate';
 import {toLonLat} from 'ol/proj';
+import {getLength} from 'ol/sphere';
 import {toTWD97, toTWD67, toTaipowerCoord} from './coord';
 
 //import * as moment from 'moment-timezone';
 import { getSymbol, matchRules, symbol_inv } from './sym'
-import { getEstElevation, getEleOfCoord, setEleOfCoord, getLocalTimeByCoord, gmapUrl, colorCode } from './common'
+import { getEstElevation, getEleOfCoord, setEleOfCoord, getLocalTimeByCoord, gmapUrl, colorCode, companionColor, complementaryColor } from './common'
 import { olWptFeature, def_trk_color, getTrkptIndices, isTrkFeature, isWptFeature} from './ol/gpx-common';
 import { delayToEnable } from './lib/dom-utils';
 import Opt from './opt';
@@ -111,6 +112,7 @@ export class PtPopupOverlay extends Overlay{
     _trk_name: HTMLElement;
     _trk_desc: HTMLElement;
     _trk_seg_sn: HTMLElement;
+    _trk_progbar: HTMLElement;
     _trk_color: HTMLElement;
     _colorboard: HTMLElement;
     _pt_header: HTMLElement;
@@ -208,6 +210,7 @@ export class PtPopupOverlay extends Overlay{
         this._trk_name =        el.querySelector<HTMLElement>('.pop-trk-name');
         this._trk_desc =        el.querySelector<HTMLElement>('.pop-trk-desc');
         this._trk_seg_sn =      el.querySelector<HTMLElement>('.pop-trk-seg-sn');
+        this._trk_progbar =     el.querySelector<HTMLElement>('.pop-trk-progbar');
         this._trk_color =       el.querySelector<HTMLElement>('.pop-trk-color');
         this._pt_header =       el.querySelector<HTMLElement>('.pop-pt-header');
         this._pt_sym =          el.querySelector<HTMLImageElement>('.pop-pt-sym');
@@ -467,7 +470,7 @@ export class PtPopupOverlay extends Overlay{
         if(is_changed){
             obj[key] = value;
             this._feature.set(key, value);       // TODO: we either modify TRK or PT at a time, so not need to check the feature kind... but be careful if need to support for trkpt edit or something like that.
-            this._feature.unset('pseudo');       // pseudo -> normal
+            this._feature.unset('pseudo');       // a modified pseudo feature will become normal
             if(need_reset) this.setContent(this._data);
         }
         return is_changed;
@@ -599,34 +602,48 @@ export class PtPopupOverlay extends Overlay{
     private setTrackTools(track, {trk, pt}){
         if(track){
             const readonly = track.get('readonly');
+            const trksegs = track.getGeometry().getCoordinates();
+            const [i, j] = getTrkptIndices(trksegs, {coord: pt.coord});  // real trkpt coord
+
             //tool
             displayElem(this._trk_tool, !readonly /*&& !pt.is_virtual*/);
             if(!readonly /*&& !pt.is_virtual*/){
-                const endidx = getTrkptIndices(track.getGeometry().getCoordinates(), {coord: pt.coord, atends: true } );
-                displayElem(this._tool_join_trk,  endidx);
-                displayElem(this._tool_split_trk, !endidx && (!pt.is_virtual || track.getGeometry().getLayout().endsWith('M'))); // virtual trkpt with time is ok
+                const at_end = i >= 0 && (j === 0 || j == trksegs[i].length - 1);
+                displayElem(this._tool_join_trk,  at_end);
+                displayElem(this._tool_split_trk, !at_end && (!pt.is_virtual || track.getGeometry().getLayout().endsWith('M'))); // virtual trkpt with time is ok
             }
             //header
-            this.pt_trk_seg_sn = this.getTrksegSnText();
+            this.pt_trk_seg_sn = (trksegs.length <= 1)? '':                    // only one trkseg
+                                               (i < 0)? `-/${length}`:         // virtual trkpt
+                                                        `${i + 1}/${length}`;  // multiple trksegs
+            //progress bar
+            const seg = (i >= 0)? track.getGeometry().getLineString(i): null;
+            const seg_dist  = seg? getLength(seg): 1;
+            const frag_dist = seg? getLength(new LineString(seg.getCoordinates().slice(0, j+1))): 0;
+            this._setProgressBar(frag_dist, seg_dist, trk.color, (v) => {
+                v = Math.round(v).toString();
+                return (v.length <= 3)? v: `${v.slice(0,-3)},${v.slice(-3)}`;
+            });
         }
     }
 
-    private getTrksegSnText(){
-        const trksegs = this._feature.getGeometry().getCoordinates();
-        if(trksegs.length <= 1)
-            return '';
+    private _setProgressBar(value, total, color, formatter) {
+        const _bar        = this._trk_progbar;
+        const _bar_label  = this._trk_progbar.querySelector<HTMLElement>(':scope > span');
+        const _prog       = this._trk_progbar.querySelector<HTMLElement>(':scope > div');
+        const _prog_label = this._trk_progbar.querySelector<HTMLElement>(':scope > div > span');
 
-        if(this._data.pt.is_virtual)
-            return `-/${trksegs.length}`;
+        let bar_color = "LightGray";
+        if(color == bar_color) bar_color = companionColor(bar_color);
 
-        const indices = getTrkptIndices(trksegs, {coord: this._data.pt.coord});  // real trkpt coord
-        if(!indices){
-            console.error("cannot find the trkseg index by the coord");  //should not happen
-            return `-/${trksegs.length}`;
-        }
+        _bar.style.backgroundColor = bar_color;
+        _prog_label.style.color = complementaryColor(bar_color) || '#202020';
+        _bar_label.textContent = formatter(total);
 
-        const [idx, _] = indices;
-        return `${idx + 1}/${trksegs.length}`;
+        _prog.style.backgroundColor = colorCode(color);
+        _prog.style.width = `${value*100/total}%`;
+        _prog_label.style.color = complementaryColor(color) || '#202020';
+        _prog_label.textContent = formatter(value);
     }
 
     private setUrlContent(el: HTMLAnchorElement, {url, title}, license_icon=false){

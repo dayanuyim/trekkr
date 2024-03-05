@@ -9,7 +9,7 @@ import GPXStyle from '../style/GPX';
 import { def_trk_color, isTrkFeature, isWptFeature, olWptFeature, olTrackFeature, getTrkptIndices } from '../gpx-common';
 
 import { getSymbol } from '../../sym'
-import { getEpochOfCoord, getXYZMOfCoord } from '../../common';
+import { getEpochOfCoord, getXYZMOfCoord, companionColor } from '../../common';
 
 
 const xy_equals = ([x1, y1], [x2, y2]) => (x1 === x2 && y1 === y2);
@@ -39,31 +39,6 @@ function interpCoords(c1, c2, time){
 
 //----------------------------------------------------------------
 
-function companionColor(color){
-  switch(color){
-    case 'White':       return 'Black';
-    case 'LightGray':   return 'DarkGray';
-    case 'DarkGray':    return 'LightGray';
-    case 'Black':       return 'White';
-    case 'Yellow':      return 'DarkYellow';
-    case 'DarkYellow':  return 'Yellow';
-    case 'Magenta':     return 'DarkMagenta';
-    case 'DarkMagenta': return 'Magenta';
-    case 'Cyan':        return 'DarkCyan';
-    case 'DarkCyan':    return 'Cyan';
-    case 'Blue':        return 'DarkBlue';
-    case 'DarkBlue':    return 'Blue';
-    case 'Green':       return 'DarkGreen';
-    case 'DarkGreen':   return 'Green';
-    case 'Red':         return 'DarkRed';
-    case 'DarkRed':     return 'Red';
-    default:            return companionColor(def_trk_color);
-  }
-}
-
-
-//----------------------------------------------------------------
-
 function mkCrosshairWpt(coords, options?){
   return olWptFeature(coords, Object.assign({
     name: '',
@@ -86,15 +61,14 @@ function splitTrack(track, coord)
   const trksegs = track.getGeometry().getCoordinates();
 
   const split_by = (time && layout.endsWith('M'))? {time}: {coord};
-  const point = getTrkptIndices(trksegs, split_by);
-  if(!point)
+  const [i, j] = getTrkptIndices(trksegs, split_by);
+  if(i < 0 || j < 0)
     return console.error('cannot find the split point by coord', coord);
 
-  const [i, j] = point;
   if(j == 0 || j == trksegs[i].length -1)
     return console.error('cannot split at the first or the last of a trkseg');
 
-  const [trksegs1, trksegs2] = splitTrksegs(trksegs, point, coord);
+  const [trksegs1, trksegs2] = splitTrksegs(trksegs, [i, j], coord);
   track.getGeometry().setCoordinates(trksegs1); // reset the current track
   return olTrackFeature({                      // create the split-out track
     coordinates: trksegs2,
@@ -106,8 +80,7 @@ function splitTrack(track, coord)
 }
 
 //@coord may be a virtual trkpt, not in the trksegs[i]
-function splitTrksegs(trksegs, point, coord){
-  const [i, j] = point;
+function splitTrksegs(trksegs, [i, j], coord){
   const trksegs1 = trksegs.slice(0, i);   // for track1
   const trksegs2 = trksegs.slice(i+1);    // for track2
 
@@ -370,7 +343,7 @@ class GPX extends VectorLayer<VectorSource>{
 
         //split out other tracks
         return trksegs.map((seg, i) => {
-          color = companionColor(color);
+          color = companionColor(color) || companionColor(def_trk_color);
           return olTrackFeature({
             coordinates: [seg],
             layout,

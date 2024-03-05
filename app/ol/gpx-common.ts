@@ -72,7 +72,7 @@ function getTrkptIndicesAtEnds(trksegs, value, eq)
       for(let j = 0; j < trkseg.length; j += trkseg.length-1)   // the fist and the last
         if(eq(trkseg[j], value)) return [i, j];
     }
-    return null;
+    return [-1, -1];
 }
 
 // TODO: seems no efficient way...should get the info from ol...
@@ -85,7 +85,7 @@ function getTrkptIndicesByCoord(trksegs, coord)
     if (j >= 0)
       return [i, j];
   }
-  return null;
+  return [-1, -1];
 }
 
 // optimize by binary search
@@ -103,5 +103,5 @@ function getTrkptIndicesByTime(trksegs, time)
     });
     return [i, j];
   }
-  return null;
+  return [-1, -1];
 }

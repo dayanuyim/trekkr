@@ -1,3 +1,35 @@
+/* ============== .progbar ==========================*/
+.progbar {
+    font-size: 1px;
+}
+
+.progbar {
+    position: relative;
+    color: #202020;
+    background-color: lightgray;
+    border-radius: 8px;
+    border: solid 1px #e0e0e0;
+}
+
+.progbar>span {
+    position: absolute;
+    right: 4px;
+    bottom: 0;
+}
+
+.progbar>div {
+    display: inline-block;
+    box-sizing: border-box;
+    text-align: left;
+    color: #202020;
+    background-color: darkgray;
+    padding: 0 4px;
+    border-radius: 8px;
+}
+
+.progbar>div>span {
+}
+
 /******************* Popup Overlay ********************/
 
 select, option {
@@ -111,9 +143,11 @@ select::-ms-expand {
 .pop-trk {
     position: relative;
     white-space: nowrap;
+    /*
     border-bottom: solid 1px lightgray;
     padding-bottom: 4px;
     margin-bottom: 5px;
+    */
     /*border: solid 1px transparent;*/
     /*border-radius: 8px;*/
 }
@@ -164,17 +198,32 @@ select::-ms-expand {
     display: inline-block;
 }
 
+.pop-trk-name-wrap {
+    display:inline-block;
+    width: calc(100% - 27px);
+}
+
 .pop-trk-name {
+    display: inline-block;
     vertical-align: 4px;
     font-weight: bold;
 }
 
 .pop-trk-seg-sn {
-    position: absolute;
+    /*position: absolute;
     bottom: 7px;
-    right: -25px;
+    right: -25px;*/
+    vertical-align: 4px;
     color: gray;
     font-size: small;
+}
+
+.pop-trk-progbar{
+    margin: 1px 0 4px 0;
+}
+
+.pop-trk:hover .pop-trk-progbar{
+    font-size: 12px;
 }
 
 .pop-colorboard {
