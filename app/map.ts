@@ -330,7 +330,7 @@ export class AppMap{
   }
 
   private getGpxLayer() {
-    return this._map.getLayers().item(this.indexOfPseudoGpxLayer()) as VectorLayer<VectorSource<Geometry>>;
+    return this._map.getLayers().item(this.indexOfPseudoGpxLayer()) as VectorLayer<VectorSource<Feature<Geometry>>>;
   }
 
   /*
