@@ -634,10 +634,11 @@ export class PtPopupOverlay extends Overlay{
             this.pt_trk_seg_sn = (trksegs.length <= 1)? '':               // not show if only one trkseg
                                  `${(i<0)? '-': i+1}/${trksegs.length}`;  // multiple trksegs (no index if virtual trkpt)
             //progress bar
-            const seg = (i >= 0)? track.getGeometry().getLineString(i): null;
-            const seg_dist  = seg? getLength(seg): null;
-            const frag_dist = seg? getLength(new LineString(seg.getCoordinates().slice(0, j+1))): null;
+            const trkseg = (i >= 0)? trksegs[i]: null;
+            const frag_dist = trkseg? getLength(new LineString(trkseg.slice(0, j+1))): 0;
+            const seg_dist  = trkseg? getLength(new LineString(trkseg.slice(j))) + frag_dist: 0;
             setProgressBar(this._trk_progbar, frag_dist, seg_dist, trk.color, (v) => {
+                if(!v) return '';
                 v = Math.round(v).toString();
                 return (v.length <= 3)? v: `${v.slice(0,-3)},${v.slice(-3)}`;
             });
