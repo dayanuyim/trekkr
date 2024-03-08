@@ -9,7 +9,7 @@ import {toTWD97, toTWD67, toTaipowerCoord} from './coord';
 
 //import * as moment from 'moment-timezone';
 import { getSymbol, matchRules, symbol_inv } from './sym'
-import { getEstElevation, getEleOfCoord, setEleOfCoord, getLocalTimeByCoord, gmapUrl, colorCode, companionColor, complementaryColor } from './common'
+import { getEstElevation, getEleOfCoord, setEleOfCoord, getLocalTimeByCoord, gmapUrl, colorCode, complementaryColor } from './common'
 import { olWptFeature, def_trk_color, getTrkptIndices, isTrkFeature, isWptFeature} from './ol/gpx-common';
 import { delayToEnable } from './lib/dom-utils';
 import Opt from './opt';
@@ -106,11 +106,11 @@ function setProgressBar(progbar: HTMLElement, value, total, color, formatter) {
         const text_el = color_el.querySelector<HTMLElement>(':scope > span');
         color_el.style.backgroundColor = colorCode(color);
         text_el.style.color = complementaryColor(color) || '#202020';
-        text_el.textContent = text && formatter? formatter(text): text;
+        text_el.textContent = formatter? formatter(text): text;
     }
 
     let bcolor = "LightGray";
-    if(color == bcolor) bcolor = companionColor(bcolor);
+    if(color == bcolor) bcolor = 'DarkGray';  //companionColor(bcolor);
 
     setting(progbar, total, bcolor);
     setting(running, value, color);
@@ -503,7 +503,7 @@ export class PtPopupOverlay extends Overlay{
     }
 
     async popContent(feature) {
-        //console.log('popContent', feature);
+        console.log('popContent', feature);
 
         // @@! Experimental, restore the hidden wpt
         feature = this._wpt_feature_of(feature) || feature;
@@ -638,7 +638,7 @@ export class PtPopupOverlay extends Overlay{
             const frag_dist = trkseg? getLength(new LineString(trkseg.slice(0, j+1))): 0;
             const seg_dist  = trkseg? getLength(new LineString(trkseg.slice(j))) + frag_dist: 0;
             setProgressBar(this._trk_progbar, frag_dist, seg_dist, trk.color, (v) => {
-                if(!v) return '';
+                if(v == null) return '';
                 v = Math.round(v).toString();
                 return (v.length <= 3)? v: `${v.slice(0,-3)},${v.slice(-3)}`;
             });
