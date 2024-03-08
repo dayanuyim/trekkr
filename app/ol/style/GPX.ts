@@ -293,7 +293,7 @@ class GPX extends ExtensibleFunction {
       filterable: false,
       scale: 1,
       trackWidth: 3,
-      trackArrowNum: 0,
+      trackArrowNum: 1,
     }, options);
 
     super(function(feature){
