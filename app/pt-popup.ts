@@ -637,7 +637,7 @@ export class PtPopupOverlay extends Overlay{
             const trkseg = (i >= 0)? trksegs[i]: null;
             const frag_dist = trkseg? getLength(new LineString(trkseg.slice(0, j+1))): 0;
             const seg_dist  = trkseg? getLength(new LineString(trkseg.slice(j))) + frag_dist: 0;
-            setProgressBar(this._trk_progbar, frag_dist, seg_dist, trk.color, (v) => {
+            setProgressBar(this._trk_progbar, frag_dist, seg_dist, trk.color || def_trk_color, (v) => {
                 if(!v) return '';
                 v = Math.round(v).toString();
                 return (v.length <= 3)? v: `${v.slice(0,-3)},${v.slice(-3)}`;
