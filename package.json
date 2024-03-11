@@ -28,7 +28,7 @@
     "proj4": "^2.10.0",
     "style-loader": "^3.3.4",
     "ts-loader": "^9.5.1",
-    "typescript": "^5.3.3",
+    "typescript": "^5.4.2",
     "tz-lookup": "^6.1.25",
     "url-loader": "^4.1.1",
     "webpack": "^5.90.3",
