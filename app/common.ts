@@ -39,13 +39,14 @@ function colorHex(color)
     "wheat":"#f5deb3","white":"#ffffff","whitesmoke":"#f5f5f5",
     "yellow":"#ffff00","yellowgreen":"#9acd32", "darkyellow": "#ffcc00"};
 
+    if(!color) return undefined;
     color = color.toLowerCase();
     if (color.startsWith("#")) return color;
     return colors[color];  //may return undefined
 }
 
 export function colorCode(color){
-  switch(color.toLowerCase()) {
+  switch(color?.toLowerCase()) {
     case 'darkyellow': return '#ffcc00';
     default:           return color;
   }
@@ -74,6 +75,7 @@ export function companionColor(color){
 }
 
 export function complementaryColor(color){
+  if(!color) return undefined;
   const hex = colorHex(color);
   if(!hex) return undefined;
   const r = parseInt(hex.slice(1, 3), 16);
