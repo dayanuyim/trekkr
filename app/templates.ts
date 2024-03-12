@@ -398,19 +398,25 @@ export const main = Handlebars.compile(`
     <div class="toolbar toolbar-side">{{toolbarSide}}</div>
     <div class="toolbar toolbar-top">{{toolbarTop}}</div>
 
-    <div id="ctx-menu">{{ctxMenuItems}}</div>
+    <div id="ctx-menu" class="ctx-menu">{{ctxMenuItems}}</div>
 
     <div id="map" class="ol-map-container"></div>
 `);
 
 const ctxMenuItems = Handlebars.compile(`
-    <input type="file" id="open-files" multiple hidden>
-    <div class="ctx-item"><a class="item-open-files"><i class="fas fa-file-circle-plus"></i>匯入檔案...</a></div>
+    <div class="ctx-item"><a class="item-open-files"><i class="fas fa-file-circle-plus"></i>匯入檔案...</a>
+        <input type="file" id="open-files" multiple hidden>
+    </div>
     <div class="ctx-item-bar"></div>
     <div class="ctx-item"><a class="item-gmap" target="_blank"><i class="fab fa-google"></i>GoogleMap&nbsp;Here</a></div>
     <div class="ctx-item"><a class="item-add-wpt"><i class="fas fa-location-dot"></i>新增航點</a></div>
     <div class="ctx-item"><a class="item-apply-sym"><i></i>套用&nbsp;Symbol&nbsp;規則</a></div>
     <div class="ctx-item-bar"></div>
+    <div class="ctx-item ctx-item-group"><i class="fa-solid fa-scissors"></i><a class="item-split-track">分割航段...</a>
+        <div class="ctx-submenu">
+            <div class="ctx-item"><a class="item-split-tracks-days">依每日</a></div>
+        </div>
+    </div>
     <div class="ctx-item"><a class="item-promote-trksegs"><i class="fa-solid fa-route"></i>所有航段轉為航跡</a></div>
     <div class="ctx-item-bar"></div>
     <div class="ctx-item"><a class="item-save-gpx"><i class="fas fa-file-contract"></i>匯出&nbsp;GPX&nbsp;航跡檔</a></div>

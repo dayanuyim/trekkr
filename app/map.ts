@@ -569,6 +569,10 @@ export class AppMap{
       });
     });
 
+    ctx.setItem(".item-split-tracks-days", (el) => {
+      this._gpx_layer.splitTracksDays();
+    });
+
     ctx.setItem(".item-promote-trksegs", (el) => {
       this._gpx_layer.promoteTrksegs();
     });

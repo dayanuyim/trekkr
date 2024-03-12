@@ -9,7 +9,7 @@ import GPXStyle from '../style/GPX';
 import { def_trk_color, isTrkFeature, isWptFeature, olWptFeature, olTrackFeature, getTrkptIndices } from '../gpx-common';
 
 import { getSymbol } from '../../sym'
-import { getEpochOfCoord, getXYZMOfCoord, companionColor } from '../../common';
+import { getEpochOfCoord, getXYZMOfCoord, companionColor, getLocalTimeByCoord } from '../../common';
 
 
 const xy_equals = ([x1, y1], [x2, y2]) => (x1 === x2 && y1 === y2);
@@ -311,6 +311,35 @@ class GPX extends VectorLayer<VectorSource>{
       return splitTrksegs(trksegs, [i, j], coord);
     })
     .forEach(trk => this.addTrack(trk));
+  }
+
+  public splitTrackDays(trk){
+    if(!trk.getGeometry().getLayout().includes('M'))
+      return;
+
+    const trksegs = trk.getGeometry().getCoordinates()
+      .flatMap(trkseg => {
+        let end_of_day;
+        return trkseg
+          .reduce((begins, coord, i) => {
+            const time = getLocalTimeByCoord(coord);
+            if (!end_of_day || time.isAfter(end_of_day)) {
+              end_of_day = time.endOf('day');
+              begins.push(i);
+            }
+            return begins;
+          }, [])
+          .map((begin, i, arr) => {
+            const end = arr[i + 1];  // end is undefined for the last part
+            return trkseg.slice(begin, end);
+          });
+    });
+    trk.getGeometry().setCoordinates(trksegs);
+  }
+
+  public splitTracksDays(){
+    this.getTracks()
+      .forEach(trk => this.splitTrackDays(trk));
   }
 
   public promoteTrksegs(){
