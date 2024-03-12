@@ -503,7 +503,7 @@ export class PtPopupOverlay extends Overlay{
     }
 
     async popContent(feature) {
-        console.log('popContent', feature);
+        //console.log('popContent', feature);
 
         // @@! Experimental, restore the hidden wpt
         feature = this._wpt_feature_of(feature) || feature;

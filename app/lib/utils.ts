@@ -269,6 +269,39 @@ export function splitn(arr, ...predicates)
   return result;
 }
 
+// split array into groups, each group is consecutive with the equal value.
+export function splitContinuity(arr, value_of, is_equal)
+{
+  if(!value_of) value_of = v => v;
+
+  const find_next = (from) => {
+    const value = value_of(arr[from]);
+    let m = from + 1;
+    let n = arr.length - 1;
+
+    if (m > n) return n + 1;
+    if (!is_equal(value, value_of(arr[m]))) return m;
+    if (is_equal(value, value_of(arr[n]))) return n + 1;
+    while ((m + 1) < n) {
+      let k = (m + n) >> 1;
+      if (is_equal(value, value_of(arr[k])))
+        m = k;
+      else
+        n = k;
+    }
+    return n;
+  }
+
+  const begins = [];
+  for (let i = 0; i < arr.length; i = find_next(i))
+    begins.push(i);
+
+  return begins.map((begin, i) => {
+    const end = begins[i + 1];  // end is undefined for the last part
+    return arr.slice(begin, end);
+  });
+}
+
 //https://stackoverflow.com/questions/57760111/javascript-map-find-at-the-same-time-findmap
 
 function* map<T, U>(a: T[], fn: (x: T) => U) {

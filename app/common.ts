@@ -167,14 +167,14 @@ export const getEstElevation = async (coord) => {
     return await googleElevation(lat, lon);
   }
   catch(err){
-    console.log(`Google Elevation Error: ${err}`);
+    console.error(`Google Elevation Error: ${err}`);
     return undefined;
   }
 };
 
-export function getLocalTimeByCoord(coord)
+export function getLocalTimeByCoord(coord, layout?)
 {
-  const epoch = getEpochOfCoord(coord);
+  const epoch = getEpochOfCoord(coord, layout);
   if(!epoch)
     return undefined;
 

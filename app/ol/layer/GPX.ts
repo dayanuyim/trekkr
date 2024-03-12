@@ -10,6 +10,7 @@ import { def_trk_color, isTrkFeature, isWptFeature, olWptFeature, olTrackFeature
 
 import { getSymbol } from '../../sym'
 import { getEpochOfCoord, getXYZMOfCoord, companionColor, getLocalTimeByCoord } from '../../common';
+import { splitContinuity } from '../../lib/utils';
 
 
 const xy_equals = ([x1, y1], [x2, y2]) => (x1 === x2 && y1 === y2);
@@ -88,11 +89,10 @@ function joinTrksegs(trk, begin, end){
   }
 }
 
-
 /****************************************************************
  * GPX Related Operations in Openlayers.
  * A GPX layer is a Vector Layer with Vector Source.
- * A Vector Source can be 
+ * A Vector Source can be
  *      1) url with GPX format or
  *      2) features (manually created or parsed by GPX Format)
  ***************************************************************/
@@ -314,26 +314,21 @@ class GPX extends VectorLayer<VectorSource>{
   }
 
   public splitTrackDays(trk){
-    if(!trk.getGeometry().getLayout().includes('M'))
+    const layout = trk.getGeometry().getLayout();
+    if(!layout.includes('M'))
       return;
 
+    //const ts1 = performance.now();
     const trksegs = trk.getGeometry().getCoordinates()
       .flatMap(trkseg => {
-        let end_of_day;
-        return trkseg
-          .reduce((begins, coord, i) => {
-            const time = getLocalTimeByCoord(coord);
-            if (!end_of_day || time.isAfter(end_of_day)) {
-              end_of_day = time.endOf('day');
-              begins.push(i);
-            }
-            return begins;
-          }, [])
-          .map((begin, i, arr) => {
-            const end = arr[i + 1];  // end is undefined for the last part
-            return trkseg.slice(begin, end);
-          });
+        return splitContinuity(
+          trkseg,
+          coord => getLocalTimeByCoord(coord, layout),
+          (t1, t2) => t1.isSame(t2, 'day')
+        );
     });
+    //const ts2 = performance.now();
+    //console.log('get begins', trksegs.map(t=>t.length), `${ts2-ts1}ms`);
     trk.getGeometry().setCoordinates(trksegs);
   }
 
