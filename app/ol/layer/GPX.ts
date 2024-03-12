@@ -53,32 +53,6 @@ function isCrosshairWpt(feature){
 
 //----------------------------------------------------------------
 
-// The fuction works only when @coord is a trkpt in the @track.
-function splitTrack(track, coord)
-{
-  const time = getEpochOfCoord(coord);
-  const layout = track.getGeometry().getLayout();
-  const trksegs = track.getGeometry().getCoordinates();
-
-  const split_by = (time && layout.endsWith('M'))? {time}: {coord};
-  const [i, j] = getTrkptIndices(trksegs, split_by);
-  if(i < 0 || j < 0)
-    return console.error('cannot find the split point by coord', coord);
-
-  if(j == 0 || j == trksegs[i].length -1)
-    return console.error('cannot split at the first or the last of a trkseg');
-
-  const [trksegs1, trksegs2] = splitTrksegs(trksegs, [i, j], coord);
-  track.getGeometry().setCoordinates(trksegs1); // reset the current track
-  return olTrackFeature({                      // create the split-out track
-    coordinates: trksegs2,
-    layout,
-  },{
-    name: (track.get('name') || '') + '-2',
-    color: companionColor(track.get('color')),
-  })
-}
-
 //@coord may be a virtual trkpt, not in the trksegs[i]
 function splitTrksegs(trksegs, [i, j], coord){
   const trksegs1 = trksegs.slice(0, i);   // for track1
@@ -321,39 +295,65 @@ class GPX extends VectorLayer<VectorSource>{
     }
   }
 
+  // The fuction works only when @coord is a trkpt in the @track.
   public splitTrack(trk, coord){
-    const trk2 = splitTrack(trk, coord);
-    if(trk2)
-      this.addTrack(trk2);
+    GPX.spawnTracks(trk, (trksegs) => {
+      const time = getEpochOfCoord(coord);
+      const layout = trk.getGeometry().getLayout();
+      const split_by = (time && layout.endsWith('M'))? {time}: {coord};
+
+      const [i, j] = getTrkptIndices(trksegs, split_by);
+      if(i < 0 || j < 0)
+        return console.error('cannot find the split point by coord', coord);
+      if(j == 0 || j == trksegs[i].length -1)
+        return console.error('cannot split at the first or the last of a trkseg');
+
+      return splitTrksegs(trksegs, [i, j], coord);
+    })
+    .forEach(trk => this.addTrack(trk));
   }
 
   public promoteTrksegs(){
     this.getTracks()
       .filter(trk => trk.getGeometry().getCoordinates().length > 1)
-      .flatMap(trk => {
-        const trksegs = trk.getGeometry().getCoordinates();
-        const layout = trk.getGeometry().getLayout();
-        const name = trk.get('name') || '';
-        let color = trk.get('color') || def_trk_color;
-
-        // reset the orginal track
-        trk.getGeometry().setCoordinates([trksegs.shift()]);
-        trk.set('name', `${name}-1`);
-        trk.set('color', color);
-
-        //split out other tracks
-        return trksegs.map((seg, i) => {
-          color = companionColor(color) || companionColor(def_trk_color);
-          return olTrackFeature({
-            coordinates: [seg],
-            layout,
-          }, {
-            name: `${name}-${i+2}`,
-            color,
-          });
-        });
-      })
+      .flatMap(trk => GPX.spawnTracks(trk, (trksegs) => {
+        return trksegs.map(trkseg => [trkseg]);
+      }))
       .forEach(trk => this.addTrack(trk));
+  }
+
+  // @spawner get trksegs from @trk, then return a array of trksegs, i.g., trksegs_set
+  // trksegs_set[0] is used to reset the origianl @trk,
+  // trksegs_set[1..n-1] is used to spawn new tracks.
+  private static spawnTracks(trk, spawner){
+    const trksegs = trk.getGeometry().getCoordinates();
+    const trksegs_set = spawner(trksegs);
+    if(!Array.isArray(trksegs_set) || trksegs_set.length <= 0){
+      console.error("spawnTracks error: bad spawner having no array of trksegs");
+      return [];
+    }
+
+    const layout = trk.getGeometry().getLayout();
+    const name = trk.get('name') || '';
+    let color = trk.get('color');
+    if(!companionColor(color)) color = def_trk_color;  // if not legal color...
+
+    // reset the orginal track
+    trk.getGeometry().setCoordinates(trksegs_set.shift());
+    trk.set('name', `${name}-1`);
+    trk.set('color', color);
+
+    //spawn other tracks
+    return trksegs_set.map((trksegs, i) => {
+      color = companionColor(color);
+      return olTrackFeature({
+        coordinates: trksegs,
+        layout,
+      }, {
+        name: `${name}-${i+2}`,
+        color,
+      });
+    });
   }
 
   public genXml(){
