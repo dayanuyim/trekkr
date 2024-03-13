@@ -1,7 +1,7 @@
 'use strict';
 
 import * as moment from 'moment-timezone';
-import tzlookup from 'tz-lookup';
+import tzlookup from '@photostructure/tz-lookup';
 import {fromLonLat, toLonLat} from 'ol/proj';
 import {format as fmtCoordinate} from 'ol/coordinate';
 import elevationApi from 'google-elevation-api';
@@ -179,6 +179,7 @@ export function getLocalTimeByCoord(coord, layout?)
     return undefined;
 
   //cache tz to optimize since tzlookup is a slow operation
+  // TODO: but what is the timeing to clear the cache?
   if(!Param.tz){
     const [lon, lat] = toLonLat(coord);
     Param.tz = tzlookup(lat, lon);
