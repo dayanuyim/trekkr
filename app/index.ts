@@ -99,20 +99,13 @@ async function loadQueryData(map, url){
 }
 
 async function fetchData(url){
-  try{
-    const resp = await fetch(url, {
-      method: 'GET',
-      mode: 'cors', // dont set no-cors,  which not mean 'no cors' or 'to disable cors'!
-      //headers: new Headers({ 'Content-Type': mime, }),
-    });
+  const resp = await fetch(url, {
+    method: 'GET',
+    mode: 'cors', // dont set no-cors,  which not mean 'no cors' or 'to disable cors'!
+    //headers: new Headers({ 'Content-Type': mime, }),
+  });
 
-    if(!resp.ok)
-      throw new Error(`${resp.status} ${resp.statusText}`)
-
-    return resp;
-  }
-  catch(e){
-    alert(`fetch data error: ${e.message}`);
-    return null;
-  }
+  if(!resp.ok)
+    throw new Error(`${resp.status} ${resp.statusText}`)
+  return resp;
 }
