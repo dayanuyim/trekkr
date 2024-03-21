@@ -217,15 +217,13 @@ function refreshDocTitle(){
 export function setGpxFilename(path: string, overwrite: boolean = false){
   const filename = path?.split(/[\\/]/).pop();
   if(filename && filename.toLowerCase().endsWith(".gpx") && (overwrite || !Opt.rt.gpx_filename)){
-    Opt.rt.gpx_filename = filename;
-    refreshDocTitle();
+    if(Opt.update('rt.gpx_filename', filename))
+      refreshDocTitle();
   }
 }
 
 export function setDocTitle(title){
-  if(title){
-    Opt.rt.title = title;
+  if(title && Opt.update('rt.title', title)){
     refreshDocTitle();
   }
-
 }
