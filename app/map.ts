@@ -120,30 +120,61 @@ export class AppMap{
 
     //create layer from features, and add it to the map
     drag_interaciton.on('addfeatures', (e) => {
-      this.addFileFeatures(e.file.name, e.features);
+      setGpxFilename(e.file.name);
+      this.addGpxFeatures(e.features);
     });
   };
 
   // ----------------------------------------------------------------
 
   // for input file or http response
-  public async readFileFeatures(filename, blob: Blob|File|Response){
+  public async readFeatures(blob: Blob|File|Response){
     try{
       const arraybuf = await blob.arrayBuffer();
       const features = this._readFeatures(arraybuf);
-      this.addFileFeatures(filename, features);
+      this.addGpxFeatures(features);
     }
     catch(e){
-      console.error(`read '${filename}' array buffer error`, e);
+      console.error('read features error', e);
     }
   }
 
-  private addFileFeatures(filename, features){
-    setGpxFilename(filename); // to rec the basename if a gpx is loaded
-    this._addGpxFeatures(features);
+  public readTextFeatures(text: string){
+    try{
+      const features = this._readFeatures(null, text);
+      this.addGpxFeatures(features);
+    }
+    catch(e){
+      console.error('read text featuers error', e);
+    }
   }
 
-  private _addGpxFeatures(features: FeatureLike[]): void {
+  // This function is much like the ability to read features from drag-and-drop files, but here the from file content.
+  //    ref: ol/interaction/DragAndDrop.js
+  private _readFeatures(arrbuf: ArrayBuffer, text?: string)
+  {
+    text = text || new TextDecoder().decode(arrbuf);
+
+    return mapFind(this._formats, format => {
+      const formatter = (typeof format === 'function') ? new format() : format;
+      const data = (formatter.getType() == 'arraybuffer') ? arrbuf : text;
+      if(!data) return null;   // if arraybuffer is required but only text provided
+      try {
+        return formatter.readFeatures(data, {
+          featureProjection: this._map.getView().getProjection(),
+        });
+      }
+      catch (e) {
+        // the error is normal in the try-and-error process
+        // console.debug(`'${formatter.constructor.name}' read features error: ${e.message}`);
+        return null;
+      }
+    }, features => {
+      return features && features.length > 0;
+    });
+  }
+
+  private addGpxFeatures(features: FeatureLike[]): void {
     if(!features) return;
     const real_features = features.filter(f => f instanceof Feature)  // filter out RenderFeature
                                 .map(f => f as Feature);
@@ -159,34 +190,6 @@ export class AppMap{
     this.setInteraction(layer);
     this._map.getView().fit(layer.getSource().getExtent(), { maxZoom: 16 });
     //*/
-  }
-
-  // This function is much like the ability to read features from drag-and-drop files, but here the from file content.
-  //    ref: ol/interaction/DragAndDrop.js
-  private _readFeatures(arrbuf: ArrayBuffer)
-  {
-    const try_to_read = (formatter, data, options) => {
-      try {
-        return formatter.readFeatures(data, options);
-      }
-      catch (e) {
-        // the error is normal in the try-and-error process
-        // console.debug(`'${formatter.constructor.name}' read features error: ${e.message}`);
-        return null;
-      }
-    };
-
-    const text = new TextDecoder().decode(arrbuf);
-
-    return mapFind(this._formats, format => {
-      const formatter = (typeof format === 'function') ? new format() : format;
-      const data = (formatter.getType() == 'arraybuffer') ? arrbuf : text;
-      return try_to_read(formatter, data, {
-        featureProjection: this._map.getView().getProjection(),
-      });
-    }, features => {
-      return features && features.length > 0;
-    });
   }
 
   // ----------------------------------------------------------------
@@ -547,7 +550,8 @@ export class AppMap{
     openfiles.accept = this._formats_types.join(",");
     openfiles.addEventListener("change", (e: InputEvent) => {
       Array.from(openfiles.files).forEach(file => {
-        this.readFileFeatures(file.name, file);
+        setGpxFilename(file.name);
+        this.readFeatures(file);
       });
     });
     ctx.setItem(".item-open-files", (el) => {

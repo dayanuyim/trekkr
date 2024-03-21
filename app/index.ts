@@ -74,6 +74,12 @@ function main(main_el: HTMLElement)
   main_el.addEventListener('keyup', function (e) {
     Opt.rt.shiftdown = e.shiftKey;
   });
+  main_el.addEventListener('paste', e => {
+    const text = e.clipboardData.getData('text');
+    //map.readFeatures(new Blob([text], {type: 'text/plain'}));
+    map.readTextFeatures(text);
+    e.preventDefault();
+  });
 
   // load initial data
   const params = new URLSearchParams(window.location.search);
@@ -83,7 +89,10 @@ function main(main_el: HTMLElement)
 
   if(title) setDocTitle(title);
   if(filename) setGpxFilename(filename, true);
-  if(data) loadQueryData(map, data);
+  if(data){
+    setGpxFilename(data);
+    loadQueryData(map, data);
+  }
 }
 
 
@@ -91,7 +100,7 @@ async function loadQueryData(map, url){
   // fetch and parse
   try{
     const resp = await fetchData(url);
-    map.readFileFeatures(resp.url, resp);
+    map.readFeatures(resp);
   }
   catch(e){
     alert(`fetch data error: ${e.message}`);
