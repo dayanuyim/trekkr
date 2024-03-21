@@ -75,10 +75,10 @@ function main(main_el: HTMLElement)
     Opt.rt.shiftdown = e.shiftKey;
   });
   main_el.addEventListener('paste', e => {
+    e.preventDefault();
     const text = e.clipboardData.getData('text');
     //map.readFeatures(new Blob([text], {type: 'text/plain'}));
     map.readTextFeatures(text);
-    e.preventDefault();
   });
 
   // load initial data

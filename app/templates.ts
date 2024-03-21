@@ -107,7 +107,6 @@ export const popContent = Handlebars.compile(`
         <fieldset class="pop-pt-tool">
             <button class="pop-tool-mk-wpt" title="Make Wpt"><i class="fas fa-map-pin"></i></button>
             <button class="pop-tool-rm-wpt" title="Delete Wpt"><i class="fas fa-trash-can"></i></button>
-            <button class="pop-tool-cp-wpt" title="Copy Wpt"><i class="fa-solid fa-copy"></i></button>
         </fieldset>
 
         <div class="pop-pt-header">

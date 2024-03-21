@@ -10,7 +10,7 @@ import {toTWD97, toTWD67, toTaipowerCoord} from './coord';
 //import * as moment from 'moment-timezone';
 import { getSymbol, matchRules, symbol_inv } from './sym'
 import { getEstElevation, getEleOfCoord, setEleOfCoord, getLocalTimeByCoord, gmapUrl, colorCode, complementaryColor } from './common'
-import { olWptFeature, def_trk_color, getTrkptIndices, isTrkFeature, isWptFeature} from './ol/gpx-common';
+import { olWptFeature, def_trk_color, getTrkptIndices, isTrkFeature, isWptFeature, createGpxText} from './ol/gpx-common';
 import { delayToEnable } from './lib/dom-utils';
 import Opt from './opt';
 import * as templates from './templates';
@@ -79,6 +79,12 @@ function readonlyElem(el: HTMLElement, readonly)
         el.style.pointerEvents = readonly? 'none': '';
 }
 
+function highlightElement(el: HTMLElement, duration=1000){
+    el.classList.add('highlight');
+    setTimeout(()=>{
+        el.classList.remove('highlight');
+    }, duration);
+}
 
 /*
 declare class Overlay{
@@ -124,6 +130,7 @@ export class PtPopupOverlay extends Overlay{
     _closer: HTMLElement;
     _resizer: HTMLElement;
     _resizer_content: HTMLElement;
+    _content: HTMLElement;
     _image: HTMLElement;
     _trk: HTMLElement;
     _trk_tool: HTMLElement;
@@ -160,6 +167,7 @@ export class PtPopupOverlay extends Overlay{
     _feature;
     _data;
     _resize_observer;
+    _is_on_content;
     _listeners = {};
 
     get pt_trk_name() { return this._trk_name.textContent; }
@@ -215,6 +223,7 @@ export class PtPopupOverlay extends Overlay{
         this._closer =          el.querySelector<HTMLElement>('.pop-closer');
         this._resizer =         el.querySelector<HTMLElement>('.pop-resizer');
         this._resizer_content = this._resizer.querySelector<HTMLElement>('.pop-resizer-content');
+        this._content =         el.querySelector<HTMLElement>('.pop-content');
         this._image =           el.querySelector<HTMLElement>('.pop-image');
         this._colorboard =      el.querySelector<HTMLElement>('.pop-colorboard');
         this._symboard =        el.querySelector<HTMLElement>('.pop-symboard');
@@ -281,10 +290,27 @@ export class PtPopupOverlay extends Overlay{
 
     private initEvents(){
         //close popup
-        this._closer.onclick = e => { this.hide();
+        this._closer.onclick = e => {
+            this.hide();
             (<HTMLElement>e.currentTarget).blur();
             return false;
         };
+
+        // it is weird? oncopy is not so 'boundary clear' like onclick event..., so onlcick is used to filer...
+        this._content.onclick = e => {
+            this._is_on_content = (e.target === e.currentTarget);
+        }
+        this._content.oncopy = e => {
+            if(!this._is_on_content)
+                return;
+            e.preventDefault();
+            const text = (this._data.trk)?
+                    createGpxText([], [this._feature]):
+                    createGpxText([this._feature], []);
+            e.clipboardData.setData('text', text);
+            //navigator.clipboard?.writeText(text);  // clipboard is not available for unsecure connection
+            highlightElement(this.getElement(), 1000);
+        }
 
         /*
         // !! NOT WORK! NOT WAY TO CHANGE RESIZE CURSOR !!

@@ -51,10 +51,11 @@ select::-ms-expand {
     /*padding: 15px 2em 15px 15px;*/
     padding: 2px;
     border-radius: 10px;
-    border: 1px solid #cccccc;
     bottom: 12px;
     left: -50px;
     /*min-width: 225px;*/
+    border: 1px solid #cccccc;
+    transition: border 1s ease-in-out;
 }
 .ol-popup:after, .ol-popup:before {
     top: 100%;
@@ -76,6 +77,10 @@ select::-ms-expand {
     border-width: 11px;
     left: 48px;
     margin-left: -11px;
+}
+
+.ol-popup.highlight {
+    border: 1px solid orange;
 }
 
 /* ======================================================================== */ 
@@ -281,10 +286,6 @@ select::-ms-expand {
 
 .pop-tool-rm-wpt svg {
     color: #505050;
-}
-
-.pop-tool-cp-wpt svg {
-    color: darkolivegreen;
 }
 
 /*----------------------------------------------------------------*/
