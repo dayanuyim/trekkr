@@ -55,7 +55,7 @@ select::-ms-expand {
     left: -50px;
     /*min-width: 225px;*/
     border: 1px solid #cccccc;
-    transition: border 1s ease-in-out;
+    transition: border 0.5s ease-out;
 }
 .ol-popup:after, .ol-popup:before {
     top: 100%;
