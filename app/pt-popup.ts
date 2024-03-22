@@ -308,7 +308,7 @@ export class PtPopupOverlay extends Overlay{
                     createGpxText([], [this._feature]):
                     createGpxText([this._feature], []);
             e.clipboardData.setData('text', text);
-            //navigator.clipboard?.writeText(text);  // clipboard is not available for unsecure connection
+            //navigator.clipboard?.writeText(text);  // the clipboard is not available for unsecure connection
             highlightElement(this.getElement(), 1000);
         }
 
@@ -561,6 +561,7 @@ export class PtPopupOverlay extends Overlay{
         this.resetDisplay(pt.image);
         this.setContent(this._data);
         this.setPosition(pt.coord);
+        this._content.focus();
     }
 
     private _track_feature_of(trkpt: Feature<Point>){

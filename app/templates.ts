@@ -387,7 +387,7 @@ export const main = Handlebars.compile(`
         <div class="pop-resizer">
             <div class="pop-resizer-content pop-image">
                 <a href="#" class="pop-closer"></a>
-                <div class="pop-content">
+                <div class="pop-content" tabindex="0">
                     {{popContent}}
                 </div>
             </div>
