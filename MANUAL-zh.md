@@ -20,7 +20,7 @@
 
       - _title_: 設定頁面標題
 
-    - 由Clipboard貼上：僅支援文字類型格式
+    - 由Clipboard貼上：於地圖上使用系統貼上熱鍵( Ctrl+v / Cmd+v)。僅支援文字類型格式。
 
 航點(Waypoints)新增
 -------------------
@@ -96,9 +96,15 @@ layout
 複製功能
 --------
 
-  - 若為 trkpt，則複製其track為GPX格式至clipboard
+  1. 點選Popup視窗空白處，確認Focus至此視窗
 
-  - 若為 wpt，則複製其wpt為GPX格式至clipboard
+  2. 使用系統複製熱鍵 (Ctrl+C 或 Cmd+C)
+
+  3. 若視窗邊框閃爍，表示成功至複製clipboard
+
+      - 若為 trkpt，則複製其track為GPX格式至clipboard
+
+      - 若為 wpt，則複製其wpt為GPX格式至clipboard
 
 
 功具列
