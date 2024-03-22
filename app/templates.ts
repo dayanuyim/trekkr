@@ -318,7 +318,7 @@ export const settings = Handlebars.compile(`
         </div>
 
         <div class="tabcontent" id="setting-about">
-            <span>使用手冊</span> <a href="javascript:void(0)">建構中...</a>
+            <span>使用手冊</span> <a href="https://github.com/dayanuyim/trekkr/blob/dev/MANUAL-zh.md" target="_blank">中文</a>
         </div>
 
     </div>
