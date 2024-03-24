@@ -75,7 +75,7 @@ function main(main_el: HTMLElement)
     Opt.rt.shiftdown = e.shiftKey;
   });
   main_el.addEventListener('paste', e => {
-    e.preventDefault();
+    //e.preventDefault();   // NOT to prevent, which will disable other editable elements
     const text = e.clipboardData.getData('text');
     //map.readFeatures(new Blob([text], {type: 'text/plain'}));
     map.readTextFeatures(text);
