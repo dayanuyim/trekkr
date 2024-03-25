@@ -17,6 +17,7 @@ import { AppMap } from './map';
 import { Settings } from './settings';
 import { Sidebar, Topbar } from './toolbar';
 import { setGpxFilename, setDocTitle } from './common';
+import { isEditableElement } from './lib/dom-utils';
 import Opt from './opt';
 
 (async () => {
@@ -75,6 +76,8 @@ function main(main_el: HTMLElement)
     Opt.rt.shiftdown = e.shiftKey;
   });
   main_el.addEventListener('paste', e => {
+    // filter out the normal editon
+    if(isEditableElement(e.target)) return;
     //e.preventDefault();   // NOT to prevent, which will disable other editable elements
     const text = e.clipboardData.getData('text');
     //map.readFeatures(new Blob([text], {type: 'text/plain'}));

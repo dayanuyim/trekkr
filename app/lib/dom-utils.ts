@@ -236,4 +236,14 @@ export function keyEnterToBlur(el: HTMLInputElement)
     el.addEventListener('keydown', _key_enter_to_blur_listener);
 }
 
-
+export function isEditableElement(el: EventTarget) {
+  if (el instanceof HTMLElement && el.isContentEditable) return true;
+  if (el instanceof HTMLInputElement) {
+    // https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input#input_types
+    if (/text|email|number|password|search|tel|url/.test(el.type || '')) {
+      return !(el.disabled || el.readOnly);
+    }
+  }
+  if (el instanceof HTMLTextAreaElement) return !(el.disabled || el.readOnly);
+  return false;
+}
