@@ -24,7 +24,7 @@
     "html5sortable": "^0.13.3",
     "jquery": "^3.7.1",
     "mini-css-extract-plugin": "^2.8.1",
-    "ol": "9.0.0",
+    "ol": "9.1.0",
     "proj4": "^2.10.0",
     "style-loader": "^3.3.4",
     "ts-loader": "^9.5.1",
