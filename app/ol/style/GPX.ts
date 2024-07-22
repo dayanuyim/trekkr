@@ -206,6 +206,8 @@ const track_arrow_styles = (linestrings, {trackColor: color, trackWidth: width, 
   const style_gen = arrow_head_style_generator(color, width);
   return linestrings.flatMap(linestr => {
     const coords = linestr.getCoordinates();
+    if(coords.length <= 1)
+      return [];
     return genSequence(begin, coords.length, arrow_num, min_step)
             .map(idx => style_gen(coords[idx - 1], coords[idx]));
   });
