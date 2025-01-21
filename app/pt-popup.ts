@@ -120,7 +120,10 @@ function setProgressBar(progbar: HTMLElement, value, total, color, formatter) {
 
     setting(progbar, total, bcolor);
     setting(running, value, color);
-    running.style.width = total? `${value*100/total}%`: '0';
+
+    const percentage = (value*100/total).toFixed(1) + '%';
+    progbar.title = percentage;
+    running.style.width = total? percentage: '0';
 }
 
 const xy_equals = ([x1, y1], [x2, y2]) => (x1 === x2 && y1 === y2);
