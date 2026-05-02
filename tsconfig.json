@@ -1,6 +1,7 @@
 {
     "compilerOptions": {
         "outDir": "./dist/",
+        "rootDir": "./app",
         "sourceMap": true,
         "module": "CommonJS",
         "esModuleInterop": true,
@@ -9,8 +10,12 @@
             "DOM",
             "ES2019"
         ],
-        "downlevelIteration": true,
+        //"downlevelIteration": true,
         "allowJs": true,
-        "alwaysStrict": true
-    }
+        "alwaysStrict": true,
+        "noImplicitAny": false  // TODO: fix this
+    },
+    "include": [
+        "app/**/*",
+    ]
 }
