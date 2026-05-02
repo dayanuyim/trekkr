@@ -13,7 +13,9 @@
         //"downlevelIteration": true,
         "allowJs": true,
         "alwaysStrict": true,
-        "noImplicitAny": false  // TODO: fix this
+        "noImplicitAny": false,                 // TODO: fix this
+        "strictPropertyInitialization": false,  // TODO: fix this
+        "strictNullChecks": false,
     },
     "include": [
         "app/**/*",

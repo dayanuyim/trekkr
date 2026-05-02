@@ -10,11 +10,11 @@ import { getRenderPixel } from 'ol/render';
 import { platformModifierKeyOnly } from 'ol/events/condition';
 import { Geometry } from 'ol/geom';
 import * as Extent from 'ol/extent';
-import { GeoJSON, IGC, KML, TopoJSON } from 'ol/format';
 
+import { GeoJSON, IGC, KML, TopoJSON } from 'ol/format';
 import PhotoFormat from './ol/format/Photo';
-import GPXLayer from './ol/layer/GPX';
 import GPXFormat from './ol/format/GPX';
+import GPXLayer from './ol/layer/GPX';
 import GPXStyle from './ol/style/GPX';
 
 import Opt from './opt';
@@ -53,7 +53,7 @@ export class AppMap{
   _map: Map
   _gpx_layer: GPXLayer;   //a gpx adapter for VectorLayer
   _ctxmenu_coord;
-  _formats = [
+  _formats: any[] = [
     GPXFormat,
     new PhotoFormat()
       .setListener('featureexists', (time) => this._gpx_layer.findWaypoint(time))
@@ -71,12 +71,12 @@ export class AppMap{
     ".igc",                // IGC
   ];
 
-  public constructor(target){
+  public constructor(target: string){
     this.init(target);
     this.initEvents();
   }
 
-  private init(target)
+  private init(target: string)
   {
     const drag_interaciton = new DragAndDrop({
       formatConstructors: this._formats,
@@ -141,7 +141,7 @@ export class AppMap{
 
   public readTextFeatures(text: string){
     try{
-      const features = this._readFeatures(null, text);
+      const features = this._readFeatures(undefined, text);
       this.addGpxFeatures(features);
     }
     catch(e){
@@ -151,7 +151,7 @@ export class AppMap{
 
   // This function is much like the ability to read features from drag-and-drop files, but here the from file content.
   //    ref: ol/interaction/DragAndDrop.js
-  private _readFeatures(arrbuf: ArrayBuffer, text?: string)
+  private _readFeatures(arrbuf?: ArrayBuffer, text?: string)
   {
     text = text || new TextDecoder().decode(arrbuf);
 
@@ -548,7 +548,7 @@ export class AppMap{
     // set menu listeners ========
     const openfiles = <HTMLInputElement> document.querySelector('input#open-files');
     openfiles.accept = this._formats_types.join(",");
-    openfiles.addEventListener("change", (e: InputEvent) => {
+    openfiles.addEventListener("change", (e) => {
       Array.from(openfiles.files).forEach(file => {
         setGpxFilename(file.name);
         this.readFeatures(file);

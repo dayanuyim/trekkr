@@ -106,7 +106,8 @@ async function loadQueryData(map, url){
     map.readFeatures(resp);
   }
   catch(e){
-    alert(`fetch data error: ${e.message}`);
+    const errmsg = (e instanceof Error)? e.message: JSON.stringify(e);
+    alert(`fetch data error: ${errmsg}`);
   }
 }
 
