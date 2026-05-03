@@ -14,6 +14,7 @@
         "allowJs": true,
         "alwaysStrict": true,
         "noImplicitAny": false,                 // TODO: fix this
+        "noImplicitThis": false,                // TODO: fix this
         "strictPropertyInitialization": false,  // TODO: fix this
         "strictNullChecks": false,
     },

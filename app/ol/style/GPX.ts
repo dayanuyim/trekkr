@@ -5,13 +5,9 @@ import ArrowHead from './ArrowHead';
 import { def_trk_color } from '../gpx-common';
 import { ExtensibleFunction } from '../../lib/utils';
 import { def_symbol, getSymbol } from '../../sym'
-import { colorCode, matchRule } from '../../common';
+import { colorCode, matchRule, FilterRule } from '../../common';
 
 import Opt from '../../opt';
-
-function lowercase(val){
-  return val? val.toLowerCase(): val;
-}
 
 // generate integer sequence from [begin, end)
 // @end-1, the last index, should be picked if @num is greater than 0
@@ -114,13 +110,18 @@ function _wpt_style(name, sym, scale=1)
   });
 }
 
-function filterWpt(feature){
-  //not match if finding any rule does not match
-  const notmatch = ['name', 'desc', 'sym'].find((kind)=>{
-    const rule = Opt.filter.wpt[kind];
-    return rule.enabled && !matchRule(rule, lowercase(feature.get(kind)));
+function filterWpt(feature, filter?){
+  if(!filter || !filter.wpt)
+    return true;
+
+  // pass only if every rule matches
+  return Object.entries(filter.wpt).every(([prop, rule]) => {
+    const r = rule as FilterRule;
+    if(!r || !r.enabled)  // viewed as matching if no rule or the rule is not enabled
+      return true;
+    const val = feature.get(prop);
+    return val && matchRule(r, val.toLowerCase());  //lowercase for caseignore
   });
-  return !notmatch;
 }
 
 const feat_prop = (feature, key, def_value?) => {
@@ -135,8 +136,8 @@ const feat_prop = (feature, key, def_value?) => {
 const wpt_style = (feature, options?) => {
   options = options || {};
   if(!feature.get('pseudo')){  //normal wpt
-    if(options.invisible) return null;
-    if(options.filterable && !filterWpt(feature)) return null;
+    if(!options.seeable) return null;
+    if(options.seeable === 'filtered' && !filterWpt(feature, options.seefilter)) return null;
   }
 
   const name = feat_prop(feature, 'name');
@@ -269,8 +270,7 @@ const gpx_style = (feature, options?) => {
 function GPX_closure_version(options?){
   // default options
   options = Object.assign({
-    invisible: false,
-    filterable: false,
+    seeable: true,
     scale: 1,
   }, options);
   return (feature) => gpx_style(feature, options);
@@ -281,18 +281,18 @@ function GPX_closure_version(options?){
 //  (A style function is a function feeded a feature object and returns a style object)
 class GPX extends ExtensibleFunction {
 
-  get filterable(){ return this._options.filterable; }
-  set filterable(v){ this._options.filterable = v; }
-  get invisible(){ return this._options.invisible; }
-  set invisible(v){ this._options.invisible = v; }
+  get seefilter(){ return this._options.seefilter; }
+  set seefilter(v){ this._options.seefilter = v; }
+  get seeable(){ return this._options.seeable; }
+  set seeable(v){ this._options.seeable = v; }
 
   private _options;
 
   constructor(options?) {
     // make a copy of the options
     options = Object.assign({
-      invisible: false,
-      filterable: false,
+      seeable: true,
+      seefilter: undefined,
       scale: 1,
       trackWidth: 3,
       trackArrowNum: 1,

@@ -1,6 +1,6 @@
 'use strict';
 import sortable from 'html5sortable/dist/html5sortable.es.js'
-import {tablink} from './lib/dom-utils';
+import { tablink, keyEnterToBlur } from './lib/dom-utils';
 import * as templates from './templates';
 import Opt from './opt';
 
@@ -33,9 +33,10 @@ class Layer {
     _desc: HTMLElement;
     _checked: HTMLInputElement;
     _opacity: HTMLInputElement;
-    _filterable: HTMLElement;
-    _invisible: HTMLElement;
+    _seefilter: HTMLDivElement;
+    _seeable: HTMLElement;
     _spy: HTMLElement;
+    //_filter_btn: HTMLButtonElement;
 
     private _listeners = {};
 
@@ -46,18 +47,51 @@ class Layer {
     get desc(){ return this._desc.textContent.trim();}
     get opacity(){ return limit(Number(this._opacity.value)/100, 0, 1);}
     get checked(){ return this._checked.checked;}
-    get filterable(){ return this._filterable.classList.contains('enabled');}
-    get invisible(){ return this._invisible.classList.contains('enabled');}
-    get spy(){ return this._spy.classList.contains('enabled');}
-    set spy(v){ this._spy.classList.toggle('enabled', v)};
+    get seeable(){ return this._base.dataset.seeable;}
+    get isspy(){ return this._spy.classList.contains('enabled');}
+    set isspy(v){ this._spy.classList.toggle('enabled', v)};
+    get seefilter(){
+        if(!this._seefilter) return undefined;
+
+        const data = {};
+        this._seefilter.querySelectorAll<HTMLElement>('.tabcontent').forEach(tab => {
+            const item = tab.classList.contains('filter-wpt')? 'wpt':
+                         tab.classList.contains('filter-trk')? 'trk':
+                         undefined;
+            if(!item)
+                return console.error(`Unknown filter item for tab '${tab.className}'`);
+
+            data[item] = {};
+
+            // Select all filter rows within this tab
+            const rows = tab.querySelectorAll<HTMLElement>('.filter-row');
+
+            rows.forEach(row => {
+                // Get the kind (name, desc, sym) - cleaning up potential syntax artifacts from the HTML
+                const kind = row.dataset.kind;
+                const en = row.querySelector<HTMLInputElement>('.filter-row-en');
+                const text = row.querySelector<HTMLInputElement>('.filter-row-text');
+                const regex = row.querySelector<HTMLButtonElement>('.filter-row-regex');
+
+                // Build the entry for this specific filter kind
+                data[item][kind] = {
+                    enabled: en.checked,
+                    type: regex.classList.contains('active') ? "regex" : "contains",
+                    text: text.value.trim().toLowerCase(),  // saving lower, for caseignore
+                };
+            });
+        });
+
+        return data;
+    }
 
     constructor(el: HTMLElement){
         this._base =       el;
         this._desc =       el.querySelector<HTMLElement>('.ly-opt-desc');
         this._checked =    el.querySelector<HTMLInputElement>('.ly-opt-checked');
         this._opacity =    el.querySelector<HTMLInputElement>('.ly-opt-opacity');
-        this._filterable = el.querySelector<HTMLElement>('.ly-opt-filterable');
-        this._invisible =  el.querySelector<HTMLElement>('.ly-opt-invisible');
+        this._seefilter =  el.querySelector<HTMLDivElement>('.filter-panel');
+        this._seeable =    el.querySelector<HTMLElement>('.ly-opt-seeable');
         this._spy =        el.querySelector<HTMLElement>('.ly-attr-spy')
 
         this.init();
@@ -66,17 +100,69 @@ class Layer {
     private init(){
         //this._initOption(this._checked, 'checked');
         //this._initOption(this._opacity, 'opacity');
-        //this._initOption(this._filterable, 'filterable');
-        //this._initOption(this._invisible, 'invisible');
+        //this._initOption(this._seeable, 'seeable');
         this._base.querySelectorAll<HTMLElement>('.ly-ctrl.ly-opt').forEach((el) => {
             const prefix = "ly-opt-";
             const name = el.classList.value.split(' ').find(c => c.startsWith(prefix))?.substring(prefix.length);
             this._initOption(el, name);
         });
 
-        Layer.addObserver('spyid', (id) => this.spy = (this.id == id) );
+        // filter -----------------------
+        //init filter-panel tab
+        tablink('.filter-panel .tablink', 0, this._base);
+
+        if (this._seefilter) {
+            this.initFilterRows();
+
+            // TODO: need to fix, should retore only if necessary.
+            // to restore icon
+            this._seeable.addEventListener('click', e => {
+                this._seeable.innerHTML = templates.seeableIcon(this.seeable);
+            });
+
+            this._seeable.ondblclick = e => this._seefilter.hidden = false;  //dblclick to show
+
+            // unfocus to hide filter panel
+            window.addEventListener('click', e => {
+                if(this._seefilter.hidden)
+                    return;
+                if(this._seefilter.contains(e.target as Node))
+                    return;
+
+                // seefilter is set--------------------------
+                this._seefilter.hidden = true;
+
+                //data 
+                const seeable = 'filtered'
+                const seefilter = this.seefilter;
+                console.log(seeable, seefilter);
+
+                // udpate ui
+                this._seeable.innerHTML = templates.seeableIcon(seeable);
+                this._seeable.classList.toggle('enabled', true);
+
+                // udpate conf
+                const c1 = Opt.updateLayer(this.id, 'seeable', seeable);
+                const c2 = Opt.updateLayer(this.id, 'seefilter', seefilter);
+
+                // notify
+                if(c1 || c2) this._listeners['seefilter']?.(this.id, seeable, seefilter);
+            });
+        }
+
+        /*
+        this._filter_btn.classList.toggle('enabled', this.is_filter_enabled);
+        this._filter_btn.classList.toggle('active', Opt.filter.visible);      // show panel or not
+        this._filter_btn.onclick = e =>{
+            const active = this._filter_btn.classList.toggle('active');
+            Opt.update('filter.visible', active);
+        };
+        */
+
+        // init spy observer to sync between layers, since only one layer can be spy at the same time
+        Layer.addObserver('isspy', (id) => this.isspy = (this.id == id) );
         this._spy.onclick = e => {
-            Layer.notifyObservers('spyid', this.id);
+            Layer.notifyObservers('isspy', this.id);
             if(Opt.update('spy.id', this.id)) // update opt
                 this._listeners['spy']?.(this.id);
         };
@@ -95,7 +181,39 @@ class Layer {
         })
     }
 
+    private initFilterRows(){
+        this._base.querySelectorAll<HTMLElement>('.filter-row').forEach(row => {
+            const kind = row.dataset.kind; //name, desc, sym
 
+            const _en    = row.querySelector<HTMLInputElement>('.filter-row-en');
+            const _text  = row.querySelector<HTMLInputElement>('.filter-row-text');
+            const _regex = row.querySelector<HTMLButtonElement>('.filter-row-regex');
+
+            //_en.checked = Opt.filter.wpt[kind].enabled;
+            //_text.value = Opt.filter.wpt[kind].text;
+            //_regex.classList.toggle('active', Opt.filter.wpt[kind].type == "regex");
+
+            _en.onchange = e => {
+                //if(Opt.update(`filter.wpt.${kind}.enabled`, _en.checked))
+                    //this._listeners['seefitlerchanged']?.();
+            };
+
+            keyEnterToBlur(_text);
+            _text.onchange = e => {
+                //if(Opt.update(`filter.wpt.${kind}.text`, _text.value.toLowerCase()) &&  // saving lower, for caseignore
+                //Opt.filter.wpt[kind].enabled)
+                    //this._listeners['seefitlerchanged']?.();
+                    ;
+            };
+
+            _regex.onclick = e => {
+                const active = _regex.classList.toggle('active');
+                //if(Opt.update(`filter.wpt.${kind}.type`, active?"regex":"contains") &&
+                //Opt.filter.wpt[kind].enabled)
+                    //this._listeners['seefitlerchanged']?.();
+            };
+        });
+    }
 
 
     public setListener(event, listener){
@@ -165,7 +283,7 @@ export class Settings{
     // ----------------------------------------------------------------
 
     private initLayers(){
-        tablink('.settings-main .tablink', '.settings-main .tabcontent');
+        tablink('.settings-main>.tab>.tablink', 0, this._base);  //init settings-main tab
 
         this._toggle_btn.onclick = () => this._base.classList.toggle('collapsed');
         this._toggle_btn.title = Opt.data.tooltip.btn_settings;
@@ -188,11 +306,11 @@ export class Settings{
 
         //layer events
         this.layers.forEach(layer =>
-            layer.setListener('spy',        (id)             => this._listeners['spy']?.(id))
-                 .setListener('checked',    (id, checked)    => this._listeners['layer_checked']?.(id, checked))
-                 .setListener('opacity',    (id, opacity)    => this._listeners['layer_opacity']?.(id, opacity))
-                 .setListener('filterable', (id, filterable) => this._listeners['layer_filterable']?.(id, filterable))
-                 .setListener('invisible',  (id, invisible)  => this._listeners['layer_invisible']?.(id, invisible))
+            layer.setListener('spy',       (id)                     => this._listeners['spy']?.(id))
+                 .setListener('checked',   (id, checked)            => this._listeners['layer_checked']?.(id, checked))
+                 .setListener('opacity',   (id, opacity)            => this._listeners['layer_opacity']?.(id, opacity))
+                 .setListener('seefilter', (id, seeable, seefilter) => this._listeners['layer_seefilter']?.(id, seeable, seefilter))
+                 .setListener('seeable',   (id, seeable)            => this._listeners['layer_seeable']?.(id, seeable))
         );
     }
 

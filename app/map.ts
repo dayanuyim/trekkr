@@ -419,20 +419,14 @@ export class AppMap{
     this._getLayer(id)?.setOpacity(opacity);
   }
 
-  public setLayerFilterable(id, filterable)
+  public setLayerSeeable(id, seeable, seefilter?)
   {
-    const layer = this._getLayer(id);
-    if(layer){
-      layer.getStyle().filterable = filterable;
-      layer.changed();
-    }
-  }
+    if(seeable === undefined && seefilter === undefined) return;
 
-  public setLayerInvisible(id, invisible)
-  {
     const layer = this._getLayer(id);
     if(layer){
-      layer.getStyle().invisible = invisible;
+      if(seeable !== undefined) layer.getStyle().seeable = seeable;
+      if(seefilter !== undefined) layer.getStyle().seefilter = seefilter;
       layer.changed();
     }
   }

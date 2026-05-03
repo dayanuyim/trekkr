@@ -171,21 +171,36 @@ export function getOffset(el: Element) {
 }
 
 // w3c tab
-export function tablink(tab_q, content_q, init_idx=0)
+export function tablink(tab_q, init_idx=0, base_el=document.body)
 {
-    const cls = 'active';
+    const active = 'active';
 
-    const tabs = document.body.querySelectorAll<HTMLButtonElement>(tab_q);
-    const contents = document.body.querySelectorAll(content_q);
+    // get tabs
+    const tabs = Array.from(base_el.querySelectorAll(tab_q));
 
-    tabs.forEach(tab => tab.addEventListener('click', e => {
-        const content = document.getElementById(tab.getAttribute('data-content'));  // link tabcontent by id
-        tabs.forEach(el => el.classList.toggle(cls, el == tab));
-        contents.forEach(el => el.classList.toggle(cls, el == content));
+    // get tab contents
+    //const cons = base_el.querySelectorAll(content_q);
+    const cons = tabs.map(tab => {
+        const con = base_el.querySelectorAll(tab.dataset.content);  // query tabcontent by tab's data-content
+        if(con.length == 0)
+            return console.error(`No tabcontent '${tab.dataset.content}'`);
+        if(con.length > 1)
+            console.warn(`Multiple tabcontents found for '${tab.dataset.content}'`, {content: con});
+        return con[0];
+    });
+
+    // tab click event
+    tabs.forEach((tab, idx) => tab.addEventListener('click', e => {
+        const choose = (el, i) => el.classList.toggle(active, i == idx);
+        tabs.forEach(choose);
+        cons.forEach(choose);
     }));
 
-    if(tabs.length > init_idx)
+    // init click
+    if(tabs.length){
+        init_idx = Math.max(0, Math.min(init_idx, tabs.length-1));
         tabs[init_idx].click();
+    }
 }
 
 export function saveTextAsFile(textToWrite, fileNameToSaveAs, fileType) {

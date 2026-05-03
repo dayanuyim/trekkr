@@ -14,7 +14,7 @@ class Opt{
     }
 
     //cookie options
-    _version = 8;
+    _version = 9;
     xy = [13461784.981041275, 2699338.9447048027];    //xy = fromLonLat([120.929272, 23.555519]);
     zoom = 15;
     coordsys = 'twd67';
@@ -24,6 +24,7 @@ class Opt{
         radius: 75,
         id: "NLSC_PHOTO_MIX",
     };
+    /* TODO remove later */
     filter = {
         visible: false,
         force: false,  // if true, also filter the user's gpx layer
@@ -33,6 +34,7 @@ class Opt{
             sym: { enabled: false, type: "contains", text: ""},
         }
     }
+    /* TODO remove later */
     goto = {
         visible: false,
         coordsys: 'wgs84',
@@ -143,8 +145,7 @@ class Opt{
     public strip(){
         const obj = Object.assign({}, this, {
             layers: this.layers.map(layer => copyIfKeyDefined(layer, [
-                'id', 'checked', 'opacity',
-                'filterable', 'invisible',
+                'id', 'checked', 'opacity', 'seeable', 'seefilter',
             ])),
         });
         delete obj.rt;     // not saving runtime

@@ -157,14 +157,14 @@ function kmlLayer(url, options?){
   }, options));
 }
 
-function mkLayer({type, url, legend, layers, interactable, readonly, filterable, invisible, scale})
+function mkLayer({type, url, legend, layers, interactable, readonly, seeable, seefilter, scale})
 {
   switch(type){
     case 'osm': return osmLayer();
     case 'xyz': return xyzLayer(url, legend? {transition: 0}: undefined);
     case 'wms': return wmsLayer(url, layers);
     case 'json': return jsonLayer(url);
-    case 'gpx': return gpxLayer(url, {interactable}, {readonly}, {filterable, invisible, scale});
+    case 'gpx': return gpxLayer(url, {interactable}, {readonly}, {seeable, seefilter, scale});
     case 'kml': return kmlLayer(url);
     case 'grid': return graticule(url);
     default: throw `unrecognize layer conf type: ${type}`;

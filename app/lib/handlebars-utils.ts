@@ -24,8 +24,12 @@ Handlebars.registerHelper('ifcond', function (v1, operator, v2, options) {
     return evalCond(v1, operator, v2)? options.fn(this) : options.inverse(this);
 });
 
-Handlebars.registerHelper('ifeql', function (v1, v2, options) {
+Handlebars.registerHelper('ifeq', function (v1, v2, options) {
     return v1 === v2? options.fn(this) : options.inverse(this);
+});
+
+Handlebars.registerHelper('ifneq', function (v1, v2, options) {
+    return v1 !== v2? options.fn(this) : options.inverse(this);
 });
 
 Handlebars.registerHelper('ifzero', function (v, options) {

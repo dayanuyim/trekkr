@@ -188,7 +188,13 @@ export function getLocalTimeByCoord(coord, layout?)
   return moment.unix(epoch).tz(Param.tz);
 }
 
-export function matchRule({enabled, type, text}, str: string){
+export interface FilterRule {
+  enabled: boolean;
+  type: string;
+  text: string;
+}
+
+export function matchRule({enabled, type, text}: FilterRule, str: string){
   if(!str) return false;
   if(!enabled) return false;
   switch(type){

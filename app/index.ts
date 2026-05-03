@@ -43,18 +43,17 @@ function main(main_el: HTMLElement)
     .setListener('spyenabled', (spy) => map.setSpyLayer(spy));
 
   const topbar = new Topbar(main_el.querySelector('.toolbar-top'))
-    .setListener('filterchanged', (filterable) => map.setLayerFilterable(null, filterable))
-    .setListener('filterrulechanged', () => map.redrawText())
+    //.setListener('seefitlerchanged', () => map.redrawText())
     .setListener('getcenter', () => map.getView().getCenter())
     .setListener('goto', (coord) => map.setCrosshairWpt(coord));
 
   const settings = new Settings(main_el.querySelector('.settings'))
-    .setListener('layers_reorder',   (ids) => map.setLayers(Opt.layers))
-    .setListener('layer_checked',    (id, checked) => map.setLayers(Opt.layers))
-    .setListener('layer_opacity',    (id, opacity) => map.setLayerOpacity(id, opacity))
-    .setListener('layer_filterable', (id, filterable) => map.setLayerFilterable(id, filterable))
-    .setListener('layer_invisible',  (id, invisible) => map.setLayerInvisible(id, invisible))
-    .setListener('spy',              (id) => map.setSpyLayer(Opt.spy))
+    .setListener('layers_reorder',  (ids) => map.setLayers(Opt.layers))
+    .setListener('layer_checked',   (id, checked) => map.setLayers(Opt.layers))
+    .setListener('layer_opacity',   (id, opacity) => map.setLayerOpacity(id, opacity))
+    .setListener('layer_seefilter', (id, seeable, seefiter) => map.setLayerSeeable(id, seeable, seefiter))
+    .setListener('layer_seeable',   (id, seeable) => map.setLayerSeeable(id, seeable))
+    .setListener('spy',             (id) => map.setSpyLayer(Opt.spy))
     .setListener('wptchanged', () => map.redrawText())
     .setListener('trkchanged', () => map.redrawText());
 

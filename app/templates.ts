@@ -13,6 +13,9 @@ Handlebars.registerHelper('undefined', function (value) {
   return value === undefined;
 });
 
+Handlebars.registerHelper('eq', (op1, op2) => op1 === op2);
+Handlebars.registerHelper('neq', (op1, op2) => op1 !== op2);
+
 Handlebars.registerHelper("mul", (val, mul, options) => {
     return Math.floor(val * mul);
 });
@@ -202,6 +205,17 @@ export const symboard = Handlebars.compile(`
     </div>
 `);
 
+export const seeableIcon = (seeable) => {
+    return seeable === "filtered"?
+        //'<i class="fa-solid fa-eye-slash"></i>':
+        '<i class="fa-solid fa-eye-low-vision"></i>':
+        '<i class="fa-solid fa-eye"></i>';
+};
+
+Handlebars.registerHelper("seeableIcon", (seeable) => {
+    return new Handlebars.SafeString(seeableIcon(seeable));
+});
+
 // ly-opt: the option for each layer
 // ly-attr: the attribute shared by all layers
 // ly-ctrl: the interactive ctonrol
@@ -212,12 +226,12 @@ export const mkLayer = Handlebars.compile(`
         <input type="checkbox" class="ly-ctrl ly-opt ly-opt-checked" id="ly-{{id}}" {{#if checked}}checked{{/if}}><!--
      --><span class="ly-body"><!--
          --><label class="ly-opt ly-opt-desc" for="ly-{{id}}">{{desc}}</label>
-            <button class="ly-ctrl ly-attr ly-attr-spy      {{#if legend}}hidden{{/if}} {{#if spy}}enabled{{/if}}"><i class="fa-solid fa-earth-asia"></i></button>
-            <button class="ly-ctrl ly-opt ly-opt-filterable {{#if (undefined filterable)}}hidden{{/if}} {{#if filterable}}enabled{{/if}}"><i class="fa-solid fa-filter"></i></button>
-            <button class="ly-ctrl ly-opt ly-opt-invisible  {{#if (undefined invisible )}}hidden{{/if}} {{#if invisible }}enabled{{/if}}"><i class="fa-solid fa-eye-slash"></i></button>
+            <button class="ly-ctrl ly-attr ly-attr-spy   {{#if spy}}enabled{{/if}}"                  {{#if legend}}hidden{{/if}}><i class="fa-solid fa-earth-asia"></i></button>
+            <button class="ly-ctrl ly-opt ly-opt-seeable {{#if (neq seeable 'none')}}enabled{{/if}}" {{#if (undefined seeable)}}hidden{{/if}}>{{seeableIcon seeable}}</button>
         </span>
         <input type="number" class="ly-ctrl ly-opt ly-opt-opacity" max="100" min="0" step="5" value="{{mul opacity 100}}">
         <i class="fas fa-percent"></i>
+        {{#if (isdefined seefilter)}}{{filterPanel seefilter}}{{/if}}
     </li>
     {{/with}}
 `);
@@ -245,9 +259,9 @@ export const settings = Handlebars.compile(`
     </div>
     <div class="settings-main">
         <div class="tab">
-            <span class="tablink" data-content="setting-layers">圖層</span>
-            <span class="tablink" data-content="setting-opts">設定</span>
-            <span class="tablink" data-content="setting-about">關於</span>
+            <span class="tablink" data-content="#setting-layers">圖層</span>
+            <span class="tablink" data-content="#setting-opts">設定</span>
+            <span class="tablink" data-content="#setting-about">關於</span>
         </div>
 
         <div class="tabcontent" id="setting-layers">
@@ -334,41 +348,74 @@ Handlebars.registerHelper("toolbarSide", ()=>{
 });
 
 const filterRow = Handlebars.compile(`
-    <div class="filter-row">
-        <input type="checkbox" id="filter-wpt-{{kind}}-en"/>
-        <label for="filter-wpt-{{kind}}-en">{{kind}}</label>
-        <input type="text" id="filter-wpt-{{kind}}"/>
-        <button type="button" class="filter-wpt-regex" id="filter-wpt-{{kind}}-regex" title="use regex">.*</button>
+    <div class="filter-row" data-kind="{{kind}}">
+        <input  type="checkbox" class="filter-row-en" id="filter-row-en-{{uid}}" {{#if rule.enabled}}checked{{/if}}/>
+        <label                                       for="filter-row-en-{{uid}}">{{kind}}</label>
+        <input  type="text"     class="filter-row-text" value="{{rule.text}}"/>
+        <button type="button"   class="filter-row-regex" title="use regex">.*</button>
     </div>
 `);
-Handlebars.registerHelper("filterRow", (kind)=>{
-    return new Handlebars.SafeString(filterRow({kind}));
+Handlebars.registerHelper("filterRow", (kind, rule)=>{
+    return new Handlebars.SafeString(filterRow({
+        kind,
+        rule,
+        uid: Math.floor(Math.random() * 1000000),  //just for label[for] to work, no need to set a stable id
+    }));
 });
 
-export const toolbarTop = Handlebars.compile(`
-    <div class="ol-control">
-        <button class="ctrl-btn ctrl-btn-filter" title="Filter..."><i class="fas fa-filter"></i></button>
-        <div class="filter-panel glassmophism">
-            <div class="tab">
-                <span class="tablink" data-content="filter-wpt">Waypoint</span>
-                <span class="tablink" data-content="filter-trk">Track</span>
-            </div>
-            <div class="tabcontent" id="filter-wpt">
-                {{filterRow "name"}}
-                {{filterRow "desc"}}
-                {{filterRow "sym"}}
-            </div>
-            <div class="tabcontent" id="filter-trk">
-                <p>The fitlers for tracks</p>
-            </div>
-            <div class="footer">
-                <div class="filter-force">
-                    <input type="checkbox" id="filter-force"/>
-                    <label for="filter-force" title="Filter all including the user layer">all layers</label>
-                </div>
+const filterPanel = Handlebars.compile(`
+    {{#with filter}}
+    <div class="filter-panel glassmophism" hidden>
+        <div class="tab">
+            {{#if (isdefined wpt)}}
+                <span class="tablink" data-content=".filter-wpt">Waypoint</span>
+            {{/if}}
+            {{#if (isdefined trk)}}
+                <span class="tablink" data-content=".filter-trk">Track</span>
+            {{/if}}
+        </div>
+
+        {{#if (isdefined wpt)}}
+        {{#with wpt}}
+        <div class="tabcontent filter-wpt">
+            {{filterRow "name" name}}
+            {{filterRow "desc" desc}}
+            {{filterRow "sym" sym}}
+        </div>
+        {{/with}}
+        {{/if}}
+
+        {{#if (isdefined trk)}}
+        {{#with trk}}
+        <div class="tabcontent filter-trk">
+            {{filterRow "name" name}}
+        </div>
+        {{/with}}
+        {{/if}}
+
+        <!--
+        <div class="footer">
+            <div class="filter-force">
+                <input type="checkbox" class="filter-force"/>
+                <label for="filter-force" title="Filter all including the user layer">all layers</label>
             </div>
         </div>
+        -->
     </div>
+    {{/with}}
+`);
+
+Handlebars.registerHelper("filterPanel", (filter)=>{
+    return new Handlebars.SafeString(filterPanel({filter}));
+});
+
+
+export const toolbarTop = Handlebars.compile(`
+    <!--
+    <div class="ol-control">
+        <button class="ctrl-btn ctrl-btn-filter" title="Filter..."><i class="fas fa-filter"></i></button>
+    </div>
+    -->
     <div class="ol-control">
         <button class="ctrl-btn ctrl-btn-goto" title="Goto..."><i class="fa-solid fa-crosshairs"></i></button>
         <span class="goto-panel">

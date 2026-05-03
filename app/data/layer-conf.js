@@ -266,7 +266,12 @@ export default
         opacity: 1.0,
         interactable: true,
         readonly: true,
-        filterable: false,
+        seeable: 'filtered',
+        seefilter: {
+            trk: {
+                name: {enabled: false, type: "contains", text: ""},
+            }
+        },
     },
     {
         id: 'Twtript',
@@ -278,8 +283,19 @@ export default
         opacity: 1.0,
         interactable: true,
         readonly: true,
-        filterable: false,
-        invisible: true,
+        seeable: 'filtered',   // true | false | filtered
+        seefilter: {         // only applied if 'filtered' is set.
+            // 過濾項目可以是 wpt 或 trk，有設定才會於 FilterPanel 出現分頁
+            wpt: {
+                // type: "contains" | "startswith" | "endswith" | "equals" | "regex"
+                name: {enabled: false, type: "contains", text: ""},
+                desc: {enabled: false, type: "contains", text: ""},
+                sym:  {enabled: false, type: "contains", text: ""},
+            },
+            trk: {
+                name: {enabled: false, type: "contains", text: ""},
+            }
+        },
         scale: 0.375,
     },
     //--------------------------------------------------------------------------------------

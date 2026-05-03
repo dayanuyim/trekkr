@@ -3,13 +3,11 @@ import { transform  } from 'ol/proj';
 import { taipowerCoordToTWD67, toTWD67, toTWD97, TM2Sixcodes, WEB_MERCATOR } from './coord';
 import { WGS84, TWD97, TWD67, } from './coord';
 import { containsCoordinate } from 'ol/extent';
-import { tablink, keyEnterToBlur } from './lib/dom-utils';
 
 export class Sidebar{
 
     _base: HTMLElement;
     _spy_btn: HTMLButtonElement;
-    //_goto_btn: HTMLButtonElement;
     _listeners = {}
 
     constructor(el: HTMLElement){
@@ -31,8 +29,6 @@ export class Sidebar{
             Opt.update('spy.enabled', enabled);
             this._listeners['spyenabled']?.(Opt.spy);
         });
-
-        //this._goto_btn.classList.add('active');
     }
 
     public setListener(event, listener){
@@ -141,8 +137,6 @@ const coordsys_profiles = {
 export class Topbar{
 
     _base: HTMLElement;
-    _filter_btn: HTMLButtonElement;
-    _filter_force: HTMLInputElement
     //_filter_wpt_name_en: HTMLInputElement;
     //_filter_wpt_name: HTMLInputElement;
     //_filter_wpt_name_regex: HTMLButtonElement;
@@ -159,7 +153,6 @@ export class Topbar{
 
     _listeners = {}
 
-    get filter_force(){ return this._filter_force.checked; }
     get is_filter_enabled(){ return !!Object.values(Opt.filter.wpt).find((rule: any)=>rule.enabled); } // viewed as enabled if any rule is enabled.
     get goto_coordsys(){ return this._goto_coordsys.value; }
     set goto_coordsys(v){ this._goto_coordsys.value = v; }
@@ -173,8 +166,7 @@ export class Topbar{
 
     private initElements(el: HTMLElement){
         this._base               = el;
-        this._filter_btn         = el.querySelector<HTMLButtonElement>('button.ctrl-btn-filter');
-        this._filter_force       = el.querySelector<HTMLInputElement>('#filter-force');
+        //this._filter_btn         = el.querySelector<HTMLButtonElement>('button.ctrl-btn-filter');
         //this._filter_wpt_name_en = el.querySelector<HTMLInputElement>('#filter-wpt-name-en');
         //this._filter_wpt_desc_en = el.querySelector<HTMLInputElement>('#filter-wpt-desc-en');
         //this._filter_wpt_sym_en  = el.querySelector<HTMLInputElement>('#filter-wpt-sym-en');
@@ -185,26 +177,6 @@ export class Topbar{
     }
 
     private init(){
-        // filter -----------------------
-        tablink('.filter-panel .tablink', '.filter-panel .tabcontent');  //init tab
-
-        this.initFilterRow('name');
-        this.initFilterRow('desc');
-        this.initFilterRow('sym');
-
-        this._filter_force.checked = Opt.filter.force;
-        this._filter_force.onchange = e => {
-            if(Opt.update('filter.force', this.filter_force))
-                this._listeners['filterchanged']?.(this.filter_force);
-        };
-
-        this._filter_btn.classList.toggle('enabled', this.is_filter_enabled);
-        this._filter_btn.classList.toggle('active', Opt.filter.visible);      // show panel or not
-        this._filter_btn.onclick = e =>{
-            const active = this._filter_btn.classList.toggle('active');
-            Opt.update('filter.visible', active);
-        };
-
         // goto -----------------------
         this._goto_btn.classList.toggle('active', Opt.goto.visible);  //init
         this._goto_btn.onclick = e =>{
@@ -245,37 +217,6 @@ export class Topbar{
             if(webcoord)
                 this._listeners['goto']?.(webcoord);
         }
-    }
-
-    private initFilterRow(kind: string){
-        const en    = this._base.querySelector<HTMLInputElement>(`#filter-wpt-${kind}-en`);
-        const text  = this._base.querySelector<HTMLInputElement>(`#filter-wpt-${kind}`);
-        const regex = this._base.querySelector<HTMLButtonElement>(`#filter-wpt-${kind}-regex`);
-
-        en.checked = Opt.filter.wpt[kind].enabled;
-        text.value = Opt.filter.wpt[kind].text;
-        regex.classList.toggle('active', Opt.filter.wpt[kind].type == "regex");
-
-        en.onchange = e => {
-            if(Opt.update(`filter.wpt.${kind}.enabled`, en.checked))
-                this._listeners['filterrulechanged']?.();
-            // set button state after Opt updated
-            this._filter_btn.classList.toggle('enabled', this.is_filter_enabled);
-        };
-
-        keyEnterToBlur(text);
-        text.onchange = e => {
-            if(Opt.update(`filter.wpt.${kind}.text`, text.value.toLowerCase()) &&  // saving lower, for caseignore
-               Opt.filter.wpt[kind].enabled)
-                this._listeners['filterrulechanged']?.();
-        };
-
-        regex.onclick = e => {
-            const active = regex.classList.toggle('active');
-            if(Opt.update(`filter.wpt.${kind}.type`, active?"regex":"contains") &&
-               Opt.filter.wpt[kind].enabled)
-                this._listeners['filterrulechanged']?.();
-        };
     }
 
     private parseTokens(profile, tokens){
