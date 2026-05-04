@@ -46,6 +46,9 @@ module.exports = {
         rules: [{
             test: /\.tsx?$/,
             loader: 'ts-loader',
+            options: {
+                configFile: 'tsconfig.json',
+            }
         }, {
             test: /\.(sa|sc|c)ss$/,
             use: [ MiniCssExtractPlugin.loader, 'css-loader',/* 'postcss-loader', 'sass-loader', */],

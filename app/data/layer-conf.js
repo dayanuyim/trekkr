@@ -266,7 +266,7 @@ export default
         opacity: 1.0,
         interactable: true,
         readonly: true,
-        seeable: 'filtered',
+        seeable: true,
         seefilter: {
             trk: {
                 name: {enabled: false, type: "contains", text: ""},

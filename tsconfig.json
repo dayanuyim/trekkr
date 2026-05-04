@@ -4,11 +4,15 @@
         "rootDir": "./app",
         "sourceMap": true,
         "module": "CommonJS",
+        //"module": "NodeNext",
+        //"moduleResolution": "NodeNext",
         "esModuleInterop": true,
         "target": "ES6",
+        //"target": "ESNext",
         "lib": [
             "DOM",
-            "ES2019"
+            "ES2019",
+            "ESNext",
         ],
         //"downlevelIteration": true,
         "allowJs": true,

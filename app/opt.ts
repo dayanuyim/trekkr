@@ -1,9 +1,11 @@
 'use strict';
 import layer_conf from './data/layer-conf';
 import Cookies from 'js-cookie';
+//import { zlibSync, unzlibSync } from 'fflate';
+import {isEqual} from 'lodash';
 import { copyIfKeyDefined } from './lib/utils';
 
-let _cookies_save_timer = null;
+let _cookies_save_timers = {};
 
 class Opt{
     static instance = undefined;
@@ -24,17 +26,6 @@ class Opt{
         radius: 75,
         id: "NLSC_PHOTO_MIX",
     };
-    /* TODO remove later */
-    filter = {
-        visible: false,
-        force: false,  // if true, also filter the user's gpx layer
-        wpt: {
-            name:{ enabled: false, type: "contains", text: ""},
-            desc:{ enabled: false, type: "contains", text: ""},
-            sym: { enabled: false, type: "contains", text: ""},
-        }
-    }
-    /* TODO remove later */
     goto = {
         visible: false,
         coordsys: 'wgs84',
@@ -70,7 +61,8 @@ class Opt{
 
     private constructor(){
         const saved = this.load();
-        if(saved && saved._version && saved._version === this._version)
+        //console.log('Loaded options from cookie:', saved);
+        if(saved?._version === this._version)
             Object.assign(this, this.restore(saved));
 
         //reset properties
@@ -79,16 +71,18 @@ class Opt{
     }
 
     private load() {
-        const saved = Cookies.get('maps');
-        if (saved) {
-            try {
-                return JSON.parse(saved);
-            }
-            catch (err) {
-                console.error(`Parse Cookie Error: ${err}`);
+        const saved: { [key: string]: any } = {};
+        try {
+            for(const key in this){
+                const value = Cookies.get(key);
+                if(value !== undefined)
+                    saved[key] = JSON.parse(value);
             }
         }
-        return undefined;
+        catch (err) {
+            console.warn(`Parse cookie error: ${err}`);
+        }
+        return saved;
     }
 
     // ----------------------------------------------------------------
@@ -97,9 +91,9 @@ class Opt{
         return this.layers.find(layer => layer.id == id);
     }
 
-    public updateLayer(id, key, value){
+    public updateLayer(id, keypath, value){
         const obj = this.getLayer(id);
-        return this._update(obj, key, value);
+        return this.update(keypath, value, obj, 'layers');
     }
 
     public updateLayersOrder(ids: Array<string>){
@@ -108,49 +102,76 @@ class Opt{
         const is_changed = !!this.layers.find(({id}, i) => pos_idx[id] != i);
         if(is_changed){
             this.layers.sort((a, b) => pos_idx[a.id] - pos_idx[b.id]);
-            this.lazySave();
+            this.lazySave('layers');
         }
         return is_changed;
     }
 
     // ----------------------------------------------------------------
 
-    public update(keypath: string, value){
+    // @obj is the object to be updated agaist the @keypath. The default is the opt itself if not specified.
+    // @prop is the name of the property of the opt. The default is the top level key of the keypath if not specified.
+    // some examples:
+    //  update('zoom', 10);
+    //  update('spy.radius', 20);
+    //  update('opacity', 0.5, opt.layers[0], 'layers');
+    //  udpate('seefilter', {trk: {name: {enabled: true, type: 'contains', text: 'test'}}}, opt.layers[2], 'layers');
+    public update(keypath: string, value: any, obj?: any, prop?: string){
         const keys = keypath.split('.');
+        prop = prop || keys[0];   // use the top level key as the prop if not specified
+
         const key = keys.pop();
-        const obj = keys.reduce((obj, key) => obj[key], this);
-        return this._update(obj, key, value);
+        obj = obj || this;
+        obj = keys.reduce((obj, key) => obj[key], obj);
+        return this._update(key, value, obj, prop);
     }
 
-    private _update(obj, key, value){
-        const is_changed = (obj[key] !== value);
+    private _update(key, value, obj, prop){
+        const is_changed = !isEqual(obj[key], value);
         if(is_changed){
             obj[key] = value;
-            this.lazySave();
+            this.lazySave(prop);
         }
         return is_changed;
     }
 
-    private lazySave(){
-        if(_cookies_save_timer) clearTimeout(_cookies_save_timer);
-        _cookies_save_timer = setTimeout(() => {
-            _cookies_save_timer = null;
-            const value = JSON.stringify(this.strip());
-            if(value.length >= 4096)
-                console.warn(`The cookie size is larger 4096: ${value.length}`)
-            Cookies.set("maps", value, {sameSite: 'strict'});
-        }, 1000);
+    private lazySave(prop){
+
+        const cookies_opt = {sameSite: 'strict'};
+        const version_key = '_version';
+
+        if(_cookies_save_timers[prop])
+            clearTimeout(_cookies_save_timers[prop]);
+
+        _cookies_save_timers[prop] = setTimeout(() => {
+            _cookies_save_timers[prop] = null;
+
+            const value = JSON.stringify(this.getStrippedValue(prop));
+            //console.log(`Saving ${prop} to cookie:`, value);
+
+            // after encodeURIComponent, cookie may exceed the limit 4096 bytes. we warn if the cookie seems too large.
+            if(value.length >= 2600)
+                console.warn(`The cookie size is too larger: ${value.length}`)
+
+            Cookies.set(prop, value, cookies_opt);
+            Cookies.set(version_key, this[version_key], cookies_opt);  //for future compatibility check
+        }, 2000);
     }
 
-    public strip(){
-        const obj = Object.assign({}, this, {
-            layers: this.layers.map(layer => copyIfKeyDefined(layer, [
-                'id', 'checked', 'opacity', 'seeable', 'seefilter',
-            ])),
-        });
-        delete obj.rt;     // not saving runtime
-        delete obj.data;   // not saving constant data
-        return obj;
+    public getStrippedValue(key){
+        switch(key){
+            case 'layers':
+                return this.layers.map(layer => copyIfKeyDefined(layer, [
+                    'id', 'checked', 'opacity', 'seeable', 'seefilter',
+                ]));
+            //case 'zoom':
+                //return this.zoom.toFixed(2);  // it is useless for being over precise
+            case 'rt':
+            case 'data':
+                return {};    //not saving runtime or constant data  
+            default:
+                return this[key];
+        }
     }
 
     private restore(orig){
@@ -170,6 +191,24 @@ class Opt{
                                  .concat(defs);     //append the rest
         return orig;
     }
+
+    // TODO: need I use compress to reduce the cookie size? 
+    /*
+    private compress(obj){
+        const str = JSON.stringify(obj);
+        const bytes = new TextEncoder().encode(str);
+        const compressed = zlibSync(bytes, {level: 9});
+        //Buffer.from(compressed).toString('base64'); // tranditional way
+        return compressed.toBase64();
+    }
+
+    private decompress(str){
+        const compressed = Uint8Array.fromBase64(str);
+        const bytes = unzlibSync(compressed);
+        const json_str = new TextDecoder().decode(bytes);
+        return JSON.parse(json_str);
+    }
+    */
 }
 
 
