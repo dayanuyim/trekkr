@@ -1,4 +1,5 @@
 'use strict';
+import 'long-press-event';
 import sortable from 'html5sortable/dist/html5sortable.es.js'
 import { tablink, keyEnterToBlur } from './lib/dom-utils';
 import * as templates from './templates';
@@ -47,34 +48,35 @@ class Layer {
     get desc(){ return this._desc.textContent.trim();}
     get opacity(){ return limit(Number(this._opacity.value)/100, 0, 1);}
     get checked(){ return this._checked.checked;}
-    get seeable(){ return this._base.dataset.seeable;}
     get isspy(){ return this._spy.classList.contains('enabled');}
     set isspy(v){ this._spy.classList.toggle('enabled', v)};
+    get seeable(){ return this._seeable.classList.contains('filtered')? 'filtered':
+                          this._seeable.classList.contains('enabled');}
     get seefilter(){
         if(!this._seefilter) return undefined;
 
         const data = {};
         this._seefilter.querySelectorAll<HTMLElement>('.tabcontent').forEach(tab => {
-            const item = tab.classList.contains('filter-wpt')? 'wpt':
+            const kind = tab.classList.contains('filter-wpt')? 'wpt':
                          tab.classList.contains('filter-trk')? 'trk':
                          undefined;
-            if(!item)
-                return console.error(`Unknown filter item for tab '${tab.className}'`);
+            if(!kind)
+                return console.error(`Unknown filter kind for tab '${tab.className}'`);
 
-            data[item] = {};
+            data[kind] = {};
 
             // Select all filter rows within this tab
             const rows = tab.querySelectorAll<HTMLElement>('.filter-row');
 
             rows.forEach(row => {
-                // Get the kind (name, desc, sym) - cleaning up potential syntax artifacts from the HTML
-                const kind = row.dataset.kind;
+                // Get the attr (name, desc, sym) - cleaning up potential syntax artifacts from the HTML
+                const attr = row.dataset.attr;
                 const en = row.querySelector<HTMLInputElement>('.filter-row-en');
                 const text = row.querySelector<HTMLInputElement>('.filter-row-text');
                 const regex = row.querySelector<HTMLButtonElement>('.filter-row-regex');
 
-                // Build the entry for this specific filter kind
-                data[item][kind] = {
+                // Build the entry for this specific filter attr
+                data[kind][attr] = {
                     enabled: en.checked,
                     type: regex.classList.contains('active') ? "regex" : "contains",
                     text: text.value.trim().toLowerCase(),  // saving lower, for caseignore
@@ -98,66 +100,29 @@ class Layer {
     }
 
     private init(){
-        //this._initOption(this._checked, 'checked');
-        //this._initOption(this._opacity, 'opacity');
-        //this._initOption(this._seeable, 'seeable');
-        this._base.querySelectorAll<HTMLElement>('.ly-ctrl.ly-opt').forEach((el) => {
-            const prefix = "ly-opt-";
-            const name = el.classList.value.split(' ').find(c => c.startsWith(prefix))?.substring(prefix.length);
-            this._initOption(el, name);
+//        this._base.querySelectorAll<HTMLElement>('.ly-ctrl.ly-opt').forEach((el) => {
+//            const prefix = "ly-opt-";
+//            const name = el.classList.value.split(' ').find(c => c.startsWith(prefix))?.substring(prefix.length);
+//
+//            const event = (el instanceof HTMLInputElement) ?  // ctrl type
+//                'change' : 'click';
+//            el.addEventListener(event, e => this._updateOption(el, name));
+//        });
+
+        this._checked.addEventListener('change', e => this._updateOption(this._checked, 'checked'));
+        this._opacity.addEventListener('change', e => this._updateOption(this._opacity, 'opacity'));
+
+        this._seeable.addEventListener('click', e => {
+            // disable if seefilter panel is popup.
+            if(this._seefilter?.hidden === false)   // _seefilter may undefined 
+                return;
+            // to restore to the normal state anyway if clicked.
+            this._seeable.classList.remove('filtered');
+            // toggle seeable and update
+            this._updateOption(this._seeable, 'seeable');
         });
 
-        // filter -----------------------
-        //init filter-panel tab
-        tablink('.filter-panel .tablink', 0, this._base);
-
-        if (this._seefilter) {
-            this.initFilterRows();
-
-            // TODO: need to fix, should retore only if necessary.
-            // to restore icon
-            this._seeable.addEventListener('click', e => {
-                this._seeable.innerHTML = templates.seeableIcon(this.seeable);
-            });
-
-            this._seeable.ondblclick = e => this._seefilter.hidden = false;  //dblclick to show
-
-            // unfocus to hide filter panel
-            window.addEventListener('click', e => {
-                if(this._seefilter.hidden)
-                    return;
-                if(this._seefilter.contains(e.target as Node))
-                    return;
-
-                // seefilter is set--------------------------
-                this._seefilter.hidden = true;
-
-                //data 
-                const seeable = 'filtered'
-                const seefilter = this.seefilter;
-                console.log(seeable, seefilter);
-
-                // udpate ui
-                this._seeable.innerHTML = templates.seeableIcon(seeable);
-                this._seeable.classList.toggle('enabled', true);
-
-                // udpate conf
-                const c1 = Opt.updateLayer(this.id, 'seeable', seeable);
-                const c2 = Opt.updateLayer(this.id, 'seefilter', seefilter);
-
-                // notify
-                if(c1 || c2) this._listeners['seefilter']?.(this.id, seeable, seefilter);
-            });
-        }
-
-        /*
-        this._filter_btn.classList.toggle('enabled', this.is_filter_enabled);
-        this._filter_btn.classList.toggle('active', Opt.filter.visible);      // show panel or not
-        this._filter_btn.onclick = e =>{
-            const active = this._filter_btn.classList.toggle('active');
-            Opt.update('filter.visible', active);
-        };
-        */
+        this.initFilterPanel();
 
         // init spy observer to sync between layers, since only one layer can be spy at the same time
         Layer.addObserver('isspy', (id) => this.isspy = (this.id == id) );
@@ -168,50 +133,85 @@ class Layer {
         };
     }
 
+    /*
     private _initOption(el, name){
-        const is_input = (el instanceof HTMLInputElement);  // ctrl type
-        const event = is_input? 'change': 'click';
-        
-        el.addEventListener(event, e => {
-            const value = is_input?
-                this[name]:   // get input value from the accesor
-                el.classList.toggle('enabled');
-            if(Opt.updateLayer(this.id, name, value))
-                this._listeners[name]?.(this.id, value);
-        })
+        const event = (el instanceof HTMLInputElement)?  // ctrl type
+            'change' : 'click';
+        el.addEventListener(event, e => this._updateOption(el, name));
+    }
+    */
+
+    private _updateOption(el, name){
+        // toggle button class if not input
+        if(!(el instanceof HTMLInputElement))
+            el.classList.toggle('enabled');
+
+        const value = this[name];                     // get input value from the accessor
+        if(Opt.updateLayer(this.id, name, value))     // update cookie
+            this._listeners[name]?.(this.id, value);  // notify change
+    }
+
+    private initFilterPanel() {
+        if (!this._seefilter)
+            return;
+
+        //init filter-panel
+        tablink('.filter-panel .tablink', 0, this._base);
+        this.initFilterRows();
+
+        //long press to show
+        this._seeable.dataset.longPressDelay = '750';
+        this._seeable.addEventListener('long-press', e => {
+            this._seefilter.hidden = false;
+        });
+
+        // unfocus to hide filter panel
+        window.addEventListener('click', e => {
+            if (this._seefilter.hidden)
+                return;
+            if (this._seeable.contains(e.target as Node) ||
+                this._seefilter.contains(e.target as Node))
+                return;
+
+            this._seefilter.hidden = true;
+
+            // finish the filter setting ------------
+
+            // udpate ui
+            this._seeable.classList.add('filtered');
+            this._seeable.classList.add('enabled');
+
+            //data collected from ui
+            const seeable = this.seeable;
+            const seefilter = this.seefilter;
+
+            // udpate conf
+            const c1 = Opt.updateLayer(this.id, 'seeable', seeable);
+            const c2 = Opt.updateLayer(this.id, 'seefilter', seefilter);
+
+            // notify if changed
+            if (c1 || c2) this._listeners['seefilter']?.(this.id, seeable, seefilter);
+        });
     }
 
     private initFilterRows(){
-        this._base.querySelectorAll<HTMLElement>('.filter-row').forEach(row => {
-            const kind = row.dataset.kind; //name, desc, sym
+        const conf = Opt.getLayer(this.id)?.seefilter;
 
+        this._base.querySelectorAll<HTMLElement>('.tabcontent .filter-row').forEach(row => {
+            const kind = row.closest('.tabcontent').classList.contains('filter-wpt')? 'wpt': 'trk';
+            const attr = row.dataset.attr; //name, desc, sym
             const _en    = row.querySelector<HTMLInputElement>('.filter-row-en');
             const _text  = row.querySelector<HTMLInputElement>('.filter-row-text');
             const _regex = row.querySelector<HTMLButtonElement>('.filter-row-regex');
 
-            //_en.checked = Opt.filter.wpt[kind].enabled;
-            //_text.value = Opt.filter.wpt[kind].text;
-            //_regex.classList.toggle('active', Opt.filter.wpt[kind].type == "regex");
+            //init data
+            _en.checked = conf?.[kind]?.[attr]?.enabled;
+            _text.value = conf?.[kind]?.[attr]?.text?? '';
+            _regex.classList.toggle('active', conf?.[kind]?.[attr]?.type == "regex");
 
-            _en.onchange = e => {
-                //if(Opt.update(`filter.wpt.${kind}.enabled`, _en.checked))
-                    //this._listeners['seefitlerchanged']?.();
-            };
-
+            //set event handers
             keyEnterToBlur(_text);
-            _text.onchange = e => {
-                //if(Opt.update(`filter.wpt.${kind}.text`, _text.value.toLowerCase()) &&  // saving lower, for caseignore
-                //Opt.filter.wpt[kind].enabled)
-                    //this._listeners['seefitlerchanged']?.();
-                    ;
-            };
-
-            _regex.onclick = e => {
-                const active = _regex.classList.toggle('active');
-                //if(Opt.update(`filter.wpt.${kind}.type`, active?"regex":"contains") &&
-                //Opt.filter.wpt[kind].enabled)
-                    //this._listeners['seefitlerchanged']?.();
-            };
+            _regex.onclick = e => _regex.classList.toggle('active');
         });
     }
 

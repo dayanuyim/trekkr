@@ -292,9 +292,6 @@ export default
                 desc: {enabled: false, type: "contains", text: ""},
                 sym:  {enabled: false, type: "contains", text: ""},
             },
-            trk: {
-                name: {enabled: false, type: "contains", text: ""},
-            }
         },
         scale: 0.375,
     },

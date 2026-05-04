@@ -110,19 +110,27 @@ function _wpt_style(name, sym, scale=1)
   });
 }
 
-function filterWpt(feature, filter?){
-  if(!filter || !filter.wpt)
+function filterFeature(feature, filter?){
+  if(!filter)
     return true;
 
   // pass only if every rule matches
-  return Object.entries(filter.wpt).every(([prop, rule]) => {
-    const r = rule as FilterRule;
-    if(!r || !r.enabled)  // viewed as matching if no rule or the rule is not enabled
-      return true;
-    const val = feature.get(prop);
-    return val && matchRule(r, val.toLowerCase());  //lowercase for caseignore
+  return Object.entries(filter).every(([prop, rule]) => {
+    if ((rule as FilterRule)?.enabled) {
+      const val = feature.get(prop);
+      return val && matchRule(rule as FilterRule, val.toLowerCase());  //lowercase for caseignore
+    }
+    // viewed as matching if no rule or the rule is not enabled
+    return true;
   });
 }
+
+function isSeeable(feature, options, kind){
+    if(!options.seeable) return false;
+    if(options.seeable === 'filtered') return filterFeature(feature, options?.seefilter?.[kind]);
+    return true;
+}
+
 
 const feat_prop = (feature, key, def_value?) => {
   const value = feature.get(key);
@@ -136,8 +144,7 @@ const feat_prop = (feature, key, def_value?) => {
 const wpt_style = (feature, options?) => {
   options = options || {};
   if(!feature.get('pseudo')){  //normal wpt
-    if(!options.seeable) return null;
-    if(options.seeable === 'filtered' && !filterWpt(feature, options.seefilter)) return null;
+    if(!isSeeable(feature, options, 'wpt')) return null;
   }
 
   const name = feat_prop(feature, 'name');
@@ -196,7 +203,7 @@ const arrow_head_style_generator = (color, shaft_width) => {
   });
 }
 
-const track_arrow_styles = (linestrings, {trackColor: color, trackWidth: width, trackArrowNum: arrow_num}) => {
+const trk_arrow_styles = (linestrings, {trackColor: color, trackWidth: width, trackArrowNum: arrow_num}) => {
   //let { interval, max_num: arrow_num } = Opt.track.arrow;
   const begin = 15;   // show arrows in the very ends seems useless, so skip it.
   const min_step = 20;
@@ -214,7 +221,7 @@ const track_arrow_styles = (linestrings, {trackColor: color, trackWidth: width, 
   });
 }
 
-const track_line_styles = ({trackColor: color, trackWidth: width}) => {
+const trk_line_styles = ({trackColor: color, trackWidth: width}) => {
   return [
     new Style({
       stroke: new Stroke({
@@ -233,16 +240,19 @@ const track_line_styles = ({trackColor: color, trackWidth: width}) => {
   ];
 }
 
-const track_styles = (feature, options) => {
+const trk_styles = (feature, options) => {
+  options = options || {};
+  if(!isSeeable(feature, options, 'trk')) return null;
+
   options.trackColor = (feature.get('color') || def_trk_color).toLowerCase();
-  return track_line_styles(options).concat(
-         track_arrow_styles(feature.getGeometry().getLineStrings(), options),
+  return trk_line_styles(options).concat(
+         trk_arrow_styles(feature.getGeometry().getLineStrings(), options),
   );
 }
 
 // ----------------------------------------------------------------------------
 // @not really use, just for in case
-const route_style = (feature, options?) => {
+const rte_style = (feature, options?) => {
   return new Style({
     stroke: new Stroke({
       color: '#f00',
@@ -258,8 +268,8 @@ const empty_style = new Style({});
 const gpx_style = (feature, options?) => {
   switch (feature.getGeometry().getType()) {
     case 'Point':           return wpt_style(feature, options);
-    case 'MultiLineString': return track_styles(feature, options);
-    case 'LineString':      return route_style(feature, options);
+    case 'MultiLineString': return trk_styles(feature, options);
+    case 'LineString':      return rte_style(feature, options);
     default:                return empty_style;  //for fallback
   }
 };

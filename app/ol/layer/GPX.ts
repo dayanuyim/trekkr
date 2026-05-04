@@ -1,4 +1,5 @@
 import { Feature } from 'ol';
+import { Coordinate } from 'ol/coordinate';
 import { Vector as VectorLayer } from 'ol/layer';
 import { Vector as VectorSource } from 'ol/source';
 import { MultiLineString, Point } from 'ol/geom';
@@ -170,7 +171,7 @@ class GPX extends VectorLayer<VectorSource>{
   public estimateCoord(time) {
     //*/
     return this.getTracks()
-      .reduce((coord, trk) => coord || trk.getGeometry().getCoordinateAtM(time), undefined);   // return the first if found
+      .reduce<Coordinate|undefined>((coord, trk) => coord || trk.getGeometry().getCoordinateAtM(time), undefined);   // return the first if found
     /*/
     const time_of = (coords) => coords[coords.length - 1];
     return this.getTracks()

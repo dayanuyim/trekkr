@@ -197,6 +197,11 @@ html, body {
     color: #808080;
 }
 
+#setting-layers li .ly-opt-seeable.filtered .seeable-icon-normal,
+#setting-layers li .ly-opt-seeable:not(.filtered) .seeable-icon-filtered {
+    display: none;
+}
+
 #setting-layers li .ly-body {
     display: inline-block;
     min-width: 15.5em;
