@@ -36,9 +36,9 @@ Handlebars.registerHelper('fmtTime', function(moment) {
     return moment? moment.format('YYYY-MM-DD HH:mm:ss'): '-';
 });
 
-Handlebars.registerHelper("selop", (value, selected, text, attrs, options)=>{
-    if(value === selected)
-        attrs += " selected";
+Handlebars.registerHelper("selop", (value, /*selected,*/ text, attrs, options)=>{
+    //if(value === selected)
+    //    attrs += " selected";
     return new Handlebars.SafeString(`<option value="${value}" ${attrs}>${text}</option>`);
 });
 
@@ -68,13 +68,13 @@ Handlebars.registerHelper("colorboardItems", (options)=>{
 
 const coordsysMenu = Handlebars.compile(`
     <select class="{{cls}}" dir="rtl">
-        {{selop ""         coordsys "-"       "disabled hidden"}}
-        {{selop "wgs84"    coordsys "WGS84"}}
-        {{selop "twd97"    coordsys "TWD97"}}
-        {{selop "twd67"    coordsys "TWD67"}}
-        {{selop "taipower" coordsys "電力座標"}}
-        {{selop "twd97_6"  coordsys "&#x3285;TWD97"}}
-        {{selop "twd67_6"  coordsys "&#x3285;TWD67"}}
+        {{selop ''         '-'             'disabled hidden'}}
+        {{selop 'wgs84'    'WGS84'         ''}}
+        {{selop 'twd97'    'TWD97'         ''}}
+        {{selop 'twd67'    'TWD67'         ''}}
+        {{selop 'taipower' '電力座標'      ''}}
+        {{selop 'twd97_6'  '&#x3285;TWD97' ''}}
+        {{selop 'twd67_6'  '&#x3285;TWD67' ''}}
     </select>
 `);
 Handlebars.registerHelper("coordsysMenu", (cls, options)=>{
