@@ -4,7 +4,8 @@ import * as moment from 'moment-timezone';
 import tzlookup from '@photostructure/tz-lookup';
 import {fromLonLat, toLonLat} from 'ol/proj';
 import {format as fmtCoordinate} from 'ol/coordinate';
-import elevationApi from 'google-elevation-api';
+//import elevationApi from 'google-elevation-api';
+import { setOptions, importLibrary } from "@googlemaps/js-api-loader";
 import Opt from './opt';
 
 const Param = {
@@ -145,6 +146,46 @@ export function getEpochOfCoord(coord, layout?){
   }
 };
 
+// Google Map ref:
+//   https://developers.google.com/maps/documentation/javascript/reference/elevation
+
+let elevation_instance = null;
+
+async function getGoogleElevationService(){
+  if (!elevation_instance) {
+    setOptions({
+      key: Opt.data.gmapkey,
+      v: 'quarterly',
+    });
+    const { ElevationService } = await importLibrary("elevation");
+    elevation_instance = new ElevationService();
+  }
+  return elevation_instance;
+}
+
+/**
+ * 根據座標取得高度
+ * @param {number} lat latitude
+ * @param {number} lng longitude
+ */
+async function googleElevation(lat, lng) {
+  try {
+    const elevator = await getGoogleElevationService(); // 應該有快取，似乎沒必要做 singleton?
+    const { results } = await elevator.getElevationForLocations({
+      locations: [{ lat, lng }]
+    });
+
+    if(results?.length > 0)
+      return results[0].elevation;
+    return console.error(`Google Elevation API returned no result for location (${lat}, ${lng})`);
+  }
+  catch (error) {
+    //const { ElevationStatus } = await importLibrary("elevation") as google.maps.ElevationLibrary;
+    return console.error("query Elevation API error:", error);
+  }
+}
+
+/* TODO: removing it in the next version. this is old implement using 'google-elevation-api'.
 // Promisify and Accept only a location
 function googleElevation(lat, lon)
 {
@@ -160,6 +201,7 @@ function googleElevation(lat, lon)
     });
   });
 }
+*/
 
 export const getEstElevation = async (coord) => {
   const [lon, lat] = toLonLat(coord);
