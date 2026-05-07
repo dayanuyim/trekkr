@@ -110,50 +110,51 @@ class Opt{
     // ----------------------------------------------------------------
 
     // @obj is the object to be updated agaist the @keypath. The default is the opt itself if not specified.
-    // @prop is the name of the property of the opt. The default is the top level key of the keypath if not specified.
+    // @topkey is the name of the property of the opt. The default is the top level key of the keypath if not specified.
     // some examples:
     //  update('zoom', 10);
     //  update('spy.radius', 20);
     //  update('opacity', 0.5, opt.layers[0], 'layers');
     //  udpate('seefilter', {trk: {name: {enabled: true, type: 'contains', text: 'test'}}}, opt.layers[2], 'layers');
-    public update(keypath: string, value: any, obj?: any, prop?: string){
-        const keys = keypath.split('.');
-        prop = prop || keys[0];   // use the top level key as the prop if not specified
+    public update(keypath: string, value: any, obj?: any, topkey?: string){
+        if(!keypath?.length)
+            return false;
 
+        const keys = keypath.split('.');
+        topkey = topkey || keys[0];   // use the top level key if not specified
         const key = keys.pop();
-        obj = obj || this;
-        obj = keys.reduce((obj, key) => obj[key], obj);
-        return this._update(key, value, obj, prop);
+        obj = keys.reduce((obj, key) => obj[key], obj || this);  // drill down to the target object
+        return this._update(key, value, obj, topkey);
     }
 
-    private _update(key, value, obj, prop){
+    private _update(key, value, obj, topkey){
         const is_changed = !isEqual(obj[key], value);
         if(is_changed){
             obj[key] = value;
-            this.lazySave(prop);
+            this.lazySave(topkey);
         }
         return is_changed;
     }
 
-    private lazySave(prop){
+    private lazySave(topkey){
 
         const cookies_opt = {sameSite: 'strict'};
         const version_key = '_version';
 
-        if(_cookies_save_timers[prop])
-            clearTimeout(_cookies_save_timers[prop]);
+        if(_cookies_save_timers[topkey])
+            clearTimeout(_cookies_save_timers[topkey]);
 
-        _cookies_save_timers[prop] = setTimeout(() => {
-            _cookies_save_timers[prop] = null;
+        _cookies_save_timers[topkey] = setTimeout(() => {
+            _cookies_save_timers[topkey] = null;
 
-            const value = JSON.stringify(this.getStrippedValue(prop));
-            //console.log(`Saving ${prop} to cookie:`, value);
+            const value = JSON.stringify(this.getStrippedValue(topkey));
+            //console.log(`Saving ${topkey} to cookie:`, value);
 
             // after encodeURIComponent, cookie may exceed the limit 4096 bytes. we warn if the cookie seems too large.
             if(value.length >= 2600)
                 console.warn(`The cookie size is too larger: ${value.length}`)
 
-            Cookies.set(prop, value, cookies_opt);
+            Cookies.set(topkey, value, cookies_opt);
             Cookies.set(version_key, this[version_key], cookies_opt);  //for future compatibility check
         }, 2000);
     }

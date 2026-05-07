@@ -377,7 +377,9 @@ select::-ms-expand {
     cursor: pointer;
 }
 
-.pop-pt-coord-title option[value$="_6"]{
+.pop-pt-coord-title option[value="twd67_6"],
+.pop-pt-coord-title option[value="twd97_6"],
+.pop-pt-coord-title option[value="findspot"]{
     display: none;
 }
 

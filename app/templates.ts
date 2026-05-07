@@ -32,6 +32,10 @@ Handlebars.registerHelper('fmtEle', function(ele) {
     return ele.toFixed(1);
 });
 
+Handlebars.registerHelper('fmtNum', function(n, digits) {
+    return n.toFixed(digits);
+});
+
 Handlebars.registerHelper('fmtTime', function(moment) {
     return moment? moment.format('YYYY-MM-DD HH:mm:ss'): '-';
 });
@@ -75,11 +79,19 @@ const coordsysMenu = Handlebars.compile(`
         {{selop 'taipower' '電力座標'      ''}}
         {{selop 'twd97_6'  '&#x3285;TWD97' ''}}
         {{selop 'twd67_6'  '&#x3285;TWD67' ''}}
+        {{selop 'findspot' '找山'          ''}}
     </select>
 `);
 Handlebars.registerHelper("coordsysMenu", (cls, options)=>{
     return new Handlebars.SafeString(coordsysMenu({cls}));
 });
+
+export const spotItem = Handlebars.compile(`
+    <li class="goto-spot-item">
+        <span class="goto-spot-name">{{name}}</span>
+        <span class="goto-spot-info">高度: {{fmtNum ele 0}}m | 距離: {{fmtNum dist 2}} km</span>
+    </li>
+`);
 
 export const popContent = Handlebars.compile(`
     <div class="pop-trk">
@@ -414,6 +426,8 @@ export const toolbarTop = Handlebars.compile(`
             {{coordsysMenu "goto-coordsys"}}<!--
          --><input type="text" class="goto-coord-txt" placeholder="X, Y"/><!--
          --><button class="goto-coord-go"><i class="fa-solid fa-arrow-right"></i></button>
+            <ul class="goto-spot-list"></ul>
+            <button class="goto-spot-more">顯示更多...</button>
         </span>
     </div>
 `);

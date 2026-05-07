@@ -411,11 +411,16 @@ html, body {
     cursor: pointer;
 }
 
+/* not show "Go" button when "findspot" is selected, since it is triggered by clicking the spot in the list */
+.toolbar-top .goto-panel .goto-coordsys:has(option[value="findspot"]:checked) ~ .goto-coord-go {
+    display: none;
+}
+
 .toolbar-top .goto-panel .goto-coord-txt{
     text-align: left;
     font-size: 16px;
     border: none;
-    border-radius: 0 16px 16px 0;
+    border-radius: 0 6px 6px 0;
     outline: 0;
     vertical-align: 1px;
     padding: 2px 8px 2px 8px;
@@ -448,6 +453,60 @@ html, body {
 .toolbar-top .goto-panel .goto-coord-go svg{
     font-size: 12px;
 }
+
+/*------------- Topbar / Goto / Spots ----------------*/
+.goto-panel .goto-spot-list {
+    list-style: none;
+    padding: 0;
+    margin: 1px 0;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, .6);
+    overflow: scroll;
+    max-height: 90vh;
+}
+.goto-panel .goto-spot-list:not(.active) {
+    display: none;
+}
+.goto-panel .goto-spot-item {
+    padding: 6px 12px 6px 6px;  /* padding more in right for scrollbar */
+    border-bottom: 1px solid #eee;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.goto-panel .goto-spot-item:hover {
+    background-color: #f0f7ff;
+}
+.goto-panel .goto-spot-item:last-child {
+    border-bottom: none;
+}
+
+.goto-panel .goto-spot-name {
+    font-weight: bold;
+    color: #333;
+}
+.goto-panel .goto-spot-info{
+    float: right;
+    font-size: 0.9em;
+    color: #666;
+}
+
+.goto-panel button.goto-spot-more {
+    width: 100%;
+    padding: 10px;
+    background: #eee;
+    border: none;
+    cursor: pointer;
+    margin-top: 1px;
+}
+.goto-panel button.goto-spot-more:hover {
+    background: #ddd;
+}
+.goto-panel button.goto-spot-more:not(.active) {
+    display: none;
+}
+
 
 /*============= Map ======================*/
 
