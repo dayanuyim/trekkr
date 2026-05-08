@@ -11,7 +11,7 @@
   },
   "//": {},
   "devDependencies": {
-    "@fortawesome/fontawesome-free": "^6.5.1",
+    "@fortawesome/fontawesome-free": "^7.2.0",
     "@types/google.maps": "^3.64.0",
     "@types/proj4": "^2.5.5",
     "bidirectional-map": "^1.1.1",
