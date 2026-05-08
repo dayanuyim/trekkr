@@ -281,6 +281,7 @@ html, body {
 }
 
 .toolbar .ctrl-btn {
+    cursor: pointer;
     display: inline-block;
 }
 

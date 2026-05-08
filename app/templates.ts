@@ -421,6 +421,7 @@ export const toolbarTop = Handlebars.compile(`
     </div>
     -->
     <div class="ol-control">
+        <button class="ctrl-btn ctrl-btn-whereami" title="Where Am I"><i class="fa-solid fa-street-view"></i></button>
         <button class="ctrl-btn ctrl-btn-goto" title="Goto..."><i class="fa-solid fa-crosshairs"></i></button>
         <span class="goto-panel">
             {{coordsysMenu "goto-coordsys"}}<!--

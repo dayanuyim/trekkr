@@ -162,6 +162,7 @@ const coordsys_profiles = {
 export class Topbar{
 
     _base: HTMLElement;
+    _whereami_btn: HTMLButtonElement;
     //_filter_wpt_name_en: HTMLInputElement;
     //_filter_wpt_name: HTMLInputElement;
     //_filter_wpt_name_regex: HTMLButtonElement;
@@ -198,6 +199,7 @@ export class Topbar{
 
     private initElements(el: HTMLElement){
         this._base               = el;
+        this._whereami_btn       = el.querySelector<HTMLButtonElement>('button.ctrl-btn-whereami');
         //this._filter_btn         = el.querySelector<HTMLButtonElement>('button.ctrl-btn-filter');
         //this._filter_wpt_name_en = el.querySelector<HTMLInputElement>('#filter-wpt-name-en');
         //this._filter_wpt_desc_en = el.querySelector<HTMLInputElement>('#filter-wpt-desc-en');
@@ -212,6 +214,22 @@ export class Topbar{
     }
 
     private init(){
+        // where am I
+        this._whereami_btn.onclick = e => {
+            console.log('Getting current position...');
+            navigator.geolocation.getCurrentPosition(pos => {
+                const coord = [pos.coords.longitude, pos.coords.latitude];
+                this._gotoLatLon(coord);
+            }, err => {
+                console.warn('Get current position error:', err);
+                alert('無法取得目前位置，請確認裝置定位功能是否開啟，並允許網頁使用定位資訊。');
+            }, {
+                enableHighAccuracy: true,
+                timeout: 10000, // 10 seconds
+                maximumAge: 0
+            });
+        };
+
         // goto-option button
         this._goto_btn.classList.toggle('active', Opt.goto.visible);  //init
         this._goto_btn.onclick = e =>{
@@ -248,10 +266,10 @@ export class Topbar{
         });
 
         // Enter to click
-        this._goto_coord_txt.onkeyup = e => {
+        this._goto_coord_txt.addEventListener('keyup', e => {
             if(this.goto_coordsys != 'findspot' && e.key == 'Enter')
                 this._goto_coord_go.click();
-        };
+        });
 
         this._goto_coord_go.onclick = e => this.gotoCoordinate();
     }
@@ -267,9 +285,7 @@ export class Topbar{
         if(!coord || !containsCoordinate(profile.projection.getExtent(), coord))  //check range
             return this._goto_coord_txt.classList.add('invalid');
 
-        const webcoord = transform(coord, profile.projection, WEB_MERCATOR);
-        if(webcoord)
-            this._listeners['goto']?.(webcoord);
+        this._gotoLatLon(coord);
     }
 
     private parseTokens(profile, tokens){
@@ -283,7 +299,7 @@ export class Topbar{
     // goto spot ----------------------------------------------
 
     private initGotoSpot(){
-        this._goto_coord_txt.addEventListener('input', e => {
+        const lookup_keyword_and_set_spotlist = () => {
             if(this.goto_coordsys != 'findspot')
                 return;
             const keyword = this.goto_coord_txt.toLowerCase();
@@ -297,6 +313,15 @@ export class Topbar{
                 }))
                 .sort((a, b) => (a.dist || 0) - (b.dist || 0));
             this.renderSpotList(true);
+        };
+
+        this._goto_coord_txt.addEventListener('input', e => {
+            lookup_keyword_and_set_spotlist();
+        });
+
+        this._goto_coord_txt.addEventListener('keyup', e => {
+            if(e.key == 'Enter')
+                lookup_keyword_and_set_spotlist();
         });
 
         // close spot list when click outside of the panel
@@ -346,16 +371,19 @@ export class Topbar{
     }
 
     private gotoSpot({lat, lon}){
-        const coordsys = this.goto_coordsys;
-        const profile = coordsys_profiles[coordsys];
-
-        const webcoord = transform([lon, lat], profile.projection, WEB_MERCATOR);  //becare lon, lat order for transform
-        if(webcoord)
-            this._listeners['goto']?.(webcoord);
+        this._gotoLatLon([lon, lat]);
 
         //TODO: 不一定要每次都清除，可以保留之前的搜尋結果，讓使用者可以點選其他地點。
         // 要有主動清除的機制，例如「清除搜尋」或是「切換搜尋類型」時再清除。
         //this.clearSpotList();
+    }
+
+    // @coord is [lon, lat]
+    private _gotoLatLon(coord){
+        const webcoord = transform(coord, WGS84, WEB_MERCATOR);  //becare lon, lat order for transform
+        if(!webcoord)
+            return console.warn('error coord transform', coord);
+        this._listeners['goto']?.(webcoord);
     }
 
     public setListener(event, listener){
