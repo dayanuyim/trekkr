@@ -84,7 +84,7 @@ const coordsys_profiles = {
         placeholder: '緯度 23 33 32.45, 經度 120.926126',
         field: {
             separator: /[^-+.0-9]/,
-            width: '14em',
+            width: '22em',
         },
         parse: (tokens) => {
             switch(tokens.length) {
@@ -99,7 +99,7 @@ const coordsys_profiles = {
         placeholder: 'X 242459, Y 2606189',
         field: {
             separator: /[^-+.0-9]/,
-            width: '10em',
+            width: '18em',
         },
         parse: (tokens) => (tokens.length == 2)? tokens.map(Number): undefined,
     },
@@ -108,7 +108,7 @@ const coordsys_profiles = {
         placeholder: 'X 241630, Y 2606394',
         field: {
             separator: /[^-+.0-9]/,
-            width: '10em',
+            width: '18em',
         },
         parse: (tokens) => (tokens.length == 2)? tokens.map(Number): undefined,
     },
@@ -117,7 +117,7 @@ const coordsys_profiles = {
         placeholder: 'K8912ED3904',
         field: {
             separator: /[^a-zA-Z0-9]/,
-            width: '8em',
+            width: '16em',
         },
         parse: (tokens) => {
             if(tokens.length == 1){
@@ -133,7 +133,7 @@ const coordsys_profiles = {
         placeholder: '六碼 424061',
         field: {
             separator: /[^0-9]/,
-            width: '5em',
+            width: '13em',
         },
         has_ref: true,
         parse: (ref, tokens) => sixcode_parser(ref, tokens, toTWD97),
@@ -143,7 +143,7 @@ const coordsys_profiles = {
         placeholder: '六碼 416063',
         field: {
             separator: /[^0-9]/,
-            width: '5em',
+            width: '13em',
         },
         has_ref: true,
         parse: (ref, tokens) => sixcode_parser(ref, tokens, toTWD67),
@@ -163,34 +163,25 @@ export class Topbar{
 
     _base: HTMLElement;
     _whereami_btn: HTMLButtonElement;
-    //_filter_wpt_name_en: HTMLInputElement;
-    //_filter_wpt_name: HTMLInputElement;
-    //_filter_wpt_name_regex: HTMLButtonElement;
-    //_filter_wpt_desc_en: HTMLInputElement;
-    //_filter_wpt_desc: HTMLInputElement;
-    //_filter_wpt_desc_regex: HTMLButtonElement;
-    //_filter_wpt_sym_en: HTMLInputElement;
-    //_filter_wpt_sym: HTMLInputElement;
-    //_filter_wpt_sym_regex: HTMLButtonElement;
     _goto_panel: HTMLElement;
     _goto_btn: HTMLButtonElement;
     _goto_coordsys: HTMLSelectElement;
-    _goto_coord_txt: HTMLInputElement;
-    _goto_coord_go: HTMLButtonElement;
+    _goto_txt: HTMLInputElement;
+    _goto_aux_run: HTMLButtonElement;
+    _goto_aux_clear: HTMLButtonElement;
 
     _goto_spot_list: HTMLUListElement;
     _goto_spot_more: HTMLButtonElement;
 
     _listeners = {}
-    candi_sopts = [];
+    candi_spots = [];
     candi_spots_idx = 0;
     candi_spots_batch_size = 10;
 
-    get is_filter_enabled(){ return !!Object.values(Opt.filter.wpt).find((rule: any)=>rule.enabled); } // viewed as enabled if any rule is enabled.
     get goto_coordsys(){ return this._goto_coordsys.value; }
     set goto_coordsys(v){ this._goto_coordsys.value = v; }
-    get goto_coord_txt(){ return this._goto_coord_txt.value.trim(); }
-    set goto_coord_txt(txt){ this._goto_coord_txt.value = txt.trim(); }
+    get goto_txt(){ return this._goto_txt.value.trim(); }
+    set goto_txt(txt){ this._goto_txt.value = txt.trim(); }
 
     constructor(el: HTMLElement){
         this.initElements(el);
@@ -200,15 +191,12 @@ export class Topbar{
     private initElements(el: HTMLElement){
         this._base               = el;
         this._whereami_btn       = el.querySelector<HTMLButtonElement>('button.ctrl-btn-whereami');
-        //this._filter_btn         = el.querySelector<HTMLButtonElement>('button.ctrl-btn-filter');
-        //this._filter_wpt_name_en = el.querySelector<HTMLInputElement>('#filter-wpt-name-en');
-        //this._filter_wpt_desc_en = el.querySelector<HTMLInputElement>('#filter-wpt-desc-en');
-        //this._filter_wpt_sym_en  = el.querySelector<HTMLInputElement>('#filter-wpt-sym-en');
         this._goto_panel         = el.querySelector<HTMLElement>('.goto-panel');
         this._goto_btn           = el.querySelector<HTMLButtonElement>('button.ctrl-btn-goto');
         this._goto_coordsys      = el.querySelector<HTMLSelectElement>('select.goto-coordsys');
-        this._goto_coord_txt     = el.querySelector<HTMLInputElement>('input.goto-coord-txt');
-        this._goto_coord_go      = el.querySelector<HTMLButtonElement>('button.goto-coord-go');
+        this._goto_txt           = el.querySelector<HTMLInputElement>('input.goto-txt');
+        this._goto_aux_clear     = el.querySelector<HTMLButtonElement>('button.goto-aux-clear');
+        this._goto_aux_run       = el.querySelector<HTMLButtonElement>('button.goto-aux-run');
         this._goto_spot_list     = el.querySelector<HTMLUListElement>('.goto-spot-list');
         this._goto_spot_more     = el.querySelector<HTMLButtonElement>('.goto-spot-more');
     }
@@ -247,8 +235,8 @@ export class Topbar{
         const set_coord_panel = (coordsys) => {
             this.clearSpotList();  //reset anyway
             const profile = coordsys_profiles[coordsys];
-            this._goto_coord_txt.placeholder = profile.placeholder;
-            this._goto_coord_txt.style.width = profile.field.width;
+            this._goto_txt.placeholder = profile.placeholder;
+            this._goto_txt.style.minWidth = profile.field.width;
         };
 
         // set coordsys select
@@ -259,23 +247,38 @@ export class Topbar{
         this._goto_coordsys.onchange = e =>{
             Opt.update('goto.coordsys', this.goto_coordsys);
             set_coord_panel(this.goto_coordsys);
+            // reset validiity check
+            this._goto_txt.classList.remove('invalid');
         }
 
-        this._goto_coord_txt.addEventListener('input', e => {
-            this._goto_coord_txt.classList.remove('invalid');
+        this._goto_txt.addEventListener('input', e => {
+            // reset validiity check
+            this._goto_txt.classList.remove('invalid');
         });
 
-        // Enter to click
-        this._goto_coord_txt.addEventListener('keyup', e => {
-            if(this.goto_coordsys != 'findspot' && e.key == 'Enter')
-                this._goto_coord_go.click();
-        });
+        // press Enter to run
+        this._goto_txt.onkeyup = e => {
+            if (e.key == 'Enter')
+                this._goto_aux_run.click();
+        };
 
-        this._goto_coord_go.onclick = e => this.gotoCoordinate();
+        // run the action
+        this._goto_aux_run.onclick = e => {
+            if(this.goto_coordsys == 'findspot')
+                this.filterSpotList();
+            else
+                this.gotoCoordinate();
+        };
+
+        // clear the input
+        this._goto_aux_clear.onclick = e => {
+            this.goto_txt = '';
+            this._goto_txt.dispatchEvent(new Event('input', {bubbles: true}));
+        };
     }
 
     private gotoCoordinate(){
-        const txt = this.goto_coord_txt;
+        const txt = this.goto_txt;
         if(!txt) return;
         const coordsys = this.goto_coordsys;
         const profile = coordsys_profiles[coordsys];
@@ -283,7 +286,7 @@ export class Topbar{
         const tokens = txt.split(profile.field.separator).filter(x=>x);
         const coord = this.parseTokens(profile, tokens);
         if(!coord || !containsCoordinate(profile.projection.getExtent(), coord))  //check range
-            return this._goto_coord_txt.classList.add('invalid');
+            return this._goto_txt.classList.add('invalid');
 
         this._gotoLatLon(coord);
     }
@@ -299,34 +302,13 @@ export class Topbar{
     // goto spot ----------------------------------------------
 
     private initGotoSpot(){
-        const lookup_keyword_and_set_spotlist = () => {
-            if(this.goto_coordsys != 'findspot')
-                return;
-            const keyword = this.goto_coord_txt.toLowerCase();
-            const center = toLonLat(this._listeners['getcenter']?.());
-
-            // 過濾並計算距離
-            this.candi_sopts = !keyword ? [] : spots
-                .filter(s => s.name.toLowerCase().includes(keyword))
-                .map(s => Object.assign(s, {
-                    dist: center? getDistance(center, [s.lon, s.lat]) / 1000: null
-                }))
-                .sort((a, b) => (a.dist || 0) - (b.dist || 0));
-            this.renderSpotList(true);
-        };
-
-        this._goto_coord_txt.addEventListener('input', e => {
-            lookup_keyword_and_set_spotlist();
-        });
-
-        this._goto_coord_txt.addEventListener('keyup', e => {
-            if(e.key == 'Enter')
-                lookup_keyword_and_set_spotlist();
+        this._goto_txt.addEventListener('input', e => {
+            this.filterSpotList();
         });
 
         // close spot list when click outside of the panel
         window.addEventListener('click', e => {
-            if (!this.candi_sopts.length)
+            if (!this.candi_spots.length)
                 return;
             if (this._goto_panel.contains(e.target as Node))
                 return;
@@ -339,6 +321,30 @@ export class Topbar{
         };
     }
 
+    private filterSpotList = () => {
+        if(this.goto_coordsys != 'findspot')
+            return;
+
+        const keyword = this.goto_txt.toLowerCase();
+        if(!keyword)
+            return this.clearSpotList();
+
+        // filter spots
+        const center = toLonLat(this._listeners['getcenter']?.());
+        this.candi_spots = spots
+            .filter(s => s.name.toLowerCase().includes(keyword))                   // 過濾
+            .map(s => Object.assign(s, {
+                dist: center ? getDistance(center, [s.lon, s.lat]) / 1000 : null   //計算距離
+            }))
+            .sort((a, b) => (a.dist || 0) - (b.dist || 0));
+
+        // check validity
+        this._goto_txt.classList.toggle('invalid', !this.candi_spots.length);
+
+        // render spots
+        this.renderSpotList(true);
+    };
+
     private renderSpotList(reset = false) {
         if (reset) {
             this.candi_spots_idx = 0;
@@ -348,7 +354,7 @@ export class Topbar{
         let _spot_item = null;
 
         //set the next batch of spots
-        const batch = this.candi_sopts.slice(this.candi_spots_idx, this.candi_spots_idx + this.candi_spots_batch_size);
+        const batch = this.candi_spots.slice(this.candi_spots_idx, this.candi_spots_idx + this.candi_spots_batch_size);
         batch.forEach(spot => {
             this._goto_spot_list.insertAdjacentHTML('beforeend', spotItemHTML(spot));
             _spot_item = this._goto_spot_list.lastElementChild;
@@ -361,12 +367,12 @@ export class Topbar{
             _spot_item.scrollIntoView({behavior: 'smooth', block: 'center'});
 
         // show ui
-        this._goto_spot_list.classList.toggle('active', this.candi_sopts.length > 0);
-        this._goto_spot_more.classList.toggle('active', this.candi_spots_idx < this.candi_sopts.length);
+        this._goto_spot_list.classList.toggle('active', this.candi_spots.length > 0);
+        this._goto_spot_more.classList.toggle('active', this.candi_spots_idx < this.candi_spots.length);
     }
 
     private clearSpotList(){
-        this.candi_sopts = [];      //data
+        this.candi_spots = [];      //data
         this.renderSpotList(true);  //ui
     }
 

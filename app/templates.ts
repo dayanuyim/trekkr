@@ -71,17 +71,18 @@ Handlebars.registerHelper("colorboardItems", (options)=>{
 
 
 const coordsysMenu = Handlebars.compile(`
-    <select class="{{cls}}" dir="rtl">
+    <select class="{{cls}}" dir="ltr">
         {{selop ''         '-'             'disabled hidden'}}
         {{selop 'wgs84'    'WGS84'         ''}}
         {{selop 'twd97'    'TWD97'         ''}}
         {{selop 'twd67'    'TWD67'         ''}}
         {{selop 'taipower' '電力座標'      ''}}
-        {{selop 'twd97_6'  '&#x3285;TWD97' ''}}
-        {{selop 'twd67_6'  '&#x3285;TWD67' ''}}
-        {{selop 'findspot' '找山'          ''}}
-    </select>
-`);
+        {{selop 'twd97_6'  'TWD97&#x3285;' ''}}
+        {{selop 'twd67_6'  'TWD67&#x3285;' ''}}
+        {{selop 'findspot' '&#x26F0; 找山' ''}}
+    </select>`
+);  /*這邊不要換行 不然會多一個空白*/
+
 Handlebars.registerHelper("coordsysMenu", (cls, options)=>{
     return new Handlebars.SafeString(coordsysMenu({cls}));
 });
@@ -415,21 +416,22 @@ Handlebars.registerHelper("filterPanel", (filter)=>{
 
 
 export const toolbarTop = Handlebars.compile(`
-    <!--
-    <div class="ol-control">
-        <button class="ctrl-btn ctrl-btn-filter" title="Filter..."><i class="fas fa-filter"></i></button>
-    </div>
-    -->
     <div class="ol-control">
         <button class="ctrl-btn ctrl-btn-whereami" title="Where Am I"><i class="fa-solid fa-street-view"></i></button>
-        <button class="ctrl-btn ctrl-btn-goto" title="Goto..."><i class="fa-solid fa-crosshairs"></i></button>
-        <span class="goto-panel">
-            {{coordsysMenu "goto-coordsys"}}<!--
-         --><input type="text" class="goto-coord-txt" placeholder="X, Y"/><!--
-         --><button class="goto-coord-go"><i class="fa-solid fa-arrow-right"></i></button>
+    </div>
+
+    <div class="ol-control">
+        <button class="ctrl-btn ctrl-btn-goto" title="Goto..."><i class="fa-solid fa-crosshairs"></i></button><!--
+     --><div class="goto-panel"><!--
+         -->{{coordsysMenu "goto-coordsys"}}<!--
+         --><input type="text" class="goto-txt" placeholder="X, Y"/><!--
+         --><span class="goto-aux">
+                <button class="goto-aux-clear">清除</button>
+                <button class="goto-aux-run">搜尋</button>
+            </span>
             <ul class="goto-spot-list"></ul>
             <button class="goto-spot-more">顯示更多...</button>
-        </span>
+        </div>
     </div>
 `);
 Handlebars.registerHelper("toolbarTop", ()=>{
