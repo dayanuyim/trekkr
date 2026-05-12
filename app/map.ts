@@ -288,17 +288,16 @@ export class AppMap{
   };
 
   private _getFeatures(e) {
-    const hasFeatures = (f, predicate) => {
-      const features = f.get('features');
-      return features && features.find(predicate);
-    }
-    const isTrk =      f => f.getGeometry().getType() == 'MultiLineString';
-    const isPt =       f => f.getGeometry().getType() === 'Point';
-    const isTrkpt =    f => isPt(f) && hasFeatures(f, isTrk);
-    const isHiddenPt = f => isPt(f) && hasFeatures(f, isPt);    // when a wpt is not visible or covered by other wpts
-    const hasWptProp = f => f.get('name') || f.get('desc') || f.get('sym');
-    const isWpt      = f => isPt(f) && hasWptProp(f);
-    const isRoWpt    = f => isWpt(f) && f.get('readonly');
+    const featuresHas = (f, predicate) => f.get('features')?.some(predicate);
+
+    const isTrk       = f => f.getGeometry().getType() == 'MultiLineString';
+    const isPt        = f => f.getGeometry().getType() === 'Point';
+    const isTrkpt     = f => isPt(f) && featuresHas(f, isTrk);
+    const isHiddenPt  = f => isPt(f) && featuresHas(f, isPt);    // when a wpt is not visible or covered by other wpts
+    const hasWptProp  = f => f.get('name') || f.get('desc') || f.get('sym');
+    const isWpt       = f => isPt(f) && hasWptProp(f);
+    const isRoWpt     = f => isWpt(f) && f.get('readonly');
+    const isPseudoWpt = f => isWpt(f) && f.get('pseudo') || featuresHas(f, isPseudoWpt);  // recursively check: the feature is NOT A WPT itself, but its 'features' HAS a pseudo-wpt. (why?)
 
     const pixel = e.map.getEventPixel(e.originalEvent); // TODO: what is the diff between 'originalevent' and 'event'?
 
@@ -310,8 +309,9 @@ export class AppMap{
     if(features.length == 0)
       return features;
 
-    const [h, r, w, t, _] = splitn(features, isHiddenPt, isRoWpt, isWpt, isTrkpt);
-    return [w, t, r, h].find(pts => pts.length > 0) || [];   //priority: wpt > trkpt > ro_wpt > hidden_wpt > track;
+    const [p, h, r, w, t, _] = splitn(features, isPseudoWpt, isHiddenPt, isRoWpt, isWpt, isTrkpt);
+    console.debug({w, t, r, h, p});
+    return [w, t, r, h, p].find(pts => pts.length > 0) || [];   //priority: wpt > trkpt > ro_wpt > hidden_wpt > pseudo_wpt > track;
   };
 
 ////////////////////////////////////////////////////////////////

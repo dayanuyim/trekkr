@@ -382,10 +382,7 @@ html, body {
     top: .5em;
 }
 
-.toolbar-top .ol-control:nth-child(2) {
-    left: 2em;
-    border-radius: 8px;
-}
+.toolbar-top .ol-control:nth-child(2) { left: 2em; }
 /*
 .toolbar-top .ol-control:nth-child(3) { left: 4em; }
 .toolbar-top .ol-control:nth-child(4) { left: 6em; }
@@ -426,7 +423,7 @@ html, body {
     text-align: left;
     font-size: 16px;
     border: none;
-    border-radius: 0 8px 8px 0;
+    border-radius: 0 4px 4px 0;
     outline: 0;
     vertical-align: 1px;
     padding: 2px 8px 2px 8px;
