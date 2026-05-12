@@ -442,6 +442,11 @@ html, body {
     font-size: smaller;
 }
 
+/* input text is empty, then hides aux button */
+.toolbar-top .goto-panel .goto-txt:placeholder-shown + .goto-aux button{
+    display: none;
+}
+
 .toolbar-top .goto-panel .goto-aux {
     position: absolute;
     top: 2px;
@@ -517,6 +522,20 @@ html, body {
     float: right;
     font-size: 0.9em;
     color: #666;
+}
+
+.goto-panel .goto-spot-info span{
+    display: inline-block;
+}
+
+.goto-panel .goto-spot-info-ele{
+    min-width: 5.5em;
+}
+.goto-panel .goto-spot-info-dist{
+    min-width: 6.5em;
+}
+.goto-panel .goto-spot-info-dir{
+    min-width: 1em;
 }
 
 .goto-panel button.goto-spot-more {

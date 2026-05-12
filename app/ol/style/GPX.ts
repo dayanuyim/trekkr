@@ -147,9 +147,9 @@ const wpt_style = (feature, options?) => {
     if(!isSeeable(feature, options, 'wpt')) return null;
   }
 
-  const name = feat_prop(feature, 'name');
-  const sym =  feat_prop(feature, 'sym', def_symbol.name); // set default symbol name if none. Although 'sym' is not a mandatory node for wpt, having one helps ui display for edit.
-  const scale = options.scale || 1;
+  const name =  feat_prop(feature, 'name');
+  const sym =   feat_prop(feature, 'sym', def_symbol.name); // set default symbol name if none. Although 'sym' is not a mandatory node for wpt, having one helps ui display for edit.
+  const scale = feat_prop(feature, 'scale', options.scale || 1);  // use feature's scale first
   const style = _wpt_style(name, sym, scale);
 
   return feat_prop(feature, 'image')?

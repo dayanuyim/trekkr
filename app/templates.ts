@@ -40,6 +40,28 @@ Handlebars.registerHelper('fmtTime', function(moment) {
     return moment? moment.format('YYYY-MM-DD HH:mm:ss'): '-';
 });
 
+Handlebars.registerHelper('fmtDir', function(dir) {
+    switch(dir){
+        case "N":   return "↑";
+        case "NNE": return "↗↑";
+        case "NE":  return "↗";
+        case "ENE": return "↗→";
+        case "E":   return "→";
+        case "ESE": return "→↘";
+        case "SE":  return "↘";
+        case "SSE": return "↘↓";
+        case "S":   return "↓";
+        case "SSW": return "↙↓"
+        case "SW":  return "↙";
+        case "WSW": return "↙←"
+        case "W":   return "←";
+        case "WNW": return "↖←";
+        case "NW":  return "↖";
+        case "NNW": return "↖↑";
+        default:    return "";
+    }
+});
+
 Handlebars.registerHelper("selop", (value, /*selected,*/ text, attrs, options)=>{
     //if(value === selected)
     //    attrs += " selected";
@@ -90,7 +112,11 @@ Handlebars.registerHelper("coordsysMenu", (cls, options)=>{
 export const spotItem = Handlebars.compile(`
     <li class="goto-spot-item">
         <span class="goto-spot-name">{{name}}</span>
-        <span class="goto-spot-info">高度: {{fmtNum ele 0}}m | 距離: {{fmtNum dist 2}} km</span>
+        <span class="goto-spot-info">
+            <span class="goto-spot-info-ele">高度: {{fmtNum ele 0}} m</span>
+            <span class="goto-spot-info-dist">距離: {{fmtNum dist 2}} km</span>
+            <span class="goto-spot-info-dir">{{fmtDir dir}}</span>
+        </span>
     </li>
 `);
 
@@ -417,7 +443,7 @@ Handlebars.registerHelper("filterPanel", (filter)=>{
 
 export const toolbarTop = Handlebars.compile(`
     <div class="ol-control">
-        <button class="ctrl-btn ctrl-btn-whereami" title="Where Am I"><i class="fa-solid fa-street-view"></i></button>
+        <button class="ctrl-btn ctrl-btn-whereami" title="Where Am I"><i class="fa-solid fa-house-user"></i></button>
     </div>
 
     <div class="ol-control">

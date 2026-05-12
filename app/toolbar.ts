@@ -1,11 +1,78 @@
 import Opt from './opt';
 import spots from './data/spots.js';
-import { transform  } from 'ol/proj';
+import { transform, fromLonLat  } from 'ol/proj';
 import { taipowerCoordToTWD67, toTWD67, toTWD97, TM2Sixcodes, WEB_MERCATOR, WGS84, TWD97, TWD67 } from './coord';
 import { toLonLat } from 'ol/proj';
 import { containsCoordinate } from 'ol/extent';
 import { getDistance } from 'ol/sphere';
+import {toRadians, toDegrees} from 'ol/math';
 import { spotItem as spotItemHTML } from './templates';
+
+/**
+ * Calculates the bearing between two points in degrees
+ * @param {Array<number>} c1 - Starting coordinate [lon, lat]
+ * @param {Array<number>} c2 - Ending coordinate [lon, lat]
+ * @return {number} Bearing in degrees
+ */
+function getBearing(c1, c2) {
+    const lat1 = toRadians(c1[1]);
+    const lon1 = toRadians(c1[0]);
+    const lat2 = toRadians(c2[1]);
+    const lon2 = toRadians(c2[0]);
+
+    const y = Math.sin(lon2 - lon1) * Math.cos(lat2);
+    const x = Math.cos(lat1) * Math.sin(lat2) -
+              Math.sin(lat1) * Math.cos(lat2) * Math.cos(lon2 - lon1);
+
+    const brng = Math.atan2(y, x);
+
+    // Convert radians to degrees and normalize to 0-360
+    return (toDegrees(brng) + 360) % 360;
+}
+
+function toDirection(degree, granularity=8){
+  // Normalize the degree to ensure it stays within 0-360
+  degree = ((degree % 360) + 360) % 360;
+
+  const directions = (granularity <= 8)? [
+        "N", "NE", "E", "SE",
+        "S", "SW", "W", "NW"
+    ]:[
+        "N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE",
+        "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"
+    ];
+
+  granularity = directions.length;  // must be 8 or 16
+  const n = 360 / granularity;
+  const n_2 = n / 2;
+
+  // Divide 360 by the number of directions (360 / 8 = 45)
+  // We add 22.5 to offset the index so that "North" spans from 337.5 to 22.5
+  const index = Math.floor(((degree + n_2) % 360) / n);
+  return directions[index];
+};
+
+function dirCht(dir){
+    switch(dir){
+        case "N":   return "北";
+        case "NNE": return "東北偏北";
+        case "NE":  return "東北";
+        case "ENE": return "東北偏東";
+        case "E":   return "東";
+        case "ESE": return "東南偏東";
+        case "SE":  return "東南";
+        case "SSE": return "東南偏南";
+        case "S":   return "南";
+        case "SSW": return "西南偏南";
+        case "SW":  return "西南";
+        case "WSW": return "西南偏西";
+        case "W":   return "西";
+        case "WNW": return "西北偏西";
+        case "NW":  return "西北";
+        case "NNW": return "西北偏北";
+        default:    return "N/A";
+    }
+}
 
 /*
 function getDistance(lat1, lon1, lat2, lon2) {
@@ -70,6 +137,8 @@ export class Sidebar{
 
 const deg_to_decimal = ([d, m, s]) => Number(d) + m / 60.0 + s / 3600.0;
 const swap = ([a, b]) => [b, a];
+
+/* @ref: webmercator coord */
 const sixcode_parser = (ref, tokens, trans_webcoord_to) => {
     if(tokens.length == 1 && tokens[0].length == 6){
         ref = trans_webcoord_to(ref);
@@ -204,10 +273,9 @@ export class Topbar{
     private init(){
         // where am I
         this._whereami_btn.onclick = e => {
-            console.log('Getting current position...');
             navigator.geolocation.getCurrentPosition(pos => {
                 const coord = [pos.coords.longitude, pos.coords.latitude];
-                this._gotoLatLon(coord);
+                this._gotoLocation(coord, WGS84);
             }, err => {
                 console.warn('Get current position error:', err);
                 alert('無法取得目前位置，請確認裝置定位功能是否開啟，並允許網頁使用定位資訊。');
@@ -251,15 +319,17 @@ export class Topbar{
             this._goto_txt.classList.remove('invalid');
         }
 
+        // reset validiity check for the new input
         this._goto_txt.addEventListener('input', e => {
-            // reset validiity check
             this._goto_txt.classList.remove('invalid');
         });
 
-        // press Enter to run
+        // hotkey to click buttons
         this._goto_txt.onkeyup = e => {
-            if (e.key == 'Enter')
-                this._goto_aux_run.click();
+            switch(e.key){
+                case 'Enter':  return this._goto_aux_run.click();
+                case 'Escape': return this._goto_aux_clear.click();
+            }
         };
 
         // run the action
@@ -288,7 +358,7 @@ export class Topbar{
         if(!coord || !containsCoordinate(profile.projection.getExtent(), coord))  //check range
             return this._goto_txt.classList.add('invalid');
 
-        this._gotoLatLon(coord);
+        this._gotoLocation(coord, profile.projection)
     }
 
     private parseTokens(profile, tokens){
@@ -307,7 +377,7 @@ export class Topbar{
         });
 
         // close spot list when click outside of the panel
-        window.addEventListener('click', e => {
+        window.addEventListener('mouseup', e => {
             if (!this.candi_spots.length)
                 return;
             if (this._goto_panel.contains(e.target as Node))
@@ -330,7 +400,7 @@ export class Topbar{
             return this.clearSpotList();
 
         // filter spots
-        const center = toLonLat(this._listeners['getcenter']?.());
+        const center = this.getCenterLonLat();
         this.candi_spots = spots
             .filter(s => s.name.toLowerCase().includes(keyword))                   // 過濾
             .map(s => Object.assign(s, {
@@ -351,14 +421,24 @@ export class Topbar{
             this._goto_spot_list.innerHTML = '';
         }
 
-        let _spot_item = null;
+        // calc bearing
+        const center = this.getCenterLonLat();
+        const bearing = ({lat, lon}) => center ? getBearing(center, [lon, lat]): null;
+
+        // trace the last spot for scolling
+        let _spot_item: HTMLElement = null;
 
         //set the next batch of spots
         const batch = this.candi_spots.slice(this.candi_spots_idx, this.candi_spots_idx + this.candi_spots_batch_size);
         batch.forEach(spot => {
+            spot.dir = (spot.dist > 0.001)? toDirection(bearing(spot)): ''; // adding more info
+            const webcoord = fromLonLat([spot.lon, spot.lat]);
+
             this._goto_spot_list.insertAdjacentHTML('beforeend', spotItemHTML(spot));
-            _spot_item = this._goto_spot_list.lastElementChild;
-            _spot_item.onclick = () => this.gotoSpot(spot);
+            _spot_item = this._goto_spot_list.lastElementChild as HTMLElement;
+            _spot_item.onclick = () => this._gotoLocation(webcoord);
+            _spot_item.onmouseenter = () => this._listeners['goto_preview']?.(webcoord);
+            _spot_item.onmouseleave = () => this._listeners['goto_preview_end']?.(webcoord);
         });
 
         this.candi_spots_idx += batch.length;
@@ -377,19 +457,26 @@ export class Topbar{
     }
 
     private gotoSpot({lat, lon}){
-        this._gotoLatLon([lon, lat]);
+        this._gotoLocation([lon, lat], WGS84);
 
         //TODO: 不一定要每次都清除，可以保留之前的搜尋結果，讓使用者可以點選其他地點。
         // 要有主動清除的機制，例如「清除搜尋」或是「切換搜尋類型」時再清除。
         //this.clearSpotList();
     }
 
-    // @coord is [lon, lat]
-    private _gotoLatLon(coord){
-        const webcoord = transform(coord, WGS84, WEB_MERCATOR);  //becare lon, lat order for transform
-        if(!webcoord)
-            return console.warn('error coord transform', coord);
-        this._listeners['goto']?.(webcoord);
+    // @coord is an arry of [x, y, ...], so it should be [lon, lat, ...] if @proj is WGS84
+    // @proj should be provided for transorm if @coord is not web mercator
+    private _gotoLocation(coord, proj?){
+        if(proj)
+            coord = transform(coord, proj, WEB_MERCATOR);
+        if(!coord)
+            return console.warn(`error coord transform for pojection '${proj}'`, coord);
+        this._listeners['goto']?.(coord);
+    }
+
+    private getCenterLonLat(){
+        const center = this._listeners['getcenter']?.();
+        return center? toLonLat(center): null;  // it's needed to check the nullity before toLonLat()
     }
 
     public setListener(event, listener){

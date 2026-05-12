@@ -518,10 +518,27 @@ export class AppMap{
 //----------------------------------------------------------------//
 
   public setCrosshairWpt(coord){
-    const wpt = this._gpx_layer.setCrosshairWpt(coord);
+    const wpt = this._gpx_layer.setPseudoWpt('crosshair', coord);
     this._map.getView().fit(wpt.getGeometry(), {maxZoom: 16});
   }
 
+  public setPreviewWpt(coord){
+    // not bothered if not in the view
+    const extent = this._map.getView().calculateExtent(this._map.getSize());
+    if(!Extent.containsCoordinate(extent, coord))
+      return;
+
+    //console.debug('set preview wpt', coord);
+    this._gpx_layer.setPseudoWpt('preview', coord, {
+      sym: 'Star',
+      scale: 0.6,
+    });
+  }
+
+  public rmPreviewWpt(){
+    //console.debug('rm preview wpt');
+    this._gpx_layer.rmPseudoWpt('preview');
+  }
 /////////////////////// Context Menu ///////////////////////////
 
   public setCtxMenu(menu: HTMLElement) {

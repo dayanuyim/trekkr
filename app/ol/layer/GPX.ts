@@ -39,16 +39,8 @@ function interpCoords(c1, c2, time){
 
 //----------------------------------------------------------------
 
-function mkCrosshairWpt(coords, options?){
-  return olWptFeature(coords, Object.assign({
-    name: '',
-    sym: getSymbol('crosshair').name,
-    pseudo: true,
-  }, options));
-}
-
-function isCrosshairWpt(feature){
-  return !!feature.get('pseudo');
+function isPseudoWpt(feature){
+  return !!feature?.get('pseudo');
 }
 
 //----------------------------------------------------------------
@@ -97,7 +89,7 @@ function joinTrksegs(trk, begin, end){
  ***************************************************************/
 
 class GPX extends VectorLayer<VectorSource>{
-  _crosshair_wpt;
+  _pseudo_wpts = {};
   _interactable;
 
   set interactable(v){ this._interactable = v; }
@@ -123,13 +115,15 @@ class GPX extends VectorLayer<VectorSource>{
   public removeTrack(trk)    { this.getSource().removeFeature(trk);}
 
   public createWaypoint(coord, options?){
-    this.addWaypoint(olWptFeature(coord, options));
+    const wpt = olWptFeature(coord, options)
+    this.addWaypoint(wpt);
+    return wpt;
   }
 
   public getWaypoints() {
     return this.getSource().getFeatures()
             .filter(isWptFeature)
-            .filter(f => !isCrosshairWpt(f))
+            .filter(f => !isPseudoWpt(f))
             .map(f => f as Feature<Point>);
   }
 
@@ -151,14 +145,26 @@ class GPX extends VectorLayer<VectorSource>{
   }
   */
 
-  public setCrosshairWpt(coord){
+  public setPseudoWpt(key, coord, options?){
+    key = key || 'crosshair';
+
     //remove the old
-    if(this._crosshair_wpt && isCrosshairWpt(this._crosshair_wpt))
-      this.removeWaypoint(this._crosshair_wpt);
-    //add the new
-    this._crosshair_wpt = mkCrosshairWpt(coord);
-    this.addWaypoint(this._crosshair_wpt);
-    return this._crosshair_wpt;
+    this.rmPseudoWpt(key);
+
+    //crate the new
+    this._pseudo_wpts[key] = this.createWaypoint(coord, Object.assign({
+      pseudo: true,
+      name: '',
+      sym: options?.sym || getSymbol(key)?.name,  // if not provide, try to guess from key
+    }, options));
+
+    return this._pseudo_wpts[key];
+  }
+
+  public rmPseudoWpt(key){
+    if(isPseudoWpt(this._pseudo_wpts[key]))
+      this.removeWaypoint(this._pseudo_wpts[key]);
+    delete this._pseudo_wpts[key];
   }
 
   public findWaypoint(time){

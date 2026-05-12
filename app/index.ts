@@ -45,7 +45,9 @@ function main(main_el: HTMLElement)
   const topbar = new Topbar(main_el.querySelector('.toolbar-top'))
     //.setListener('seefitlerchanged', () => map.redrawText())
     .setListener('getcenter', () => map.getView().getCenter())
-    .setListener('goto', (coord) => map.setCrosshairWpt(coord));
+    .setListener('goto',             (coord) => map.setCrosshairWpt(coord))
+    .setListener('goto_preview',     (coord) => map.setPreviewWpt(coord))
+    .setListener('goto_preview_end', (coord) => map.rmPreviewWpt());
 
   const settings = new Settings(main_el.querySelector('.settings'))
     .setListener('layers_reorder',  (ids) => map.setLayers(Opt.layers))
