@@ -219,7 +219,7 @@ const coordsys_profiles = {
     },
     findspot: {
         projection: WGS84,
-        placeholder: '地點名稱',
+        placeholder: '玉山',
         field: {
             separator: / /,   //space split
             width: '20em',

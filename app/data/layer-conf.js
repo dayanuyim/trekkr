@@ -283,11 +283,10 @@ export default
         opacity: 1.0,
         interactable: true,
         readonly: true,
-        seeable: 'filtered',   // true | false | filtered
+        seeable: false,      // true | false | 'filtered'
         seefilter: {         // only applied if 'filtered' is set.
-            // 過濾項目可以是 wpt 或 trk，有設定才會於 FilterPanel 出現分頁
-            wpt: {
-                // type: "contains" | "startswith" | "endswith" | "equals" | "regex"
+            wpt: {           // 過濾項目可以是 wpt 或 trk，有設定才會於 FilterPanel 出現分頁
+                // type: "contains" | "regex" (不要設定 "startswith" | "endswith" | "equals"，因介面未支援)
                 name: {enabled: false, type: "contains", text: ""},
                 desc: {enabled: false, type: "contains", text: ""},
                 sym:  {enabled: false, type: "contains", text: ""},
