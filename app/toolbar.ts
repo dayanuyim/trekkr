@@ -222,7 +222,7 @@ const coordsys_profiles = {
         placeholder: '玉山',
         field: {
             separator: / /,   //space split
-            width: '20em',
+            width: '16em',
         },
         parse: (tokens) => (tokens.length)? tokens[0].trim(): undefined,
     },
