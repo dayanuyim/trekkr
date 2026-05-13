@@ -176,20 +176,23 @@ class Opt{
     }
 
     private restore(orig){
-        const defs = this.layers.slice();
-        const getDef = id => {
-            const idx = defs.findIndex((layer) => layer.id === id);
-            return idx >= 0? defs.splice(idx, 1)[0]: undefined;
+        const defaults = this.layers.slice();
+        const getDefault = id => {
+            const idx = defaults.findIndex((layer) => layer.id === id);
+            return idx >= 0? defaults.splice(idx, 1)[0]: undefined;
         }
 
         const fill = layer => {
-            const def = getDef(layer.id);
+            const def = getDefault(layer.id);
             return def? Object.assign(def, layer): undefined;   //discard the layer if its default not found
         }
 
+        if(!Array.isArray(orig.layers))
+            orig.layers = [];
+
         orig.layers = orig.layers.map(fill)         //restore by def
                                  .filter(ly => ly)  //discard unfilled 
-                                 .concat(defs);     //append the rest
+                                 .concat(defaults); //append the rest
         return orig;
     }
 

@@ -2,14 +2,13 @@ import { Feature } from 'ol';
 import { FeatureLike } from 'ol/Feature';
 import { defaults as defaultControls, ScaleLine, OverviewMap, ZoomSlider, Control } from 'ol/control';
 import { defaults as defaultInteractions, DragAndDrop, Modify, Select } from 'ol/interaction';
-import { toSize } from 'ol/size';
-import { Map, View, Overlay, Collection } from 'ol';
+import { Map, View, } from 'ol';
 import { Tile as TileLayer, Vector as VectorLayer } from 'ol/layer';
-import { Vector as VectorSource, TileJSON, XYZ, OSM } from 'ol/source';
+import { Vector as VectorSource, OSM } from 'ol/source';
 import { getRenderPixel } from 'ol/render';
 import { platformModifierKeyOnly } from 'ol/events/condition';
 import { Geometry } from 'ol/geom';
-import * as Extent from 'ol/extent';
+import { createEmpty as createEmptyExtent, extend as extendExtent, containsCoordinate } from 'ol/extent';
 
 import { GeoJSON, IGC, KML, TopoJSON } from 'ol/format';
 import PhotoFormat from './ol/format/Photo';
@@ -43,8 +42,8 @@ function findLayerByFeature(map, feature){
 */
 
 function unionExtents(extents){
-  const empty = Extent.createEmpty();
-  return extents.reduce((res, ext) => Extent.extend(res, ext), empty);
+  const empty = createEmptyExtent();
+  return extents.reduce((res, ext) => extendExtent(res, ext), empty);
 }
 
 ////////////////////////////////////////////////////////////////
@@ -310,7 +309,7 @@ export class AppMap{
       return features;
 
     const [p, h, r, w, t, _] = splitn(features, isPseudoWpt, isHiddenPt, isRoWpt, isWpt, isTrkpt);
-    console.debug({w, t, r, h, p});
+    //console.debug({w, t, r, h, p});
     return [w, t, r, h, p].find(pts => pts.length > 0) || [];   //priority: wpt > trkpt > ro_wpt > hidden_wpt > pseudo_wpt > track;
   };
 
@@ -524,8 +523,8 @@ export class AppMap{
 
   public setPreviewWpt(coord){
     // not bothered if not in the view
-    const extent = this._map.getView().calculateExtent(this._map.getSize());
-    if(!Extent.containsCoordinate(extent, coord))
+    const extent = this._map.getView().calculateExtent();
+    if(!containsCoordinate(extent, coord))
       return;
 
     //console.debug('set preview wpt', coord);
