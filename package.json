@@ -25,6 +25,7 @@
     "jquery": "^3.7.1",
     "mini-css-extract-plugin": "^2.10.2",
     "ol": "^10.9.0",
+    "patch-package": "^8.0.1",
     "proj4": "^2.10.0",
     "style-loader": "^4.0.0",
     "ts-loader": "^9.5.7",
