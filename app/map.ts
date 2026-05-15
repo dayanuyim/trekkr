@@ -15,6 +15,7 @@ import PhotoFormat from './ol/format/Photo';
 import GPXFormat from './ol/format/GPX';
 import GPXLayer from './ol/layer/GPX';
 import GPXStyle from './ol/style/GPX';
+import { fixGPXNamespace } from './ol/gpx-common';
 
 import Opt from './opt';
 import { splitn, mapFind } from './lib/utils';
@@ -153,6 +154,7 @@ export class AppMap{
   private _readFeatures(arrbuf?: ArrayBuffer, text?: string)
   {
     text = text || new TextDecoder().decode(arrbuf);
+    text = fixGPXNamespace(text);   // NOTE: a workaroud for the dirty GPX files with 'https' namespace
 
     return mapFind(this._formats, format => {
       const formatter = (typeof format === 'function') ? new format() : format;

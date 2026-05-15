@@ -534,7 +534,7 @@ export class PtPopupOverlay extends Overlay{
     async popContent(feature) {
         //console.log('popContent', feature);
 
-        // @@! Experimental, restore the hidden wpt
+        // restore the underlying wpt
         feature = this._wpt_feature_of(feature) || feature;
 
         // trk data
@@ -568,13 +568,11 @@ export class PtPopupOverlay extends Overlay{
     }
 
     private _track_feature_of(trkpt: Feature<Point>){
-        const features = trkpt.get('features');
-        return features ? features.find(isTrkFeature) : undefined;
+        return trkpt.get('features')?.find(isTrkFeature);
     }
 
     private _wpt_feature_of(trkpt: Feature<Point>){
-        const features = trkpt.get('features');
-        return features ? features.find(isWptFeature) : undefined;
+        return trkpt.get('features')?.find(isWptFeature);
     }
 
     private setContent({trk, pt})
@@ -640,6 +638,7 @@ export class PtPopupOverlay extends Overlay{
 
         displayElem(this._sym_copyright, is_wpt);
         if(symbol){
+            this.pt_sym = ''; // clear the old, prevent the ghost img
             this.pt_sym = symbol.path(128);
             this.setUrlContent(this._sym_maker,    symbol.maker);
             this.setUrlContent(this._sym_provider, symbol.provider);

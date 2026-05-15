@@ -14,6 +14,16 @@ export const def_trk_color = 'DarkMagenta';
 //  'DarkGray', 'LightGray', 'DarkCyan', 'DarkMagenta', 'DarkBlue', 'DarkGreen', 'DarkRed', 'Black'
 //];
 
+export function fixGPXNamespace(source){
+  if (typeof source === 'string'){
+    const source2 = source.replace(/(xmlns[^=]*=["']http)s:\/\//g, '$1://');
+    if(source2.length != source.length)
+      console.warn("GPX file with 'https' namespace is not compliant to the GPX schema, so try to read it using http.");
+    source = source2;
+  }
+  return source;
+}
+
 export function isWptFeature(feature){
   return feature.getGeometry().getType() == 'Point';
 }

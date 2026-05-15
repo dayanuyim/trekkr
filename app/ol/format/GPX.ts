@@ -1,5 +1,5 @@
 import { GPX as _GPX } from 'ol/format';
-import {isTrkFeature} from '../gpx-common';
+import {isTrkFeature, fixGPXNamespace} from '../gpx-common';
 
 function _getNode(node, name){
   const children = node.childNodes;
@@ -21,7 +21,9 @@ function getNodeContent(node, ...names)
 
 // GPX format which reads extensions node
 class GPX extends _GPX {
+
   _readonly: boolean;
+
   constructor(options?){
     super(Object.assign({
       readExtensions: (feat, node) => {
@@ -35,13 +37,20 @@ class GPX extends _GPX {
     this._readonly = !!(options && options.readonly);
   }
 
+  readMetadata(source){
+    source = fixGPXNamespace(source);
+    return super.readMetadata(source);
+  }
+
   readFeature(source, options?){
+    source = fixGPXNamespace(source);
     const feature = super.readFeature(source, options)
     feature.set('readonly', this._readonly)
     return feature;
   }
 
   readFeatures(source, options?){
+    source = fixGPXNamespace(source);
     const features = super.readFeatures(source, options)
     features.forEach(f => f.set('readonly', this._readonly))
     return features;
