@@ -13,7 +13,7 @@
   "//": {},
   "devDependencies": {
     "@fortawesome/fontawesome-free": "^7.2.0",
-    "@types/google.maps": "^3.64.0",
+    "@types/google.maps": "^3.64.1",
     "@types/proj4": "^2.5.5",
     "bidirectional-map": "^1.1.1",
     "copy-webpack-plugin": "^14.0.0",
