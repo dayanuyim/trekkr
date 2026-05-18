@@ -39,7 +39,7 @@
   },
   "dependencies": {
     "@googlemaps/js-api-loader": "^2.0.2",
-    "@photostructure/tz-lookup": "^9.0.2",
+    "@photostructure/tz-lookup": "^11.5.0",
     "colors": "^1.4.0",
     "express": "^5.2.1",
     "express-session": "^1.19.0",
