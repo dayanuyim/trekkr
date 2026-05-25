@@ -20,6 +20,7 @@ import { fixGPXNamespace } from './ol/gpx-common';
 import Opt from './opt';
 import { splitn, mapFind } from './lib/utils';
 import { saveTextAsFile } from './lib/dom-utils';
+import { throttle } from 'lodash';
 import { gmapUrl, setGpxFilename } from './common';
 import { CtxMenu } from './ctx-menu';
 import * as LayerRepo from './layer-repo';
@@ -197,11 +198,12 @@ export class AppMap{
 
   private initEvents() {
     const map = this._map;
-    map.on('pointermove', (e) =>{
+
+    map.on('pointermove', throttle((e) =>{
       if (e.dragging)
         return;
       this.hoverFeatures(e);
-    });
+    }, 150));
 
     map.on('click', (e) => {
       this.showFeatures(e);
