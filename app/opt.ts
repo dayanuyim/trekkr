@@ -165,6 +165,7 @@ class Opt{
                 return this.layers.map(layer => copyIfKeyDefined(layer, [
                     'id', 'checked', 'opacity', 'seeable', 'seefilter',
                 ]));
+                // TODO: strip the layers without alter
             //case 'zoom':
                 //return this.zoom.toFixed(2);  // it is useless for being over precise
             case 'rt':

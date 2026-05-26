@@ -3,7 +3,7 @@ import { FeatureLike } from 'ol/Feature';
 import { defaults as defaultControls, ScaleLine, OverviewMap, ZoomSlider, Control } from 'ol/control';
 import { defaults as defaultInteractions, DragAndDrop, Modify, Select } from 'ol/interaction';
 import { Map, View, } from 'ol';
-import { Tile as TileLayer, Vector as VectorLayer } from 'ol/layer';
+import { Tile as TileLayer, Vector as VectorLayer, Graticule } from 'ol/layer';
 import { Vector as VectorSource, OSM } from 'ol/source';
 import { getRenderPixel } from 'ol/render';
 import { platformModifierKeyOnly } from 'ol/events/condition';
@@ -71,6 +71,11 @@ export class AppMap{
     ".json", ".geojson",   // GeoJSON & TopoJSON (application/geo+json)
     ".igc",                // IGC
   ];
+
+  private _feature_at_pixel_opts = {
+    hitTolerance: window.matchMedia("(pointer: coarse)")? 12: 5,   // more tolerant for touch screen
+    layerFilter: (layer) => !(layer instanceof Graticule),  // ignore grid lines
+  }
 
   public constructor(target: string){
     this.init(target);
@@ -256,9 +261,9 @@ export class AppMap{
   }
 
   private hoverFeatures(e) {
-    const features = this._getFeatures(e);
-    e.map.getTargetElement().style.cursor = features.length? 'pointer': '';
-  };
+    //e.map.getTargetElement().style.cursor = this._getFeatures(e).length? 'pointer': '';  // NOTE: too heavy to use
+    e.map.getTargetElement().style.cursor = this._existsFeature(e)? 'pointer': '';
+  }
 
   private showFeatures(e) {
     let has_popup_shown = false;
@@ -290,6 +295,15 @@ export class AppMap{
     if(!has_popup_shown) popup_overlay().hide();
   };
 
+  // the function is a lightweight version of _getFeatures(),
+  // it is used only to determine whether there is any feature at the pixel
+  private _existsFeature(e){
+    return e.map.forEachFeatureAtPixel(e.pixel, (feature, layer) => {
+      //console.log("get feature: ", {feature, layer});
+      return true;   // stop after find the first feature found
+    }, this._feature_at_pixel_opts);
+  };
+
   private _getFeatures(e) {
     const featuresHas = (f, predicate) => f.get('features')?.some(predicate);
 
@@ -302,13 +316,13 @@ export class AppMap{
     const isRoWpt     = f => isWpt(f) && f.get('readonly');
     const isPseudoWpt = f => isWpt(f) && f.get('pseudo') || featuresHas(f, isPseudoWpt);  // recursively check: the feature is NOT A WPT itself, but its 'features' HAS a pseudo-wpt. (why?)
 
-    const pixel = e.map.getEventPixel(e.originalEvent); // TODO: what is the diff between 'originalevent' and 'event'?
 
     // NOTE: not use forEach..., it is hard to point to Wpt if there are Trkpt in the same place. (Why?)
+    //const pixel = e.map.getEventPixel(e.originalEvent); // TODO: what is the diff between 'originalevent' and 'event'?
     //const hit = e.map.forEachFeatureAtPixel(pixel, handleFeature);
     //e.map.getTargetElement().style.cursor = hit? 'pointer': '';
 
-    const features = e.map.getFeaturesAtPixel(pixel, { hitTolerance: 2 });
+    const features = e.map.getFeaturesAtPixel(e.pixel, this._feature_at_pixel_opts);
     if(features.length == 0)
       return features;
 
