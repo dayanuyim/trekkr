@@ -15,7 +15,7 @@ import './coord';
 import * as templates from './templates';
 import { AppMap } from './map';
 import { Settings } from './settings';
-import { Sidebar, Topbar } from './toolbar';
+import { Sidebar, Topbar, Footbar } from './toolbar';
 import { setGpxFilename, setDocTitle } from './common';
 import { isEditableElement } from './lib/dom-utils';
 import Opt from './opt';
@@ -44,18 +44,20 @@ function main(main_el: HTMLElement)
 
   const topbar = new Topbar(main_el.querySelector('.toolbar-top'))
     //.setListener('seefitlerchanged', () => map.redrawText())
-    .setListener('getcenter', () => map.getView().getCenter())
+    .setListener('getcenter',        ()      => map.getView().getCenter())
     .setListener('goto',             (coord) => map.setCrosshairWpt(coord))
     .setListener('goto_preview',     (coord) => map.setPreviewWpt(coord))
     .setListener('goto_preview_end', (coord) => map.rmPreviewWpt());
 
+  const footbar = new Footbar(main_el.querySelector('.toolbar-bottom'));
+
   const settings = new Settings(main_el.querySelector('.settings'))
-    .setListener('layers_reorder',  (ids) => map.setLayers(Opt.layers))
+    .setListener('layers_reorder',  (ids)         => map.setLayers(Opt.layers))
     .setListener('layer_checked',   (id, checked) => map.setLayers(Opt.layers))
     .setListener('layer_opacity',   (id, opacity) => map.setLayerOpacity(id, opacity))
     .setListener('layer_seefilter', (id, seeable, seefiter) => map.setLayerSeeable(id, seeable, seefiter))
     .setListener('layer_seeable',   (id, seeable) => map.setLayerSeeable(id, seeable))
-    .setListener('spy',             (id) => map.setSpyLayer(Opt.spy))
+    .setListener('spy',             (id)          => map.setSpyLayer(Opt.spy))
     .setListener('wptchanged', () => map.redrawText())
     .setListener('trkchanged', () => map.redrawText());
 

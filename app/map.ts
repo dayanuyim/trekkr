@@ -15,7 +15,7 @@ import PhotoFormat from './ol/format/Photo';
 import GPXFormat from './ol/format/GPX';
 import GPXLayer from './ol/layer/GPX';
 import GPXStyle from './ol/style/GPX';
-import { fixGPXNamespace } from './ol/gpx-common';
+import { fixGPXNamespace, isTrkFeature } from './ol/gpx-common';
 
 import Opt from './opt';
 import { splitn, mapFind } from './lib/utils';
@@ -73,7 +73,7 @@ export class AppMap{
   ];
 
   private _feature_at_pixel_opts = {
-    hitTolerance: window.matchMedia("(pointer: coarse)")? 12: 5,   // more tolerant for touch screen
+    hitTolerance: window.matchMedia("(pointer: coarse)")? 5: 2,   // more tolerant for touch screen
     layerFilter: (layer) => !(layer instanceof Graticule),  // ignore grid lines
   }
 
@@ -275,6 +275,13 @@ export class AppMap{
         case 'Point': {   // Waypoint or Track point
           has_popup_shown = true;
           popup_overlay().popContent(feature);
+
+          // TODO: if is trkpt...
+          const track = feature.get('features')?.find(isTrkFeature);
+          if(track){
+            const name = track.get('name');
+            if(name) console.log(`trkpt of track: ${name}`);
+          }
           break;
         }
         case 'LineString': {  //grid line

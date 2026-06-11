@@ -108,6 +108,7 @@ html, body {
 /* Firefox */
 #setting-layers input[type=number] {
   -moz-appearance:textfield;
+  appearance:textfield;
 }
 
 /*============ Settings Board ==================*/
@@ -351,7 +352,7 @@ html, body {
 
 .toolbar{
     position: relative;
-    z-index: 9;   /* prvent being covered by the map */
+    z-index: 7;   /* prvent being covered by the map */
 }
 
 .toolbar .ctrl-btn {
@@ -550,6 +551,19 @@ html, body {
     display: none;
 }
 
+/*============= Toolbar Bottom ======================*/
+
+.ele-profile {
+    /*background: rgba(255, 232, 232, .7);*/
+    position: fixed;
+    bottom: 32px;
+    left: 50%;
+    transform: translateX(-50%);
+    border: solid 1px #d0d0d0;
+    border-radius: 8px;
+    z-index: 7;
+    box-sizing: border-box;
+}
 
 /*============= Map ======================*/
 

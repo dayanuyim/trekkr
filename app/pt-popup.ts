@@ -4,7 +4,7 @@ import {Point, LineString} from 'ol/geom';
 import Overlay from 'ol/Overlay';
 import {toStringXY} from 'ol/coordinate';
 import {toLonLat} from 'ol/proj';
-import {getLength} from 'ol/sphere';
+import {getLength, getDistance } from 'ol/sphere';
 import {toTWD97, toTWD67, toTaipowerCoord} from './coord';
 
 //import * as moment from 'moment-timezone';
@@ -12,6 +12,7 @@ import { getSymbol, matchRules, symbol_inv } from './sym'
 import { getEstElevation, getEleOfCoord, setEleOfCoord, getEpochOfCoord, getLocalTimeByCoord, gmapUrl, colorCode, complementaryColor } from './common'
 import { olWptFeature, def_trk_color, getTrkptIndices, isTrkFeature, isWptFeature, createGpxText} from './ol/gpx-common';
 import { delayToEnable } from './lib/dom-utils';
+import { EleProfileCanvas } from './lib/ele-profile-canvas';
 import Opt from './opt';
 import * as templates from './templates';
 
@@ -172,6 +173,7 @@ export class PtPopupOverlay extends Overlay{
     _resize_observer;
     _is_on_content;
     _listeners = {};
+    _elepro_canvas: EleProfileCanvas;
 
     get pt_trk_name() { return this._trk_name.textContent; }
     set pt_trk_name(value) { this._trk_name.textContent = value; }
@@ -258,7 +260,13 @@ export class PtPopupOverlay extends Overlay{
         this._sym_maker =       this._sym_copyright.querySelector<HTMLAnchorElement>('.sym-maker');
         this._sym_provider =    this._sym_copyright.querySelector<HTMLAnchorElement>('.sym-provider');
         this._sym_license =     this._sym_copyright.querySelector<HTMLAnchorElement>('.sym-license');
+
+
+        //FIXME: remove later on
+        const _canvas = document.querySelector<HTMLCanvasElement>('canvas.ele-profile');
+        this._elepro_canvas = new EleProfileCanvas(_canvas);
     }
+
 
     public hide(){
         this.setPosition(undefined);
@@ -559,12 +567,69 @@ export class PtPopupOverlay extends Overlay{
 
         // cache for later to use
         this._feature = track? track: feature;  // trk(for rm/split/join) or wpt (for rm)
-        this._data = {trk, pt};                 // for creating/updating
+        this._data = {                          // for creating/updating
+            trk,
+            pt,
+            trkseg: this.getTrksegInfo(track, pt.coord)
+        };
 
         this.resetDisplay(pt.image);
         this.setContent(this._data);
         this.setPosition(pt.coord);
         this._content.focus();
+    }
+
+    private getTrksegInfo(trk_feat, coord: number[]){
+        if(!trk_feat)
+            return null;
+
+        const trksegs = trk_feat.getGeometry().getCoordinates();
+
+        //TODO: This is duplicated with the GPX splitTrack(), are there better way to aovid the duplication?
+        // get the Trkseg index and Trkpt index of the current pt
+        const time = getEpochOfCoord(coord);
+        const layout = trk_feat.getGeometry().getLayout();
+        const has_time = time && layout.includes('M');    // the point and track both have time info
+        const test_by = has_time? {time}: {coord};
+        const [i, j] = getTrkptIndices(trksegs, test_by);
+        //console.log('trkpt indices', i, j, trksegs[i][j], new Date(time*1000));
+
+        let points = null;
+        let vt_dist = 0;
+        if(i >= 0){
+            const calc_speed = (dd, dt) => dt? dd/dt*3.6: 0; // m/s -> km/h
+
+            let dist = 0;
+            let last_time = 0;
+
+            const coords = trksegs[i].map(c => toLonLat(c));
+            points = coords.map((c, i) => {
+                const diff = i? getDistance(c, coords[i-1]): 0;
+                const time = getEpochOfCoord(c, layout);
+                const speed = (time && last_time)? calc_speed(diff, time - last_time): 0;
+                last_time = time;
+                dist += diff;
+                return {
+                    lon: c[0],
+                    lat: c[1],
+                    ele: getEleOfCoord(c, layout),
+                    time,
+                    dist,
+                    speed,
+                };
+            });
+
+            if(j >= 0){
+                vt_dist = getDistance(coords[j], toLonLat(coord));  // distance between virtual trkpt and the real trkpt
+            }
+        }
+
+        return {
+            idx: i,
+            pt_idx: j,
+            vt_dist,
+            points,
+        };
     }
 
     private _track_feature_of(trkpt: Feature<Point>){
@@ -575,7 +640,7 @@ export class PtPopupOverlay extends Overlay{
         return trkpt.get('features')?.find(isWptFeature);
     }
 
-    private setContent({trk, pt})
+    private setContent({trk, pt, trkseg})
     {
         const readonly = this._feature.get('readonly');
 
@@ -596,7 +661,7 @@ export class PtPopupOverlay extends Overlay{
             readonlyElem(this._trk_desc, readonly);
             //readonlyElem(this._trk_color, readonly);  it seems ok to edit the color even readonly
             displayElem(this._trk_desc, trk.desc);   // show only if set. TODO: show the field on demand
-            this.setTrackTools(this._feature, {trk, pt})
+            this.setTrackTools(this._feature, this._data)
         }
 
         //wpt --------------------------------
@@ -646,54 +711,43 @@ export class PtPopupOverlay extends Overlay{
         }
     }
 
-    private setTrackTools(track, {trk, pt}){
-        if(track){
-            const readonly = track.get('readonly');
+    private fmtSnText(idx, total){
+        if(total <= 1) return '';        // not show if only one
+        if(idx < 0) return `-/${total}`; // may not have index if virtual trkpt
+        return `${idx + 1}/${total}`;
+    }
 
-            const trksegs = track.getGeometry().getCoordinates();
+    private setTrackTools(track, {trk, pt, trkseg}){
+        if(!track)
+            return;
 
-            //TODO: This is duplicated with the GPX splitTrack(), are there better way to aovid the duplication?
-            // get the Trkseg index and Trkpt index of the current pt
-            const time = getEpochOfCoord(pt.coord);
-            const has_time = time && track.getGeometry().getLayout().includes('M');    // the point and track both have time info
-            const test_by = has_time? {time}: {coord: pt.coord};
-            const [i, j] = getTrkptIndices(trksegs, test_by);
-            //console.log('trkpt indices', i, j, trksegs[i][j], new Date(time*1000));
+        const readonly = track.get('readonly');
 
-            //tool
-            displayElem(this._trk_tool, !readonly /*&& !pt.is_virtual*/);
-            if(!readonly /*&& !pt.is_virtual */){
-                const at_end = i >= 0 && (j === 0 || j == trksegs[i].length - 1);
-                displayElem(this._tool_join_trk,  at_end);
-                displayElem(this._tool_split_trk, !at_end && (!pt.is_virtual || has_time)); // virtual trkpt with time is ok
-            }
-            //header
-            this.pt_trk_seg_sn = (trksegs.length <= 1)? '':               // not show if only one trkseg
-                                 `${(i<0)? '-': i+1}/${trksegs.length}`;  // multiple trksegs (may not have index if virtual trkpt)
+        const j = trkseg.pt_idx;
 
-            //progress bar
-            let seg1_dist = 0;
-            let seg2_dist = 0;
-            if(i >= 0 && j >= 0){
-                const trkseg = trksegs[i];
-                const seg1 = trkseg.slice(0, j+1);
-                const seg2 = trkseg.slice(j);
-
-                if(pt.is_virtual){  // for virtual trkpt, show the progress as if it is on the track
-                    seg1.push(pt.coord);
-                    seg2[0] = pt.coord;
-                }
-
-                seg1_dist = getLength(new LineString(seg1));
-                seg2_dist = getLength(new LineString(seg2));
-            }
-            setProgressBar(this._trk_progbar, seg1_dist, (seg1_dist + seg2_dist), trk.color || def_trk_color, (v) => {
-                if(v === null) return '';
-                v = Math.round(v).toString();
-                return (v.length <= 3)? v: `${v.slice(0,-3)},${v.slice(-3)}`;  // inert comma for thousand separator
-            });
-            this._trk_progbar.classList.toggle('active', i>=0);
+        //tool
+        displayElem(this._trk_tool, !readonly /*&& !pt.is_virtual*/);
+        if(!readonly /*&& !pt.is_virtual */){
+            const at_end = j >= 0 && (j === 0 || j === trkseg.points.length - 1);
+            displayElem(this._tool_join_trk,  at_end);
+            displayElem(this._tool_split_trk, !at_end && j >= 0); // valid j means splitable.
         }
+        //header
+        this.pt_trk_seg_sn = this.fmtSnText(trkseg.idx, track.getGeometry().getCoordinates().length);
+
+        //progress bar
+        const frg_dist = (j >= 0)? (trkseg.points[j].dist + trkseg.vt_dist): 0;
+        const max_dist = trkseg.points?.at(-1)?.dist || 0;
+
+        setProgressBar(this._trk_progbar, frg_dist, max_dist, trk.color || def_trk_color, (v) => {
+            if(v === null) return '';
+            v = Math.round(v).toString();
+            return (v.length <= 3)? v: `${v.slice(0,-3)},${v.slice(-3)}`;  // inert comma for thousand separator
+        });
+        this._trk_progbar.classList.toggle('active', trkseg.idx >= 0);
+
+        //FIXME: remove later on
+        this._elepro_canvas.draw(trkseg.points, j);
     }
 
 

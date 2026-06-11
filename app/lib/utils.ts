@@ -320,3 +320,8 @@ export function mapFind<T, U>(
   const mapperGenerator = map(collection, mapper);
   return find(mapperGenerator, finder);
 }
+
+// Math ===========================================================
+export function clamp(value, min, max) {
+  return Math.max(min, Math.min(value, max));
+}
