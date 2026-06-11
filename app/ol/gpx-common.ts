@@ -106,13 +106,13 @@ function getTrkptIndicesByTime(trksegs, time)
 {
   for(let i = 0; i < trksegs.length; ++i){
     const trkseg = trksegs[i];
-    if(!(time_of(trkseg[0]) <= time && time <= time_of(trkseg[trkseg.length-1])))
+    if(!(time_of(trkseg[0]) <= time && time <= time_of(trkseg.at(-1))))
       continue;
 
     const j = binsearchIndex(trkseg, (coord, idx, arr) => {
       const t = time_of(coord);
-      return (time >= t) ? (time - t) :             // return 0 if time == time_of(coord)
-             (time > time_of(arr[idx - 1])) ? 0 : -1; // return 0 if time < time_of(coord) and time > time_of(the-last-coord)
+      return (time <= t) ? (time - t) :               // return 0 if time == time_of(coord)
+             (time < time_of(arr.at(idx+1))) ? 0 : 1; // return 0 if time  > time_of(coord) and time < time_of(the-next-coord)
     });
     return [i, j];
   }

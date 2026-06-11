@@ -9,7 +9,7 @@ import {toTWD97, toTWD67, toTaipowerCoord} from './coord';
 
 //import * as moment from 'moment-timezone';
 import { getSymbol, matchRules, symbol_inv } from './sym'
-import { getEstElevation, getEleOfCoord, setEleOfCoord, getLocalTimeByCoord, gmapUrl, colorCode, complementaryColor } from './common'
+import { getEstElevation, getEleOfCoord, setEleOfCoord, getEpochOfCoord, getLocalTimeByCoord, gmapUrl, colorCode, complementaryColor } from './common'
 import { olWptFeature, def_trk_color, getTrkptIndices, isTrkFeature, isWptFeature, createGpxText} from './ol/gpx-common';
 import { delayToEnable } from './lib/dom-utils';
 import Opt from './opt';
@@ -649,31 +649,53 @@ export class PtPopupOverlay extends Overlay{
     private setTrackTools(track, {trk, pt}){
         if(track){
             const readonly = track.get('readonly');
+
             const trksegs = track.getGeometry().getCoordinates();
-            const [i, j] = getTrkptIndices(trksegs, {coord: pt.coord});  // real trkpt coord
+
+            //TODO: This is duplicated with the GPX splitTrack(), are there better way to aovid the duplication?
+            // get the Trkseg index and Trkpt index of the current pt
+            const time = getEpochOfCoord(pt.coord);
+            const has_time = time && track.getGeometry().getLayout().includes('M');    // the point and track both have time info
+            const test_by = has_time? {time}: {coord: pt.coord};
+            const [i, j] = getTrkptIndices(trksegs, test_by);
+            //console.log('trkpt indices', i, j, trksegs[i][j], new Date(time*1000));
 
             //tool
             displayElem(this._trk_tool, !readonly /*&& !pt.is_virtual*/);
-            if(!readonly /*&& !pt.is_virtual*/){
+            if(!readonly /*&& !pt.is_virtual */){
                 const at_end = i >= 0 && (j === 0 || j == trksegs[i].length - 1);
                 displayElem(this._tool_join_trk,  at_end);
-                displayElem(this._tool_split_trk, !at_end && (!pt.is_virtual || track.getGeometry().getLayout().endsWith('M'))); // virtual trkpt with time is ok
+                displayElem(this._tool_split_trk, !at_end && (!pt.is_virtual || has_time)); // virtual trkpt with time is ok
             }
             //header
             this.pt_trk_seg_sn = (trksegs.length <= 1)? '':               // not show if only one trkseg
-                                 `${(i<0)? '-': i+1}/${trksegs.length}`;  // multiple trksegs (no index if virtual trkpt)
+                                 `${(i<0)? '-': i+1}/${trksegs.length}`;  // multiple trksegs (may not have index if virtual trkpt)
+
             //progress bar
-            const trkseg = (i >= 0)? trksegs[i]: null;
-            const frag_dist = trkseg? getLength(new LineString(trkseg.slice(0, j+1))): 0;
-            const seg_dist  = trkseg? getLength(new LineString(trkseg.slice(j))) + frag_dist: 0;
-            setProgressBar(this._trk_progbar, frag_dist, seg_dist, trk.color || def_trk_color, (v) => {
-                if(v == null) return '';
+            let seg1_dist = 0;
+            let seg2_dist = 0;
+            if(i >= 0 && j >= 0){
+                const trkseg = trksegs[i];
+                const seg1 = trkseg.slice(0, j+1);
+                const seg2 = trkseg.slice(j);
+
+                if(pt.is_virtual){  // for virtual trkpt, show the progress as if it is on the track
+                    seg1.push(pt.coord);
+                    seg2[0] = pt.coord;
+                }
+
+                seg1_dist = getLength(new LineString(seg1));
+                seg2_dist = getLength(new LineString(seg2));
+            }
+            setProgressBar(this._trk_progbar, seg1_dist, (seg1_dist + seg2_dist), trk.color || def_trk_color, (v) => {
+                if(v === null) return '';
                 v = Math.round(v).toString();
-                return (v.length <= 3)? v: `${v.slice(0,-3)},${v.slice(-3)}`;
+                return (v.length <= 3)? v: `${v.slice(0,-3)},${v.slice(-3)}`;  // inert comma for thousand separator
             });
             this._trk_progbar.classList.toggle('active', i>=0);
         }
     }
+
 
     private setUrlContent(el: HTMLAnchorElement, {url, title}, license_icon=false){
         const license_html = title => {
