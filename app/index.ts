@@ -49,7 +49,7 @@ function main(main_el: HTMLElement)
     .setListener('goto_preview',     (coord) => map.setPreviewWpt(coord))
     .setListener('goto_preview_end', (coord) => map.rmPreviewWpt());
 
-  const footbar = new Footbar(main_el.querySelector('.toolbar-bottom'));
+  //const footbar = new Footbar(main_el.querySelector('.toolbar-bottom'));
 
   const settings = new Settings(main_el.querySelector('.settings'))
     .setListener('layers_reorder',  (ids)         => map.setLayers(Opt.layers))

@@ -460,7 +460,7 @@ export class Topbar{
     private gotoSpot({lat, lon}){
         this._gotoLocation([lon, lat], WGS84);
 
-        //TODO: 不一定要每次都清除，可以保留之前的搜尋結果，讓使用者可以點選其他地點。
+        // 不一定要每次都清除，可以保留之前的搜尋結果，讓使用者可以點選其他地點。
         // 要有主動清除的機制，例如「清除搜尋」或是「切換搜尋類型」時再清除。
         //this.clearSpotList();
     }
@@ -493,121 +493,10 @@ export class Topbar{
 
 //=======================================================================================================
 
-
-function generateDemoTrack() {
-  const points = [];
-
-  const startLat = 24.250000;
-  const startLon = 121.180000;
-  const startTime = new Date('2024-01-01T07:30:00+08:00');
-
-  const totalPoints = 100;
-  const totalDist = 20.0;
-
-  let currentTime = new Date(startTime);
-  let prevDist = 0;
-
-  for (let i = 0; i < totalPoints; i++) {
-    const ratio = i / (totalPoints - 1);
-    const dist = ratio * totalDist;
-
-    const ele = demoElevation(dist);
-    const speed = demoSpeed(dist, i);
-
-    if (i > 0) {
-      const delta = dist - prevDist;
-      const deltaHour = speed > 0.05 ? delta / speed : 0;
-      const deltaMsec = deltaHour * 3600 * 1000;
-
-      currentTime = new Date(currentTime.getTime() + deltaMsec);
-    }
-
-    // 產生一條略微彎曲的路線
-    const lat = startLat + dist * 0.0065 + Math.sin(dist * 1.4) * 0.0012;
-    const lon = startLon + dist * 0.0042 + Math.cos(dist * 1.1) * 0.0015;
-
-    points.push({
-      lat,
-      lon,
-      ele,
-      time: new Date(currentTime),
-      dist,
-      speed
-    });
-
-    prevDist = dist;
-  }
-
-  return points;
-}
-
-function demoElevation(dist) {
-  let ele;
-
-  if (dist < 3.0) {
-    // 緩上坡：2200 -> 2850
-    ele = 2200 + dist * 215;
-  } else if (dist < 5.0) {
-    // 陡上坡：2850 -> 3550
-    ele = 2850 + (dist - 3.0) * 350;
-  } else if (dist < 7.0) {
-    // 稜線起伏：3550 附近
-    ele = 3550 + Math.sin((dist - 5.0) * Math.PI * 1.4) * 80;
-  } else if (dist < 10.0) {
-    // 下坡：3550 -> 2700
-    ele = 3550 - (dist - 7.0) * 280;
-  } else {
-    // 續下坡：2700 -> 2300
-    ele = 2700 - (dist - 10.0) * 200;
-  }
-
-  // 模擬 GPS elevation noise
-  ele += Math.sin(dist * 8.5) * 12;
-  ele += Math.cos(dist * 3.2) * 18;
-
-  return Math.round(ele);
-}
-
-function demoSpeed(dist, index) {
-  let speed;
-
-  if (dist < 3.0) {
-    // 緩上坡
-    speed = 3.0 - dist * 0.25;
-  } else if (dist < 5.0) {
-    // 陡上坡，明顯變慢
-    speed = 1.7 - (dist - 3.0) * 0.35;
-  } else if (dist < 5.35) {
-    // 停留，約 0
-    speed = 0.08;
-  } else if (dist < 7.0) {
-    // 稜線緩行
-    speed = 2.2 + Math.sin(dist * 2.0) * 0.25;
-  } else if (dist < 10.0) {
-    // 下坡較快
-    speed = 4.4 + Math.sin(dist * 1.7) * 0.6;
-  } else if (dist < 10.18) {
-    // 短暫停留
-    speed = 0.12;
-  } else {
-    // 續下坡，速度快但不完全穩定
-    speed = 4.8 + Math.sin(dist * 2.4) * 0.7;
-  }
-
-  // 模擬人的步速波動
-  speed += Math.sin(index * 0.55) * 0.18;
-  speed += Math.cos(index * 0.19) * 0.12;
-
-  return Math.max(0.05, Number(speed.toFixed(2)));
-}
-
 export class Footbar{
 
     _base: HTMLElement;
-    _ele_profile: HTMLCanvasElement;
     _listeners = {};
-
-    elepro_canvas: EleProfileCanvas;
 
     constructor(el: HTMLElement){
         this.initElements(el);
@@ -616,13 +505,9 @@ export class Footbar{
 
     private initElements(el: HTMLElement){
         this._base = el;
-        //this._ele_profile = el.querySelector<HTMLCanvasElement>('canvas.ele-profile');
-        //this.elepro_canvas = new EleProfileCanvas(this._ele_profile);
     }
 
     private init(){
-        //const points = generateDemoTrack();
-        //this.elepro_canvas.draw(points);
     }
 
     public setListener(event, listener){

@@ -2,8 +2,14 @@
 
 import * as moment from 'moment-timezone';
 import tzlookup from '@photostructure/tz-lookup';
+
+import {Feature} from 'ol';
+import {Point, LineString} from 'ol/geom';
+import {getLength, getDistance } from 'ol/sphere';
 import {fromLonLat, toLonLat} from 'ol/proj';
 import {format as fmtCoordinate} from 'ol/coordinate';
+import { getTrkptIndices, isTrkFeature, isWptFeature } from './ol/gpx-common';
+
 //import elevationApi from 'google-elevation-api';
 import { setOptions, importLibrary } from "@googlemaps/js-api-loader";
 import Opt from './opt';
@@ -274,4 +280,111 @@ export function setDocTitle(title){
   if(title && Opt.update('rt.title', title)){
     refreshDocTitle();
   }
+}
+
+
+//================================= Data collectd from a feature =======================
+
+export function buildFeatureData(feature) {
+  // restore the underlying wpt
+  feature = _wpt_feature_of(feature) || feature;
+
+  // trk data
+  const track = _track_feature_of(feature);                // for trkpt
+  const trk = track ? {
+    name: track.get('name'),
+    desc: track.get('desc'),
+    color: track.get('color'),
+  } : undefined;
+
+  // pt data
+  const pt = {
+    name: feature.get('name'),                        //maybe undefined
+    desc: feature.get('desc'),                        //maybe undefined
+    sym: feature.get('sym'),                          //maybe undefined
+    coord: feature.getGeometry().getCoordinates(),    //x, y, [ele, [time]]
+    image: feature.get('image'),
+    is_virtual: track && track.getGeometry().getLayout() != feature.getGeometry().getLayout(),
+  };
+  if (pt.is_virtual) // get data from other dimensions of its track, for example: XY -> XYZM
+    pt.coord = track.getGeometry().getClosestPoint(pt.coord);
+
+  //trkseg info
+  const trkseg = getTrksegInfo(track, pt.coord);
+
+  return {
+    feature: track ? track : feature,  // trk(for rm/split/join) or wpt (for rm)
+    data: {                            // for creating/updating
+      trk,
+      pt,
+      trkseg,
+    }
+  };
+}
+
+
+function getTrksegInfo(trk_feat, webcoord: number[]) {
+  if (!trk_feat)
+    return null;
+
+  const trksegs = trk_feat.getGeometry().getCoordinates();
+
+  //TODO: This is duplicated with the GPX splitTrack(), are there better way to aovid the duplication?
+  // get the Trkseg index and Trkpt index of the current pt
+  const time = getEpochOfCoord(webcoord);
+  const layout = trk_feat.getGeometry().getLayout();
+  const has_time = time && layout.includes('M');    // the point and track both have time info
+  const test_by = has_time ? { time } : { coord: webcoord };
+  const [idx, pt_idx] = getTrkptIndices(trksegs, test_by);
+  //console.log('trkpt indices', idx, pt_idx, trksegs[idx][pt_idx], new Date(time*1000));
+
+  let points = null;
+  let vt_dist = 0;
+  if (idx >= 0) {
+    const calc_speed = (dd, dt) => dt ? dd / dt * 3.6 : 0; // m/s -> km/h
+
+    let dist = 0;
+    let last_time = 0;
+
+    const trkseg = trksegs[idx];
+    const lonlats = trkseg.map(coord => toLonLat(coord));
+
+    points = lonlats.map((lonlat, i) => {
+      const diff = i ? getDistance(lonlat, lonlats[i - 1]) : 0;
+      const time = getEpochOfCoord(lonlat, layout);
+      const speed = (time && last_time) ? calc_speed(diff, time - last_time) : 0;
+      last_time = time;
+      dist += diff;
+      return {
+        // TODO: // lon lat 是必要的嗎？
+        lon: lonlat[0],
+        lat: lonlat[1],
+        // TODO: coord/ele/time 有必要拆開嗎？
+        coord: trkseg[i].slice(0, 2),          // web coord, for showing in the map
+        ele: getEleOfCoord(lonlat, layout),
+        time,
+        dist,
+        speed,
+      };
+    });
+
+    if (pt_idx >= 0) {
+      vt_dist = getDistance(lonlats[pt_idx], toLonLat(webcoord));  // distance between virtual trkpt and the real trkpt
+    }
+  }
+
+  return {
+    idx,
+    pt_idx,
+    vt_dist,
+    points,
+  };
+}
+
+function _track_feature_of(trkpt: Feature<Point>) {
+  return trkpt.get('features')?.find(isTrkFeature);
+}
+
+function _wpt_feature_of(trkpt: Feature<Point>){
+  return trkpt.get('features')?.find(isWptFeature);
 }

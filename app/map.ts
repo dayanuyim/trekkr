@@ -21,11 +21,12 @@ import Opt from './opt';
 import { splitn, mapFind } from './lib/utils';
 import { saveTextAsFile } from './lib/dom-utils';
 import { throttle } from 'lodash';
-import { gmapUrl, setGpxFilename } from './common';
+import { buildFeatureData, gmapUrl, setGpxFilename } from './common';
 import { CtxMenu } from './ctx-menu';
 import * as LayerRepo from './layer-repo';
 import { PtPopupOverlay } from './pt-popup';
 import { matchRules } from './sym'
+import { EleProfileCanvas } from './lib/ele-profile-canvas';
 
 /*
 //TODO: better way to do this?
@@ -53,6 +54,7 @@ function unionExtents(extents){
 export class AppMap{
   _map: Map
   _gpx_layer: GPXLayer;   //a gpx adapter for VectorLayer
+  _eleprof_canvas: EleProfileCanvas;
   _ctxmenu_coord;
   _formats: any[] = [
     GPXFormat,
@@ -123,6 +125,23 @@ export class AppMap{
     });
     this._map.addLayer(this._gpx_layer);
     this.setInteraction(this._gpx_layer);
+
+    // elevation profile canvas
+    this._eleprof_canvas = new EleProfileCanvas(document.querySelector('canvas.ele-profile'))
+        .setListener('hover', (pt) => {
+          console.log('trksegpt hover', pt);
+          this._gpx_layer.setPseudoWpt('trksegpt', pt.coord, {
+            //sym: 'Soft Field',
+            sym: 'Navaid, Amber',
+            scale: 0.5,
+          });
+          // TODO: 一直調整會頭暈，應只在 out of extent 才做調整
+          //this._map.getView().setCenter(pt.coord);
+          //this._map.getView().animate({center: pt.coord, duration: 500});
+        })
+        .setListener('unhover', () => {
+          this._gpx_layer.rmPseudoWpt('trksegpt');
+        });
 
     //create layer from features, and add it to the map
     drag_interaciton.on('addfeatures', (e) => {
@@ -266,22 +285,24 @@ export class AppMap{
   }
 
   private showFeatures(e) {
-    let has_popup_shown = false;
-    const popup_overlay = () => e.map.getOverlayById('pt-popup');
+    const pt_popup = e.map.getOverlayById('pt-popup') as PtPopupOverlay;
+
+    //hide the overlay anyway
+    pt_popup.hide();
 
     const features = this._getFeatures(e);
     features.forEach(feature => {
       switch (feature.getGeometry().getType()) {
         case 'Point': {   // Waypoint or Track point
-          has_popup_shown = true;
-          popup_overlay().popContent(feature);
 
-          // TODO: if is trkpt...
-          const track = feature.get('features')?.find(isTrkFeature);
-          if(track){
-            const name = track.get('name');
-            if(name) console.log(`trkpt of track: ${name}`);
-          }
+          // wpt/trkpt popup
+          const { feature: feat, data } = buildFeatureData(feature);
+          pt_popup.popContent(feat, data);
+
+          // ele profile
+          const { trkseg } = data;
+          this._eleprof_canvas.draw(trkseg.points, trkseg.pt_idx);
+
           break;
         }
         case 'LineString': {  //grid line
@@ -298,8 +319,6 @@ export class AppMap{
       return true;
     });
 
-    //no popup in this run, but hide the old popup if any
-    if(!has_popup_shown) popup_overlay().hide();
   };
 
   // the function is a lightweight version of _getFeatures(),

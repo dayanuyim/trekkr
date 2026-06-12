@@ -5,8 +5,16 @@ export class EleProfileCanvas {
   private _canvas: HTMLCanvasElement;
   private _ctx: CanvasRenderingContext2D;
   private _opts: any;
+
   private _points: any[];
   private _last_hover_idx = undefined;
+
+  private _listeners = {};
+
+  public setListener(event, listener){
+      this._listeners[event] = listener;
+      return this;
+  }
 
   constructor(elem: HTMLCanvasElement, options=null){
     this._canvas = elem;
@@ -136,7 +144,12 @@ export class EleProfileCanvas {
     this.drawElevationLine(xScale, yScale);
 
     if (hover_idx != null && hover_idx >= 0) {
-      this.drawHover(this._points[hover_idx], xScale, yScale, padding);
+      const pt = this._points[hover_idx];
+      this.drawHover(pt, xScale, yScale, padding);
+      this._listeners['hover']?.(pt);
+    }
+    else{
+      this._listeners['unhover']?.();
     }
   }
 
@@ -301,6 +314,7 @@ export class EleProfileCanvas {
     //const hue =  95, saturation = 20; //dark green
     const hue = 170, saturation = 22; //green
     //const hue = 210, saturation = 18; //blue gray
+    //const hue = 300, saturation = 100; //darkmagenta
 
     return `hsla(${hue}, ${saturation}%, ${lightness}%, ${alpha})`;
   }
@@ -335,4 +349,113 @@ export class EleProfileCanvas {
     ctx.font = '12px sans-serif';
     ctx.fillText(text, x + 18, y - 18);
   }
+}
+
+//=========================================================
+
+function generateDemoTrack() {
+  const points = [];
+
+  const startLat = 24.250000;
+  const startLon = 121.180000;
+  const startTime = new Date('2024-01-01T07:30:00+08:00');
+
+  const totalPoints = 100;
+  const totalDist = 20.0;
+
+  let currentTime = new Date(startTime);
+  let prevDist = 0;
+
+  for (let i = 0; i < totalPoints; i++) {
+    const ratio = i / (totalPoints - 1);
+    const dist = ratio * totalDist;
+
+    const ele = demoElevation(dist);
+    const speed = demoSpeed(dist, i);
+
+    if (i > 0) {
+      const delta = dist - prevDist;
+      const deltaHour = speed > 0.05 ? delta / speed : 0;
+      const deltaMsec = deltaHour * 3600 * 1000;
+
+      currentTime = new Date(currentTime.getTime() + deltaMsec);
+    }
+
+    // 產生一條略微彎曲的路線
+    const lat = startLat + dist * 0.0065 + Math.sin(dist * 1.4) * 0.0012;
+    const lon = startLon + dist * 0.0042 + Math.cos(dist * 1.1) * 0.0015;
+
+    points.push({
+      lat,
+      lon,
+      ele,
+      time: new Date(currentTime),
+      dist,
+      speed
+    });
+
+    prevDist = dist;
+  }
+
+  return points;
+}
+
+function demoElevation(dist) {
+  let ele;
+
+  if (dist < 3.0) {
+    // 緩上坡：2200 -> 2850
+    ele = 2200 + dist * 215;
+  } else if (dist < 5.0) {
+    // 陡上坡：2850 -> 3550
+    ele = 2850 + (dist - 3.0) * 350;
+  } else if (dist < 7.0) {
+    // 稜線起伏：3550 附近
+    ele = 3550 + Math.sin((dist - 5.0) * Math.PI * 1.4) * 80;
+  } else if (dist < 10.0) {
+    // 下坡：3550 -> 2700
+    ele = 3550 - (dist - 7.0) * 280;
+  } else {
+    // 續下坡：2700 -> 2300
+    ele = 2700 - (dist - 10.0) * 200;
+  }
+
+  // 模擬 GPS elevation noise
+  ele += Math.sin(dist * 8.5) * 12;
+  ele += Math.cos(dist * 3.2) * 18;
+
+  return Math.round(ele);
+}
+
+function demoSpeed(dist, index) {
+  let speed;
+
+  if (dist < 3.0) {
+    // 緩上坡
+    speed = 3.0 - dist * 0.25;
+  } else if (dist < 5.0) {
+    // 陡上坡，明顯變慢
+    speed = 1.7 - (dist - 3.0) * 0.35;
+  } else if (dist < 5.35) {
+    // 停留，約 0
+    speed = 0.08;
+  } else if (dist < 7.0) {
+    // 稜線緩行
+    speed = 2.2 + Math.sin(dist * 2.0) * 0.25;
+  } else if (dist < 10.0) {
+    // 下坡較快
+    speed = 4.4 + Math.sin(dist * 1.7) * 0.6;
+  } else if (dist < 10.18) {
+    // 短暫停留
+    speed = 0.12;
+  } else {
+    // 續下坡，速度快但不完全穩定
+    speed = 4.8 + Math.sin(dist * 2.4) * 0.7;
+  }
+
+  // 模擬人的步速波動
+  speed += Math.sin(index * 0.55) * 0.18;
+  speed += Math.cos(index * 0.19) * 0.12;
+
+  return Math.max(0.05, Number(speed.toFixed(2)));
 }

@@ -1,16 +1,13 @@
 'use strict';
-import {Feature} from 'ol';
-import {Point, LineString} from 'ol/geom';
 import Overlay from 'ol/Overlay';
 import {toStringXY} from 'ol/coordinate';
 import {toLonLat} from 'ol/proj';
-import {getLength, getDistance } from 'ol/sphere';
 import {toTWD97, toTWD67, toTaipowerCoord} from './coord';
 
 //import * as moment from 'moment-timezone';
 import { getSymbol, matchRules, symbol_inv } from './sym'
-import { getEstElevation, getEleOfCoord, setEleOfCoord, getEpochOfCoord, getLocalTimeByCoord, gmapUrl, colorCode, complementaryColor } from './common'
-import { olWptFeature, def_trk_color, getTrkptIndices, isTrkFeature, isWptFeature, createGpxText} from './ol/gpx-common';
+import { getEstElevation, getEleOfCoord, setEleOfCoord, getLocalTimeByCoord, gmapUrl, colorCode, complementaryColor, buildFeatureData } from './common'
+import { olWptFeature, def_trk_color, createGpxText} from './ol/gpx-common';
 import { delayToEnable } from './lib/dom-utils';
 import { EleProfileCanvas } from './lib/ele-profile-canvas';
 import Opt from './opt';
@@ -260,11 +257,6 @@ export class PtPopupOverlay extends Overlay{
         this._sym_maker =       this._sym_copyright.querySelector<HTMLAnchorElement>('.sym-maker');
         this._sym_provider =    this._sym_copyright.querySelector<HTMLAnchorElement>('.sym-provider');
         this._sym_license =     this._sym_copyright.querySelector<HTMLAnchorElement>('.sym-license');
-
-
-        //FIXME: remove later on
-        const _canvas = document.querySelector<HTMLCanvasElement>('canvas.ele-profile');
-        this._elepro_canvas = new EleProfileCanvas(_canvas);
     }
 
 
@@ -445,7 +437,8 @@ export class PtPopupOverlay extends Overlay{
                 desc,
                 sym: sym || "City (Small)",
             });
-            this.popContent(wpt);
+            const {data} = buildFeatureData(wpt);
+            this.popContent(wpt, data);
             this._listeners['mkwpt']?.(wpt);
         };
 
@@ -539,105 +532,17 @@ export class PtPopupOverlay extends Overlay{
         }
     }
 
-    async popContent(feature) {
+    async popContent(feature, data) {
         //console.log('popContent', feature);
 
-        // restore the underlying wpt
-        feature = this._wpt_feature_of(feature) || feature;
-
-        // trk data
-        const track = this._track_feature_of(feature);                // for trkpt
-        const trk = track ? {
-            name: track.get('name'),
-            desc: track.get('desc'),
-            color: track.get('color'),
-        } : undefined;
-
-        // pt data
-        const pt = {
-            name: feature.get('name'),                        //maybe undefined
-            desc: feature.get('desc'),                        //maybe undefined
-            sym: feature.get('sym'),                          //maybe undefined
-            coord: feature.getGeometry().getCoordinates(),    //x, y, [ele, [time]]
-            image: feature.get('image'),
-            is_virtual: track && track.getGeometry().getLayout() != feature.getGeometry().getLayout(),
-        };
-        if(pt.is_virtual) // get data from other dimensions of its track, for example: XY -> XYZM
-            pt.coord = track.getGeometry().getClosestPoint(pt.coord);
-
         // cache for later to use
-        this._feature = track? track: feature;  // trk(for rm/split/join) or wpt (for rm)
-        this._data = {                          // for creating/updating
-            trk,
-            pt,
-            trkseg: this.getTrksegInfo(track, pt.coord)
-        };
+        this._feature = feature;
+        this._data = data;
 
-        this.resetDisplay(pt.image);
+        this.resetDisplay(data.pt.image);
         this.setContent(this._data);
-        this.setPosition(pt.coord);
+        this.setPosition(data.pt.coord);
         this._content.focus();
-    }
-
-    private getTrksegInfo(trk_feat, coord: number[]){
-        if(!trk_feat)
-            return null;
-
-        const trksegs = trk_feat.getGeometry().getCoordinates();
-
-        //TODO: This is duplicated with the GPX splitTrack(), are there better way to aovid the duplication?
-        // get the Trkseg index and Trkpt index of the current pt
-        const time = getEpochOfCoord(coord);
-        const layout = trk_feat.getGeometry().getLayout();
-        const has_time = time && layout.includes('M');    // the point and track both have time info
-        const test_by = has_time? {time}: {coord};
-        const [i, j] = getTrkptIndices(trksegs, test_by);
-        //console.log('trkpt indices', i, j, trksegs[i][j], new Date(time*1000));
-
-        let points = null;
-        let vt_dist = 0;
-        if(i >= 0){
-            const calc_speed = (dd, dt) => dt? dd/dt*3.6: 0; // m/s -> km/h
-
-            let dist = 0;
-            let last_time = 0;
-
-            const coords = trksegs[i].map(c => toLonLat(c));
-            points = coords.map((c, i) => {
-                const diff = i? getDistance(c, coords[i-1]): 0;
-                const time = getEpochOfCoord(c, layout);
-                const speed = (time && last_time)? calc_speed(diff, time - last_time): 0;
-                last_time = time;
-                dist += diff;
-                return {
-                    lon: c[0],
-                    lat: c[1],
-                    ele: getEleOfCoord(c, layout),
-                    time,
-                    dist,
-                    speed,
-                };
-            });
-
-            if(j >= 0){
-                vt_dist = getDistance(coords[j], toLonLat(coord));  // distance between virtual trkpt and the real trkpt
-            }
-        }
-
-        return {
-            idx: i,
-            pt_idx: j,
-            vt_dist,
-            points,
-        };
-    }
-
-    private _track_feature_of(trkpt: Feature<Point>){
-        return trkpt.get('features')?.find(isTrkFeature);
-    }
-
-    private _wpt_feature_of(trkpt: Feature<Point>){
-        return trkpt.get('features')?.find(isWptFeature);
     }
 
     private setContent({trk, pt, trkseg})
@@ -745,9 +650,6 @@ export class PtPopupOverlay extends Overlay{
             return (v.length <= 3)? v: `${v.slice(0,-3)},${v.slice(-3)}`;  // inert comma for thousand separator
         });
         this._trk_progbar.classList.toggle('active', trkseg.idx >= 0);
-
-        //FIXME: remove later on
-        this._elepro_canvas.draw(trkseg.points, j);
     }
 
 
@@ -768,44 +670,4 @@ export class PtPopupOverlay extends Overlay{
         else
             el.textContent = title;
     }
-
-    /*
-    private profileFeature(feature){
-        const profile = {
-            is_wpt: undefined,
-            is_trkpt: undefined,
-            is_virtual: undefined,
-            trkseg_idx: undefined,
-            trkseg_num: undefined,
-        };
-
-        const track = this._track_feature_of(feature);
-        profile.is_trkpt = !!track;
-        profile.is_wpt = !track;
-        if(track){
-            const trksegs = track.getGeometry().getCoordinates();
-            const coord = feature.getGeometry().getCoordinates();
-            const indices = getTrkptIndicesByCoord(trksegs, coord);
-
-            profile.trkseg_num = trksegs.length;
-            profile.is_virtual = !indices;
-            if(indices){
-                const [i, j] = indices;
-                profile.is_end = (j == 0 || j == trksegs[i].length - 1);
-                profile.trkseg_idx = i;
-            }
-            else if(trksegs.length == 1){
-                profile.is_end = false;
-                profile.trkseg_idx = 0;
-            }
-            else{
-                profile.is_end = false;
-                // get closest point from each line strings, then get the most closeset
-                // really, the information really matters?
-                ///const linestrs = track.getGeometry().getLineString();
-            }
-        }
-        return profile;
-    }
-    */
 }

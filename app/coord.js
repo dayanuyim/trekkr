@@ -46,8 +46,7 @@ export const TWD97 = new Projection({
 addProjection(TWD97);
 
 
-//TODO:
-// consider addCoordinateTransforms()
+// TODO: consider addCoordinateTransforms()
 // ref: https://openlayers.org/en/latest/examples/wms-custom-proj.html
 
 export const WGS84 = getProjection('EPSG:4326');
