@@ -167,6 +167,10 @@ class GPX extends VectorLayer<VectorSource>{
     delete this._pseudo_wpts[key];
   }
 
+  public hasPseudoWpt(key){
+    return Object.hasOwn(this._pseudo_wpts, key);
+  }
+
   public findWaypoint(time){
     const time_of = (coords) => coords[coords.length - 1];
     return this.getWaypoints()

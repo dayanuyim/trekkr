@@ -54,7 +54,10 @@ function unionExtents(extents){
 export class AppMap{
   _map: Map
   _gpx_layer: GPXLayer;   //a gpx adapter for VectorLayer
+  //TODO: wrapper the eleprof code
+  _eleprof_details: HTMLDetailsElement;
   _eleprof_canvas: EleProfileCanvas;
+  _eleprof_open_once = false;
   _ctxmenu_coord;
   _formats: any[] = [
     GPXFormat,
@@ -93,7 +96,11 @@ export class AppMap{
     this._map = new Map({
       target,
       controls: defaultControls().extend([
-        new ScaleLine(),
+        new ScaleLine({
+          //bar: true,
+          //text: true,
+          maxWidth: 100,
+        }),
         new OverviewMap({
           layers: [new TileLayer({ source: new OSM() })]
         }),
@@ -127,21 +134,30 @@ export class AppMap{
     this.setInteraction(this._gpx_layer);
 
     // elevation profile canvas
-    this._eleprof_canvas = new EleProfileCanvas(document.querySelector('canvas.ele-profile'))
+    this._eleprof_details = document.querySelector('details.ele-profile');
+    this._eleprof_canvas = new EleProfileCanvas(this._eleprof_details.querySelector('canvas'))
         .setListener('hover', (pt) => {
-          console.log('trksegpt hover', pt);
           this._gpx_layer.setPseudoWpt('trksegpt', pt.coord, {
-            //sym: 'Soft Field',
-            sym: 'Navaid, Amber',
-            scale: 0.5,
+            sym: 'Point',
+            scale: 0.4,
           });
-          // TODO: 一直調整會頭暈，應只在 out of extent 才做調整
-          //this._map.getView().setCenter(pt.coord);
-          //this._map.getView().animate({center: pt.coord, duration: 500});
+          // move to the coord if out of the view extent
+          const view = this._map.getView();
+          const size = this._map.getSize().map(v => v*0.75);
+          if(!view.getAnimating() && !containsCoordinate(view.calculateExtent(size), pt.coord)){
+            view.animate({center: pt.coord, duration: 1000});
+            //view.setCenter(pt.coord);
+          }
         })
         .setListener('unhover', () => {
           this._gpx_layer.rmPseudoWpt('trksegpt');
         });
+    this._eleprof_canvas.draw([{  // if someone really want to see an empty chart, give a one.
+      coord: this._map.getView().getCenter(),
+      ele: 0,
+      dist: 0,
+      speed: 0,
+    }]);
 
     //create layer from features, and add it to the map
     drag_interaciton.on('addfeatures', (e) => {
@@ -294,14 +310,22 @@ export class AppMap{
     features.forEach(feature => {
       switch (feature.getGeometry().getType()) {
         case 'Point': {   // Waypoint or Track point
+          const { feature: feat, data } = buildFeatureData(feature);
+
+          let eleprof_open;
+          const show_eleprof_only =
+            data.trk &&
+            (eleprof_open = this.openEleprofCanvas()) &&  // eleprof is visible (this can open canvas, so do it only if trk is true.)
+            !this._gpx_layer.hasPseudoWpt('trksegpt');    // but not yet to show
 
           // wpt/trkpt popup
-          const { feature: feat, data } = buildFeatureData(feature);
-          pt_popup.popContent(feat, data);
+          if(!show_eleprof_only)
+            pt_popup.popContent(feat, data);
 
           // ele profile
           const { trkseg } = data;
-          this._eleprof_canvas.draw(trkseg.points, trkseg.pt_idx);
+          if(eleprof_open && trkseg?.pt_idx >= 0)
+            this._eleprof_canvas.draw(trkseg.points, trkseg.pt_idx);
 
           break;
         }
@@ -318,8 +342,40 @@ export class AppMap{
       }
       return true;
     });
-
   };
+
+  // check if auto to open eleprof canvas or not
+  // and return the final status
+  private openEleprofCanvas(): boolean{
+    let open = this._eleprof_details.open
+
+    // already open
+    if(open){
+      this._eleprof_open_once = true; 
+      return open;
+    }
+
+    // auto open by opt
+    open = (() => {
+      switch (Opt.eleprof_auto) {
+        case 'none': return false;
+        case 'always': return true;
+        case 'first':
+          if (!this._eleprof_open_once) {
+            this._eleprof_open_once = true;
+            return true;
+          }
+          return false;
+        default:
+          return false;
+      }
+    })();
+
+    // to open
+    if(open)
+      this._eleprof_details.open = open;
+    return open;
+  }
 
   // the function is a lightweight version of _getFeatures(),
   // it is used only to determine whether there is any feature at the pixel

@@ -26,14 +26,13 @@ export class EleProfileCanvas {
       height: 0,
       widthScale: 0.8,
       heightScale: 0.2,
-      ticks: {
-        x: 6,
-        y: 5
-      },
+      x_km_threshold: 2000,
+      x_ticks: 6,
+      y_ticks: 5,
       padding: {
         left: 60,
-        right: 40,
-        top: 40,
+        right: 20,
+        top: 20,
         bottom: 40
       }
     }, options)
@@ -106,7 +105,7 @@ export class EleProfileCanvas {
     });
   }
 
-  public draw(points, idx=null){
+  public draw(points, idx=-1){
     this._points = points;   // set as the object property for later use in hover drawing
     this.initState();
     this.drawProfile(idx);
@@ -138,7 +137,7 @@ export class EleProfileCanvas {
 
     this.clearCanvas();
     this.drawGrid(xScale, yScale, min_ele, max_ele, max_dist, padding);
-    this.drawStopBands(xScale, padding);
+    //this.drawStopBands(xScale, padding);
     //this.drawElevationAreaBase(xScale, yScale, base_y);
     this.drawElevationArea(xScale, yScale, base_y);
     this.drawElevationLine(xScale, yScale);
@@ -157,7 +156,8 @@ export class EleProfileCanvas {
     const { width, height } = this._canvas;
     const ctx = this._ctx;
     ctx.clearRect(0, 0, width, height);
-    ctx.fillStyle = '#ffffff';
+    //ctx.fillStyle = '#ffffff';
+    ctx.fillStyle = 'rgba(255,255,255,.8)'
     ctx.fillRect(0, 0, width, height);
   }
 
@@ -168,11 +168,13 @@ export class EleProfileCanvas {
     ctx.fillStyle = '#666';
     ctx.font = '12px sans-serif';
 
-    // Y 軸高度格線
-    const {ticks} = this._opts;
+    const {x_km_threshold, x_ticks, y_ticks,} = this._opts;
 
-    for (let i = 0; i <= ticks.y; i++) {
-      const ele = min_ele + ((max_ele - min_ele) * i) / ticks.y;
+    ctx.textBaseline = 'alphabetic';  // 要設定，避免在其它地方被蓋掉
+
+    // Y 軸高度格線
+    for (let i = 0; i <= y_ticks; i++) {
+      const ele = min_ele + ((max_ele - min_ele) * i) / y_ticks;
       const y = yScale(ele);
 
       ctx.beginPath();
@@ -184,16 +186,19 @@ export class EleProfileCanvas {
       ctx.fillText(`${Math.round(ele)} m`, 8, y + 4);
     }
 
-    for (let i = 0; i <= ticks.x; i++) {
-      const dist = (max_dist * i) / ticks.x;
-      const x = xScale(dist);
+    // X 軸距離格線
+    const x_label = (d) => (max_dist > x_km_threshold)?
+                            `${(d/1000).toFixed(1)} km`:
+                            `${d.toFixed(0)} m`;
 
+    for (let i = 0; i <= x_ticks; i++) {
+      const dist = (max_dist * i) / x_ticks;
+      const x = xScale(dist);
       ctx.beginPath();
       ctx.moveTo(x, padding.top);
       ctx.lineTo(x, this._canvas.height - padding.bottom);
       ctx.stroke();
-
-      ctx.fillText(`${dist.toFixed(1)} m`, x - 18, this._canvas.height - 15);
+      ctx.fillText(x_label(dist), x - 18, this._canvas.height - 15);
     }
   }
 
@@ -339,15 +344,50 @@ export class EleProfileCanvas {
     ctx.fillStyle = '#000';
     ctx.fill();
 
-    // 簡易 tooltip
-    const text = `${point.dist.toFixed(2)} m, ${Math.round(point.ele)} m, ${point.speed.toFixed(1)} km/h`;
+    // 四向防溢出、多行 tooltip
+    const font_size = 12;
+    const padding_x = 8;
+    const padding_y = 8;
+    const spacing = 6;
+    const pos_offset_x = 10;
+    const pos_offset_y = 10;
 
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.75)';
-    ctx.fillRect(x + 10, y - 35, 220, 26);
+    const textLines = [
+      `距離: ${point.dist.toFixed(0)} m`,
+      `高度: ${point.ele.toFixed(0)} m`,
+      `速度: ${point.speed.toFixed(1)} km/h`
+    ];
 
+    ctx.font = `${font_size}px sans-serif`;   // set font before measureText
+
+    const line_w = Math.max(...textLines.map(line => ctx.measureText(line).width));
+    const line_h = font_size + spacing;
+
+    const pane_w = line_w + (padding_x * 2);
+    const pane_h = (textLines.length * line_h) - spacing + (padding_y * 2); // 扣掉最後一行的行距
+
+    // set the position of tip
+    let pos_x = x + pos_offset_x;
+    if (pos_x + pane_w > ctx.canvas.width) {  // 預設往右長
+      pos_x = x - pane_w - pos_offset_x;      // 改為往左長（-10 是避開滑鼠點的間距）
+    }
+    let pos_y = y - pane_h - pos_offset_y; // 預設往上長
+    if (pos_y < 0) {
+      pos_y = y + pos_offset_y;            // 改為往下長（在點的下方，+10 是避開滑鼠指針或黑點本身）
+    }
+
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.60)';
+    ctx.fillRect(pos_x, pos_y, pane_w, pane_h);
+
+    // loop to draw multiple liens
     ctx.fillStyle = '#fff';
-    ctx.font = '12px sans-serif';
-    ctx.fillText(text, x + 18, y - 18);
+    ctx.textBaseline = 'top'; // 將基準線設為頂端，文字定位最精準
+
+    textLines.forEach((line, idx) => {
+      const text_x = pos_x + padding_x;
+      const text_y = pos_y + padding_y + (idx * line_h);
+      ctx.fillText(line, text_x, text_y);
+    });
   }
 }
 

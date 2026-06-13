@@ -53,10 +53,11 @@ module.exports = {
             test: /\.(sa|sc|c)ss$/,
             use: [ MiniCssExtractPlugin.loader, 'css-loader',/* 'postcss-loader', 'sass-loader', */],
         }, {
-            test: /\.(woff|woff2|eot|ttf|svg)$/,
-            loader: 'url-loader',
-            options: {
-                limit: 100000,
+            test: /\.(woff|woff2|eot|ttf|otf|svg)$/,
+            type: 'asset/resource', // Webpack 5 內建的資源模組，會自動複製字體檔並修正 CSS 路徑
+            dependency: { not: ['url'] }, // 關鍵：防止 css-loader 將其重複解析為 JS 模組
+            generator: {
+                filename: 'fonts/[name][ext][query]' // 打包後的字體放置路徑（選填）
             },
         }],
     },

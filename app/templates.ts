@@ -477,10 +477,14 @@ export const main = Handlebars.compile(`
     </div>
 
     <div class="settings collapsed"></div>
+
     <div class="toolbar toolbar-side">{{toolbarSide}}</div>
     <div class="toolbar toolbar-top">{{toolbarTop}}</div>
     <div class="toolbar toolbar-bottom">
-        <canvas class="ele-profile"></canvas>
+        <details class="ele-profile">
+            <summary><i class="fa-solid fa-chart-area"></i></summary>
+            <canvas></canvas>
+        </details>
     </div>
 
     <div id="ctx-menu" class="ctx-menu">{{ctxMenuItems}}</div>
