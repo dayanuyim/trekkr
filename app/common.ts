@@ -356,7 +356,7 @@ function getTrksegInfo(trk_feat, webcoord: number[]) {
       last_time = time;
       dist += diff;
       return {
-        // TODO: // lon lat 是必要的嗎？
+        // TODO: // lon lat 是必要的嗎？目前看來不會用到
         lon: lonlat[0],
         lat: lonlat[1],
         // TODO: coord/ele/time 有必要拆開嗎？
@@ -364,6 +364,7 @@ function getTrksegInfo(trk_feat, webcoord: number[]) {
         ele: getEleOfCoord(lonlat, layout),
         time,
         dist,
+        // TODO: 先不要計算速度，因為不一定會用到
         speed,
       };
     });

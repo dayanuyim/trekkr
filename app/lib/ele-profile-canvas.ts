@@ -31,7 +31,7 @@ export class EleProfileCanvas {
       y_ticks: 5,
       padding: {
         left: 60,
-        right: 20,
+        right: 30,
         top: 20,
         bottom: 40
       }

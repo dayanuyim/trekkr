@@ -584,10 +584,17 @@ details[open]::details-content {
 /* --------- summary: text and align -------------*/
 .toolbar-bottom details summary{
     text-align: center;
+    align-items: center;
     list-style-position: inside; /* Keeps the arrow next to the centered text */
     list-style: none;
+    /*cursor: pointer;*/
+    pointer-events: none;
+}
+
+/* only children of summary can trigger the details content */
+.toolbar-bottom details summary * {
     cursor: pointer;
-    align-items: center;
+    pointer-events: auto;
 }
 
 /* --------- control button --------*/
@@ -598,10 +605,6 @@ details[open]::details-content {
     font: var(--fa-font-solid);
 }
 */
-
-.toolbar-bottom details[open] summary svg[class*="fa-"] {
-    color: steelblue;
-}
 
 .toolbar-bottom details summary svg[class*="fa-"] {
     color: #666666;
@@ -614,6 +617,11 @@ details[open]::details-content {
     border-color: lightgray;
 }
 
+.toolbar-bottom details[open] summary svg[class*="fa-"] {
+    color: steelblue;
+}
+
+/*
 .corner-protude-right-bottom::before,
 .corner-protude-left-bottom::before {
     content: '\00a0';
@@ -632,6 +640,7 @@ details[open]::details-content {
     border-width: 0 0 0 1px;
     border-radius: 0 0 0 8px;
 }
+*/
 
 /* --------- canvas -------------*/
 .toolbar-bottom details.ele-profile canvas{
