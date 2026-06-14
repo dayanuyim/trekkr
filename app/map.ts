@@ -133,6 +133,11 @@ export class AppMap{
     this._map.addLayer(this._gpx_layer);
     this.setInteraction(this._gpx_layer);
 
+    // TODO: 之後移到 Opt const data
+    const move_animate_sec = 500; //ms
+    const move_threshold = 0.75;
+    const jump_threshold = 3.00;
+
     // elevation profile canvas
     this._eleprof_details = document.querySelector('details.ele-profile');
     this._eleprof_canvas = new EleProfileCanvas(this._eleprof_details.querySelector('canvas'))
@@ -141,13 +146,21 @@ export class AppMap{
             sym: 'Point',
             scale: 0.4,
           });
+
           // move to the coord if out of the view extent
           const view = this._map.getView();
-          const size = this._map.getSize().map(v => v*0.75);
-          if(!view.getAnimating() && !containsCoordinate(view.calculateExtent(size), pt.coord)){
-            view.animate({center: pt.coord, duration: 1000});
-            //view.setCenter(pt.coord);
-          }
+          if(view.getAnimating())
+            return;
+
+          const size = this._map.getSize();
+          const move_size = size.map(v => v * move_threshold);
+          const jump_size = size.map(v => v * jump_threshold);
+
+          if(!containsCoordinate(view.calculateExtent(jump_size), pt.coord))
+            return view.setCenter(pt.coord);
+
+          if(!containsCoordinate(view.calculateExtent(move_size), pt.coord))
+            return view.animate({center: pt.coord, duration: move_animate_sec});
         })
         .setListener('unhover', () => {
           this._gpx_layer.rmPseudoWpt('trksegpt');
