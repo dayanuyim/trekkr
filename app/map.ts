@@ -68,19 +68,19 @@ function calcSmoothedSpeed(points, win_size_sec = 0) {
   points.forEach((curr, idx) => {
 
     // 2.1 往前尋找符合時間視窗邊界的點（例如尋找 10 秒前的那個點作為起點）
+    // win_idx: "超過" win_size_sec 的最接近 index, 介於 [0, idx-1]
     let win_idx;
-    for(win_idx = idx; win_idx > 0; win_idx--) {
-      if((curr.time - points[win_idx - 1].time) > win_size_sec)
+    for(win_idx = idx - 1; win_idx >= 0; win_idx--) {
+      if((curr.time - points[win_idx].time) > win_size_sec)
         break; // 超過時間視窗了，停止往前找
     }
+    win_idx = Math.max(win_idx, 0);
 
     // 2.2 用整個時間視窗的總距離與總時間，計算該點的平滑速度; 否則計算原始速度
-    const start_idx = (win_idx < idx)? win_idx: idx -1;  // smoothed point (平滑速度) or previous point (原始速度)
-    const start_pt = points.at(start_idx);
-    const speed = start_pt?  calcSpeedKm(
-        curr.dist - start_pt.dist,
-        curr.time - start_pt.time
-      ): 0;
+    const win_pt = points[win_idx];  // win_idx 必為有效值，但 idx 為 0 時，兩者為同一點。
+    const speed = calcSpeedKm(       // 若 dt 為 0，calcSpeedKm() 會正確判斷，不需特別處理。
+        curr.dist - win_pt.dist,
+        curr.time - win_pt.time);
 
     // 2.3 assign
     curr.speed = speed;
