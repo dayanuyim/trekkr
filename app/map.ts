@@ -44,6 +44,51 @@ function findLayerByFeature(map, feature){
 }
 */
 
+const calcSpeedKm = (dd, dt) => (dt > 0)? (dd / dt)*3.6: 0;
+
+// 運動類型     建議 windowSizeSec  說明
+// 爬山 / 健行  15 ~ 30 秒          速度慢、容易受樹蔭/峽谷地形遮蔽，需要最長的視窗來平滑數據。
+// 跑步 / 慢跑  8 ~ 12 秒           速度中等，10 秒左右通常是運動 App（如 Strava）的黃金平衡點。
+// 公路單車     3 ~ 5 秒            速度極快，視窗如果太長，會反應不出轉彎或短衝刺的瞬間速度變化。
+
+function calcSmoothedSpeed(points, win_size_sec = 0) {
+  if (!points?.length) return [];
+
+  // 1. set the seconds of window size
+  if(!win_size_sec){
+    const all_0 = points[0];
+    const all_n = points.at(-1);
+    const all_avg = calcSpeedKm(all_n.dist - all_0.dist, all_n.time - all_0.time);
+    win_size_sec = (all_avg > 15)? 5:   // bike
+                   (all_avg > 8)? 10:   // run
+                                  20;   // walk
+  }
+
+ // 2. 計算平滑速度（時間視窗法）
+  points.forEach((curr, idx) => {
+
+    // 2.1 往前尋找符合時間視窗邊界的點（例如尋找 10 秒前的那個點作為起點）
+    let win_idx;
+    for(win_idx = idx; win_idx > 0; win_idx--) {
+      if((curr.time - points[win_idx - 1].time) > win_size_sec)
+        break; // 超過時間視窗了，停止往前找
+    }
+
+    // 2.2 用整個時間視窗的總距離與總時間，計算該點的平滑速度; 否則計算原始速度
+    const start_idx = (win_idx < idx)? win_idx: idx -1;  // smoothed point (平滑速度) or previous point (原始速度)
+    const start_pt = points.at(start_idx);
+    const speed = start_pt?  calcSpeedKm(
+        curr.dist - start_pt.dist,
+        curr.time - start_pt.time
+      ): 0;
+
+    // 2.3 assign
+    curr.speed = speed;
+  });
+
+  return points;
+}
+
 function unionExtents(extents){
   const empty = createEmptyExtent();
   return extents.reduce((res, ext) => extendExtent(res, ext), empty);
@@ -337,8 +382,10 @@ export class AppMap{
 
           // ele profile
           const { trkseg } = data;
-          if(eleprof_open && trkseg?.pt_idx >= 0)
+          if(eleprof_open && trkseg?.pt_idx >= 0){
+            trkseg.points = calcSmoothedSpeed(trkseg.points);   //calculate speed
             this._eleprof_canvas.draw(trkseg.points, trkseg.pt_idx);
+          }
 
           break;
         }
@@ -373,7 +420,7 @@ export class AppMap{
       switch (Opt.eleprof_auto) {
         case 'none': return false;
         case 'always': return true;
-        case 'first':
+        case 'once':
           if (!this._eleprof_open_once) {
             this._eleprof_open_once = true;
             return true;

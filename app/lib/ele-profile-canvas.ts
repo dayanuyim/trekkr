@@ -1,5 +1,6 @@
 import { throttle, debounce } from 'lodash';
 import { clamp, binsearchIndex } from './utils';
+import { getLocalTimeByCoord } from '../common';
 
 export class EleProfileCanvas {
   private _canvas: HTMLCanvasElement;
@@ -18,7 +19,7 @@ export class EleProfileCanvas {
 
   constructor(elem: HTMLCanvasElement, options=null){
     this._canvas = elem;
-    this._ctx = elem.getContext('2d');
+    this._ctx = elem.getContext('2d', { willReadFrequently: true });
     this._opts = Object.assign({
       slowIsDark: true,
       stopSpeed: 0.1,
@@ -48,11 +49,11 @@ export class EleProfileCanvas {
       const hover_idx = this.findNearestPointIdx(offsetX);
       if(hover_idx >= 0)
         this.drawProfile(hover_idx);
-    }, 100));
+    }, 125));
 
     this._canvas.addEventListener('mouseleave', debounce(() => {
       this.drawProfile();
-    }, 200));
+    }, 200));   //不能設太長，不然使用者馬上又回來，會出現hover消失的情況
 
     window.addEventListener('resize', debounce(() => {
       this.initState();
@@ -355,7 +356,8 @@ export class EleProfileCanvas {
     const textLines = [
       `距離: ${point.dist.toFixed(0)} m`,
       `高度: ${point.ele.toFixed(0)} m`,
-      `速度: ${point.speed.toFixed(1)} km/h`
+      `速度: ${point.speed.toFixed(1)} km/h`,
+      `時間: ${getLocalTimeByCoord(point.coord).format('YYYY-MM-DD HH:mm:ss')}`,
     ];
 
     ctx.font = `${font_size}px sans-serif`;   // set font before measureText

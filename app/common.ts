@@ -352,20 +352,19 @@ function getTrksegInfo(trk_feat, webcoord: number[]) {
     points = lonlats.map((lonlat, i) => {
       const diff = i ? getDistance(lonlat, lonlats[i - 1]) : 0;
       const time = getEpochOfCoord(lonlat, layout);
-      const speed = (time && last_time) ? calc_speed(diff, time - last_time) : 0;
+      //const speed = (time && last_time) ? calc_speed(diff, time - last_time) : 0;
       last_time = time;
       dist += diff;
       return {
         // TODO: // lon lat 是必要的嗎？目前看來不會用到
-        lon: lonlat[0],
-        lat: lonlat[1],
+        //lon: lonlat[0],
+        //lat: lonlat[1],
         // TODO: coord/ele/time 有必要拆開嗎？
-        coord: trkseg[i].slice(0, 2),          // web coord, for showing in the map
+        coord: trkseg[i],                        // web coord, for showing in the map (計算localtime需要座標以取得tz, 所以保留coord全部維度)
         ele: getEleOfCoord(lonlat, layout),
         time,
         dist,
-        // TODO: 先不要計算速度，因為不一定會用到
-        speed,
+        speed: 0, // 先不要計算速度，因為不一定會用到
       };
     });
 
