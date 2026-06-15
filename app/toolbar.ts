@@ -7,7 +7,6 @@ import { containsCoordinate } from 'ol/extent';
 import { getDistance } from 'ol/sphere';
 import {toRadians, toDegrees} from 'ol/math';
 import { spotItem as spotItemHTML } from './templates';
-import { EleProfileCanvas } from './lib/ele-profile-canvas';
 
 /**
  * Calculates the bearing between two points in degrees

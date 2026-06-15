@@ -555,101 +555,11 @@ html, body {
 
 .toolbar-bottom{
     position: fixed;
-    bottom: 8px;
+    bottom: 1.5em;
     left: 50%;
     transform: translateX(-50%);
 }
 
-/* --------- details: animation -------------*/
-
-:root { interpolate-size: allow-keywords; }
-
-/* 針對 details 內容進行動畫設定 */
-details::details-content {
-    height: 0;
-    opacity: 0;
-    overflow: hidden;
-    transition:
-      height 0.3s ease,
-      opacity 0.3s ease,
-      content-visibility 0.3s ease allow-discrete; /* 關鍵：讓收合動畫播放完才真正隱藏 */
-}
-
-/* 展開狀態的樣式 */
-details[open]::details-content {
-    height: auto;
-    opacity: 1;
-}
-
-/* --------- summary: text and align -------------*/
-.toolbar-bottom details summary{
-    text-align: center;
-    align-items: center;
-    list-style-position: inside; /* Keeps the arrow next to the centered text */
-    list-style: none;
-    /*cursor: pointer;*/
-    pointer-events: none;
-}
-
-/* only children of summary can trigger the details content */
-.toolbar-bottom details summary * {
-    cursor: pointer;
-    pointer-events: auto;
-}
-
-/* --------- control button --------*/
-
-/*
-.toolbar-bottom details summary::before{
-    content: "\f1fe";
-    font: var(--fa-font-solid);
-}
-*/
-
-.toolbar-bottom details summary svg[class*="fa-"] {
-    color: #666666;
-    background: rgba(255,255,255,.5);
-    padding: 2px 2px;
-    vertical-align: middle;  /* erase the gap between summary and details-content */
-    border-radius: 4px 4px 0 0;
-    border-style: double;
-    border-width: 4px 1px 0 1px;   /* adjust border in left and right side */
-    border-color: lightgray;
-}
-
-.toolbar-bottom details[open] summary svg[class*="fa-"] {
-    color: steelblue;
-}
-
-/*
-.corner-protude-right-bottom::before,
-.corner-protude-left-bottom::before {
-    content: '\00a0';
-}
-.corner-protude-right-bottom,
-.corner-protude-left-bottom {
-    padding: 0 0 5px 0;
-    border-color: lightgray;
-    border-style: solid;
-}
-.corner-protude-left-bottom {
-    border-width: 0 1px 0 0;
-    border-radius: 0 0 8px 0;
-}
-.corner-protude-right-bottom {
-    border-width: 0 0 0 1px;
-    border-radius: 0 0 0 8px;
-}
-*/
-
-/* --------- canvas -------------*/
-.toolbar-bottom details.ele-profile canvas{
-    /*background: rgba(255, 232, 232, .7);*/
-    border: solid 1px #d0d0d0;
-    border-radius: 8px;
-    z-index: 7;
-    box-sizing: border-box;
-}
 
 /*============= Map ======================*/
 
@@ -660,15 +570,18 @@ details[open]::details-content {
     width: 100%;
 }
 
-.ol-overviewmap
-.ol-overviewmap-map{
+.ol-overviewmap {
+    bottom: 1.5em;
+}
+.ol-overviewmap .ol-overviewmap-map{
     width: 25vw;
     height: 25vh;
 }
 
 .ol-scale-bar,
 .ol-scale-line {
-    left: calc(100% - 8px);
+    left: calc(100% - 12px);
+    bottom: 1.5em;
     transform: translateX(-100%);
 }
 

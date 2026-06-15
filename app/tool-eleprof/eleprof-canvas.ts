@@ -1,8 +1,8 @@
 import { throttle, debounce } from 'lodash';
-import { clamp, binsearchIndex } from './utils';
+import { clamp, binsearchIndex } from '../lib/utils';
 import { getLocalTimeByCoord } from '../common';
 
-export class EleProfileCanvas {
+export default class EleprofCanvas {
   private _canvas: HTMLCanvasElement;
   private _ctx: CanvasRenderingContext2D;
   private _opts: any;
@@ -357,7 +357,7 @@ export class EleProfileCanvas {
       `距離: ${point.dist.toFixed(0)} m`,
       `高度: ${point.ele.toFixed(0)} m`,
       `速度: ${point.speed.toFixed(1)} km/h`,
-      `時間: ${getLocalTimeByCoord(point.coord).format('YYYY-MM-DD HH:mm:ss')}`,
+      `時間: ${getLocalTimeByCoord(point.coord)?.format('YYYY-MM-DD HH:mm:ss')?? ''}`,
     ];
 
     ctx.font = `${font_size}px sans-serif`;   // set font before measureText

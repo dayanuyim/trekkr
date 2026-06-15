@@ -26,7 +26,7 @@ import { CtxMenu } from './ctx-menu';
 import * as LayerRepo from './layer-repo';
 import { PtPopupOverlay } from './pt-popup';
 import { matchRules } from './sym'
-import { EleProfileCanvas } from './lib/ele-profile-canvas';
+import { ToolEleprof } from './tool-eleprof';
 
 /*
 //TODO: better way to do this?
@@ -44,51 +44,6 @@ function findLayerByFeature(map, feature){
 }
 */
 
-const calcSpeedKm = (dd, dt) => (dt > 0)? (dd / dt)*3.6: 0;
-
-// 運動類型     建議 windowSizeSec  說明
-// 爬山 / 健行  15 ~ 30 秒          速度慢、容易受樹蔭/峽谷地形遮蔽，需要最長的視窗來平滑數據。
-// 跑步 / 慢跑  8 ~ 12 秒           速度中等，10 秒左右通常是運動 App（如 Strava）的黃金平衡點。
-// 公路單車     3 ~ 5 秒            速度極快，視窗如果太長，會反應不出轉彎或短衝刺的瞬間速度變化。
-
-function calcSmoothedSpeed(points, win_size_sec = 0) {
-  if (!points?.length) return [];
-
-  // 1. set the seconds of window size
-  if(!win_size_sec){
-    const all_0 = points[0];
-    const all_n = points.at(-1);
-    const all_avg = calcSpeedKm(all_n.dist - all_0.dist, all_n.time - all_0.time);
-    win_size_sec = (all_avg > 15)? 5:   // bike
-                   (all_avg > 8)? 10:   // run
-                                  20;   // walk
-  }
-
- // 2. 計算平滑速度（時間視窗法）
-  points.forEach((curr, idx) => {
-
-    // 2.1 往前尋找符合時間視窗邊界的點（例如尋找 10 秒前的那個點作為起點）
-    // win_idx: "超過" win_size_sec 的最接近 index, 介於 [0, idx-1]
-    let win_idx;
-    for(win_idx = idx - 1; win_idx >= 0; win_idx--) {
-      if((curr.time - points[win_idx].time) > win_size_sec)
-        break; // 超過時間視窗了，停止往前找
-    }
-    win_idx = Math.max(win_idx, 0);
-
-    // 2.2 用整個時間視窗的總距離與總時間，計算該點的平滑速度; 否則計算原始速度
-    const win_pt = points[win_idx];  // win_idx 必為有效值，但 idx 為 0 時，兩者為同一點。
-    const speed = calcSpeedKm(       // 若 dt 為 0，calcSpeedKm() 會正確判斷，不需特別處理。
-        curr.dist - win_pt.dist,
-        curr.time - win_pt.time);
-
-    // 2.3 assign
-    curr.speed = speed;
-  });
-
-  return points;
-}
-
 function unionExtents(extents){
   const empty = createEmptyExtent();
   return extents.reduce((res, ext) => extendExtent(res, ext), empty);
@@ -99,10 +54,8 @@ function unionExtents(extents){
 export class AppMap{
   _map: Map
   _gpx_layer: GPXLayer;   //a gpx adapter for VectorLayer
-  //TODO: wrapper the eleprof code
-  _eleprof_details: HTMLDetailsElement;
-  _eleprof_canvas: EleProfileCanvas;
-  _eleprof_open_once = false;
+  _tool_eleprof: ToolEleprof;
+  _curr_trkseg = null;
   _ctxmenu_coord;
   _formats: any[] = [
     GPXFormat,
@@ -142,8 +95,8 @@ export class AppMap{
       target,
       controls: defaultControls().extend([
         new ScaleLine({
-          //bar: true,
-          //text: true,
+          bar: true,
+          text: true,
           maxWidth: 100,
         }),
         new OverviewMap({
@@ -178,44 +131,27 @@ export class AppMap{
     this._map.addLayer(this._gpx_layer);
     this.setInteraction(this._gpx_layer);
 
-    // TODO: 之後移到 Opt const data
-    const move_animate_sec = 500; //ms
-    const move_threshold = 0.75;
-    const jump_threshold = 3.00;
-
     // elevation profile canvas
-    this._eleprof_details = document.querySelector('details.ele-profile');
-    this._eleprof_canvas = new EleProfileCanvas(this._eleprof_details.querySelector('canvas'))
-        .setListener('hover', (pt) => {
-          this._gpx_layer.setPseudoWpt('trksegpt', pt.coord, {
-            sym: 'Point',
-            scale: 0.4,
-          });
-
-          // move to the coord if out of the view extent
-          const view = this._map.getView();
-          if(view.getAnimating())
-            return;
-
-          const size = this._map.getSize();
-          const move_size = size.map(v => v * move_threshold);
-          const jump_size = size.map(v => v * jump_threshold);
-
-          if(!containsCoordinate(view.calculateExtent(jump_size), pt.coord))
-            return view.setCenter(pt.coord);
-
-          if(!containsCoordinate(view.calculateExtent(move_size), pt.coord))
-            return view.animate({center: pt.coord, duration: move_animate_sec});
-        })
-        .setListener('unhover', () => {
-          this._gpx_layer.rmPseudoWpt('trksegpt');
+    this._tool_eleprof = new ToolEleprof(document.getElementById('tool-eleprof'))
+      .setListener('hover', (pt) => {
+        // 1. show hover point in the map
+        this._gpx_layer.setPseudoWpt('trksegpt', pt.coord, {
+          sym: 'Point',
+          scale: 0.4,
         });
-    this._eleprof_canvas.draw([{  // if someone really want to see an empty chart, give a one.
-      coord: this._map.getView().getCenter(),
-      ele: 0,
-      dist: 0,
-      speed: 0,
-    }]);
+
+        // 2. go to the coord if out of the view extent
+        this.centerCoordIfNotVisible(pt.coord);
+      })
+      .setListener('unhover', () => {
+        this._gpx_layer.rmPseudoWpt('trksegpt');
+      })
+      .setListener('open', () => {
+        if(this._curr_trkseg?.points?.length){
+          const {points, pt_idx} = this._curr_trkseg;
+          this._tool_eleprof.draw(points, pt_idx);
+        }
+      });
 
     //create layer from features, and add it to the map
     drag_interaciton.on('addfeatures', (e) => {
@@ -223,6 +159,30 @@ export class AppMap{
       this.addGpxFeatures(e.features);
     });
   };
+
+  private centerCoordIfNotVisible(coord: number[]): void{
+    // TODO: 之後移到 Opt const data
+    const move_animate_sec = 500; //ms
+    const move_threshold = 0.75;
+    const jump_threshold = 3.00;
+
+    // move to the coord if out of the view extent
+    const view = this._map.getView();
+    if(view.getAnimating())
+      return;
+
+    const size = this._map.getSize();
+    const move_size = size.map(v => v * move_threshold);
+    const jump_size = size.map(v => v * jump_threshold);
+
+    // to jump
+    if(!containsCoordinate(view.calculateExtent(jump_size), coord))
+      return view.setCenter(coord);
+
+    // to move
+    if(!containsCoordinate(view.calculateExtent(move_size), coord))
+      return view.animate({center: coord, duration: move_animate_sec});
+  }
 
   // ----------------------------------------------------------------
 
@@ -361,8 +321,9 @@ export class AppMap{
   private showFeatures(e) {
     const pt_popup = e.map.getOverlayById('pt-popup') as PtPopupOverlay;
 
-    //hide the overlay anyway
+    // reset state
     pt_popup.hide();
+    this._curr_trkseg = null;
 
     const features = this._getFeatures(e);
     features.forEach(feature => {
@@ -370,22 +331,19 @@ export class AppMap{
         case 'Point': {   // Waypoint or Track point
           const { feature: feat, data } = buildFeatureData(feature);
 
-          let eleprof_open;
-          const show_eleprof_only =
-            data.trk &&
-            (eleprof_open = this.openEleprofCanvas()) &&  // eleprof is visible (this can open canvas, so do it only if trk is true.)
-            !this._gpx_layer.hasPseudoWpt('trksegpt');    // but not yet to show
+          // try and check whether eleprof is open. (do this ONLY IF TRK IS AVAILABLE, since the canvas may become open.)
+          const show_eleprof = data.trkseg?.points?.length && this._tool_eleprof.tryOpening();
+          
+          // also show the popup if the eleprof has been shown.
+          const show_popup = !show_eleprof || this._gpx_layer.hasPseudoWpt('trksegpt'); 
 
-          // wpt/trkpt popup
-          if(!show_eleprof_only)
+          if(show_popup)
             pt_popup.popContent(feat, data);
 
-          // ele profile
-          const { trkseg } = data;
-          if(eleprof_open && trkseg?.pt_idx >= 0){
-            trkseg.points = calcSmoothedSpeed(trkseg.points);   //calculate speed
-            this._eleprof_canvas.draw(trkseg.points, trkseg.pt_idx);
-          }
+          if(show_eleprof)
+            this._tool_eleprof.draw(data.trkseg.points, data.trkseg.pt_idx);
+          else
+            this._curr_trkseg = data.trkseg; // the 2nd change to show data via the open event if the user open the canvas manually
 
           break;
         }
@@ -403,39 +361,6 @@ export class AppMap{
       return true;
     });
   };
-
-  // check if auto to open eleprof canvas or not
-  // and return the final status
-  private openEleprofCanvas(): boolean{
-    let open = this._eleprof_details.open
-
-    // already open
-    if(open){
-      this._eleprof_open_once = true; 
-      return open;
-    }
-
-    // auto open by opt
-    open = (() => {
-      switch (Opt.eleprof_auto) {
-        case 'none': return false;
-        case 'always': return true;
-        case 'once':
-          if (!this._eleprof_open_once) {
-            this._eleprof_open_once = true;
-            return true;
-          }
-          return false;
-        default:
-          return false;
-      }
-    })();
-
-    // to open
-    if(open)
-      this._eleprof_details.open = open;
-    return open;
-  }
 
   // the function is a lightweight version of _getFeatures(),
   // it is used only to determine whether there is any feature at the pixel

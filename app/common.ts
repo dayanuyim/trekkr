@@ -285,6 +285,36 @@ export function setDocTitle(title){
 
 //================================= Data collectd from a feature =======================
 
+interface TrksegPoint {
+  coord: number[];
+  ele: number;
+  time: number;
+  dist: number;
+  speed: number;
+}
+
+interface FeatureData {
+  trk: {
+    name: string | null;
+    desc: string | null;
+    color: string | null;
+  } | null,
+  pt: {
+    coord: number[];
+    name: string | null;
+    desc: string | null;
+    sym: string | null;
+    image: object | null;
+    is_virtual: boolean;
+  },
+  trkseg: {
+    idx: number;
+    pt_idx: number;
+    vt_dist: number;
+    points: TrksegPoint[];
+  } | null,
+}
+
 export function buildFeatureData(feature) {
   // restore the underlying wpt
   feature = _wpt_feature_of(feature) || feature;
@@ -322,6 +352,13 @@ export function buildFeatureData(feature) {
   };
 }
 
+function _track_feature_of(trkpt: Feature<Point>) {
+  return trkpt.get('features')?.find(isTrkFeature);
+}
+
+function _wpt_feature_of(trkpt: Feature<Point>){
+  return trkpt.get('features')?.find(isWptFeature);
+}
 
 function getTrksegInfo(trk_feat, webcoord: number[]) {
   if (!trk_feat)
@@ -335,24 +372,23 @@ function getTrksegInfo(trk_feat, webcoord: number[]) {
   const layout = trk_feat.getGeometry().getLayout();
   const has_time = time && layout.includes('M');    // the point and track both have time info
   const test_by = has_time ? { time } : { coord: webcoord };
-  const [idx, pt_idx] = getTrkptIndices(trksegs, test_by);
-  //console.log('trkpt indices', idx, pt_idx, trksegs[idx][pt_idx], new Date(time*1000));
+  const [seg_idx, pt_idx] = getTrkptIndices(trksegs, test_by);
+  //console.log('trkpt indices', seg_idx, pt_idx, trksegs[seg_idx][pt_idx], new Date(time*1000));
 
   let points = null;
   let vt_dist = 0;
-  if (idx >= 0) {
-    const calc_speed = (dd, dt) => dt ? dd / dt * 3.6 : 0; // m/s -> km/h
 
+  if (seg_idx >= 0) {
     let dist = 0;
     let last_time = 0;
 
-    const trkseg = trksegs[idx];
+    const trkseg = trksegs[seg_idx];
     const lonlats = trkseg.map(coord => toLonLat(coord));
 
     points = lonlats.map((lonlat, i) => {
       const diff = i ? getDistance(lonlat, lonlats[i - 1]) : 0;
       const time = getEpochOfCoord(lonlat, layout);
-      //const speed = (time && last_time) ? calc_speed(diff, time - last_time) : 0;
+
       last_time = time;
       dist += diff;
       return {
@@ -360,13 +396,17 @@ function getTrksegInfo(trk_feat, webcoord: number[]) {
         //lon: lonlat[0],
         //lat: lonlat[1],
         // TODO: coord/ele/time 有必要拆開嗎？
-        coord: trkseg[i],                        // web coord, for showing in the map (計算localtime需要座標以取得tz, 所以保留coord全部維度)
+        coord: trkseg[i],              // web coord, for showing in the map (計算localtime需要座標以取得tz, 所以保留coord全部維度)
         ele: getEleOfCoord(lonlat, layout),
         time,
         dist,
-        speed: 0, // 先不要計算速度，因為不一定會用到
+        speed: 0, // placeholder 
       };
     });
+
+    // default potins as []
+    points = points || [];
+    calcSmoothedSpeed(points);  // TODO: calculation only if on demand?
 
     if (pt_idx >= 0) {
       vt_dist = getDistance(lonlats[pt_idx], toLonLat(webcoord));  // distance between virtual trkpt and the real trkpt
@@ -374,17 +414,75 @@ function getTrksegInfo(trk_feat, webcoord: number[]) {
   }
 
   return {
-    idx,
+    idx: seg_idx,
     pt_idx,
     vt_dist,
     points,
   };
 }
 
-function _track_feature_of(trkpt: Feature<Point>) {
-  return trkpt.get('features')?.find(isTrkFeature);
+const calcSpeedKm = (dd, dt) => (dt > 0)? (dd / dt)*3.6: 0;
+
+// 運動類型     建議 windowSizeSec  說明
+// 爬山 / 健行  15 ~ 30 秒          速度慢、容易受樹蔭/峽谷地形遮蔽，需要最長的視窗來平滑數據。
+// 跑步 / 慢跑  8 ~ 12 秒           速度中等，10 秒左右通常是運動 App（如 Strava）的黃金平衡點。
+// 公路單車     3 ~ 5 秒            速度極快，視窗如果太長，會反應不出轉彎或短衝刺的瞬間速度變化。
+function estTimeWindowSec(points: TrksegPoint[]){
+    const all_0 = points[0];
+    const all_n = points.at(-1);
+    const all_avg = calcSpeedKm(all_n.dist - all_0.dist, all_n.time - all_0.time);
+    return (all_avg > 15)? 5:   // bike
+           (all_avg > 8)? 10:   // run
+                          20;   // walk
+
 }
 
-function _wpt_feature_of(trkpt: Feature<Point>){
-  return trkpt.get('features')?.find(isWptFeature);
+/*
+function calcSmoothedSpeed(points, idx, time_win_sec){
+  const curr = points[idx];
+
+  // 1. 往前尋找符合時間視窗邊界的點（例如尋找 10 秒前的那個點作為起點）
+  // win_idx: "超過" time_win_sec 的最接近 index, 介於 [0, idx-1]
+  let win_idx;
+  for(win_idx = idx - 1; win_idx >= 0; win_idx--) {
+    if((curr.time - points[win_idx].time) > time_win_sec)
+      break; // 超過時間視窗了，停止往前找
+  }
+  win_idx = Math.max(win_idx, 0);
+
+  // 2. 用整個時間視窗的總距離與總時間，計算該點的平滑速度; 否則計算原始速度
+  const win_pt = points[win_idx];  // win_idx 必為有效值，但 idx 為 0 時，兩者為同一點。
+  return calcSpeedKm(       // 若 dt 為 0，calcSpeedKm() 會正確判斷，不需特別處理。
+      curr.dist - win_pt.dist,
+      curr.time - win_pt.time);
+}
+*/
+
+function calcSmoothedSpeed(points: TrksegPoint[], time_win_sec = 0) {
+  if (!points?.length) return;
+
+  // 1. set the seconds of window size
+  time_win_sec = time_win_sec || estTimeWindowSec(points);
+
+ // 2. 計算平滑速度（時間視窗法）
+  points.forEach((curr, idx) => {
+
+    // 2.1 往前尋找符合時間視窗邊界的點（例如尋找 10 秒前的那個點作為起點）
+    // win_idx: "超過" time_win_sec 的最接近 index, 介於 [0, idx-1]
+    let win_idx;
+    for(win_idx = idx - 1; win_idx >= 0; win_idx--) {
+      if((curr.time - points[win_idx].time) > time_win_sec)
+        break; // 超過時間視窗了，停止往前找
+    }
+    win_idx = Math.max(win_idx, 0);
+
+    // 2.2 用整個時間視窗的總距離與總時間，計算該點的平滑速度; 否則計算原始速度
+    const win_pt = points[win_idx];  // win_idx 必為有效值，但 idx 為 0 時，兩者為同一點。
+    const speed = calcSpeedKm(       // 若 dt 為 0，calcSpeedKm() 會正確判斷，不需特別處理。
+        curr.dist - win_pt.dist,
+        curr.time - win_pt.time);
+
+    // 2.3 assign
+    curr.speed = speed;
+  });
 }

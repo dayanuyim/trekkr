@@ -9,7 +9,6 @@ import { getSymbol, matchRules, symbol_inv } from './sym'
 import { getEstElevation, getEleOfCoord, setEleOfCoord, getLocalTimeByCoord, gmapUrl, colorCode, complementaryColor, buildFeatureData } from './common'
 import { olWptFeature, def_trk_color, createGpxText} from './ol/gpx-common';
 import { delayToEnable } from './lib/dom-utils';
-import { EleProfileCanvas } from './lib/ele-profile-canvas';
 import Opt from './opt';
 import * as templates from './templates';
 
@@ -170,7 +169,6 @@ export class PtPopupOverlay extends Overlay{
     _resize_observer;
     _is_on_content;
     _listeners = {};
-    _elepro_canvas: EleProfileCanvas;
 
     get pt_trk_name() { return this._trk_name.textContent; }
     set pt_trk_name(value) { this._trk_name.textContent = value; }
