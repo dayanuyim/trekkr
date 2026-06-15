@@ -171,7 +171,7 @@ class Opt{
                 //return this.zoom.toFixed(2);  // it is useless for being over precise
             case 'rt':
             case 'data':
-                return {};    //not saving runtime or constant data  
+                return {};    //not saving runtime or constant data
             default:
                 return this[key];
         }

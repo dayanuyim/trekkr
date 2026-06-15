@@ -359,6 +359,22 @@ export const settings = Handlebars.compile(`
                         <input type="number" id="trk-arrow-radius" min="1" max="99"/>
                     </li>
                 </ul>
+
+                <!---------------------------- elevation profile ------------------------------>
+                <ul class="opt-item">高度剖面圖 自動顯示
+                    <li>
+                        <input type="radio" id="eleprof-auto-always" name="eleprof-auto" value="always" />
+                        <label for="eleprof-auto-always">Always</label>
+                    </li>
+                    <li>
+                        <input type="radio" id="eleprof-auto-none" name="eleprof-auto" value="none" />
+                        <label for="eleprof-auto-none">None</label>
+                    </li>
+                    <li>
+                        <input type="radio" id="eleprof-auto-once" name="eleprof-auto" value="once" />
+                        <label for="eleprof-auto-once">Once</label>
+                    </li>
+                </ul>
             </fieldset>
         </div>
 

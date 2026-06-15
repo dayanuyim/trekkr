@@ -251,6 +251,7 @@ export class Settings{
     _opt_trk_arrow_max_num: HTMLInputElement;
     _opt_trk_arrow_interval: HTMLInputElement;
     _opt_trk_arrow_radius: HTMLInputElement;
+    //_opt_eleprof_autos: HTMLInputElement[];
 
     //because the order of layers may change on the fly, get them by the accesor
     get _layers(){ return Array.from<HTMLElement>(this._base.querySelectorAll('#setting-layers li')); }
@@ -278,6 +279,7 @@ export class Settings{
         this._opt_trk_arrow_max_num = opts.querySelector<HTMLInputElement>('#trk-arrow-max-num');
         this._opt_trk_arrow_interval = opts.querySelector<HTMLInputElement>('#trk-arrow-interval');
         this._opt_trk_arrow_radius = opts.querySelector<HTMLInputElement>('#trk-arrow-radius');
+        //this._opt_eleprof_autos = Array.from(opts.querySelectorAll<HTMLInputElement>('input[name="eleprof-auto"]'));
     }
 
     // ----------------------------------------------------------------
@@ -348,12 +350,12 @@ export class Settings{
         };
 
         // wpt display
-        this._opt_wpt_displays.forEach(disp => {
-            disp.checked = (disp.value == Opt.waypoint.display);
-            disp.onchange = () => {   //checked
-                this._opt_wpt_display_auto_zoom.disabled = disp.value != 'auto';
-                Opt.update('waypoint.display', disp.value);            // coockie
-                this._listeners['wptchanged']?.();                        // map
+        this._opt_wpt_displays.forEach(opt => {
+            opt.checked = (opt.value === Opt.waypoint.display);
+            opt.onchange = () => {   //checked
+                this._opt_wpt_display_auto_zoom.disabled = opt.value != 'auto';
+                Opt.update('waypoint.display', opt.value);            // coockie
+                this._listeners['wptchanged']?.();                    // map
             }
         });
 
@@ -394,9 +396,19 @@ export class Settings{
             Opt.update('track.arrow.radius', radius);
             this._listeners['trkchanged']?.();   // map
         };
+
+        // eleprof auto
+        this._initRadioOpts("eleprof-auto", "eleprof_auto");
     }
 
     // ----------------------------------------------------------------
+
+    private _initRadioOpts(var_name: string, opt_name: string){
+        this._base.querySelectorAll<HTMLInputElement>(`#setting-opts input[name="${var_name}"]`).forEach(opt => {
+            opt.checked = (opt.value === Opt[opt_name]);              // ui init
+            opt.onchange = () => Opt.update(opt_name, opt.value);     // coockie
+        });
+    }
 
     public setListener(event, listener){
         this._listeners[event] = listener;

@@ -146,6 +146,9 @@ export class AppMap{
       .setListener('unhover', () => {
         this._gpx_layer.rmPseudoWpt('trksegpt');
       })
+      .setListener('closed', () => {
+        this._gpx_layer.rmPseudoWpt('trksegpt');
+      })
       .setListener('open', () => {
         if(this._curr_trkseg?.points?.length){
           const {points, pt_idx} = this._curr_trkseg;
