@@ -48,6 +48,8 @@
 .tool-eleprof details summary .ctrl-btn {
     color: #666666;
     background: rgba(255,255,255,.5);
+    width: 1em;
+    height: 1em;
     padding: 2px 2px;
     vertical-align: middle;  /* erase the gap between summary and details-content */
     border-radius: 4px 4px 0 0;

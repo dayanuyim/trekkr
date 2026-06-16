@@ -335,7 +335,7 @@ export class AppMap{
           const { feature: feat, data } = buildFeatureData(feature);
 
           // try and check whether eleprof is open. (do this ONLY IF TRK IS AVAILABLE, since the canvas may become open.)
-          const show_eleprof = data.trkseg?.points?.length && this._tool_eleprof.tryOpening();
+          const show_eleprof = data.trkseg?.points?.length && this._tool_eleprof.tryOpening(Opt.eleprof_auto);
           
           // also show the popup if the eleprof has been shown.
           const show_popup = !show_eleprof || this._gpx_layer.hasPseudoWpt('trksegpt'); 

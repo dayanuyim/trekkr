@@ -26,7 +26,7 @@ class Opt{
         radius: 75,
         id: "NLSC_PHOTO_MIX",
     };
-    eleprof_auto = 'once';  // once|always|none
+    eleprof_auto = 'once';  // none|always|once
     goto = {
         visible: false,
         coordsys: 'wgs84',

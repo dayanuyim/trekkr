@@ -580,7 +580,7 @@ html, body {
 
 .ol-scale-bar,
 .ol-scale-line {
-    left: calc(100% - 12px);
+    left: calc(100% - 16px);
     bottom: 1.5em;
     transform: translateX(-100%);
 }
