@@ -131,8 +131,8 @@ export default class EleprofCanvas {
     const base_y = height - padding.bottom;
 
     const max_dist = this._points.at(-1).dist;
-    const min_ele = Math.min(...this._points.map(p => p.ele));
-    const max_ele = Math.max(...this._points.map(p => p.ele));
+    const min_ele = Math.min(...this._points.map(p => p.ele)) || 0;
+    const max_ele = Math.max(...this._points.map(p => p.ele)) || 10;
 
     const xScale = (dist) => padding.left + (dist / max_dist) * plot_w;
     const yScale = (ele) => padding.top + ((max_ele - ele) / (max_ele - min_ele || 1)) * plot_y;  // top is y-axis 0, thus (max_ele - ele), not (ele - min_ele)
@@ -356,9 +356,9 @@ export default class EleprofCanvas {
 
     const textLines = [
       `距離: ${point.dist.toFixed(0)} m`,
-      `高度: ${point.ele.toFixed(0)} m`,
+      `高度: ${point.ele?.toFixed(0)?? '-'} m`,
       `速度: ${point.speed.toFixed(1)} km/h`,
-      `時間: ${getLocalTimeByCoord(point.coord)?.format('YYYY-MM-DD HH:mm:ss')?? ''}`,
+      `時間: ${getLocalTimeByCoord(point.coord)?.format('YYYY-MM-DD HH:mm:ss')?? '-'}`,
     ];
 
     ctx.font = `${font_size}px sans-serif`;   // set font before measureText
