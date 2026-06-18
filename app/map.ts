@@ -56,7 +56,7 @@ export class AppMap{
   _map: Map
   _gpx_layer: GPXLayer;   //a gpx adapter for VectorLayer
   _tool_eleprof: ToolEleprof;
-  _curr_trkseg = null;
+  _curr_feature_data = null;
   _ctxmenu_coord;
   _formats: any[] = [
     GPXFormat,
@@ -155,10 +155,7 @@ export class AppMap{
         this._map.getOverlayById('trkseg-pt').setPosition(undefined);
       })
       .setListener('open', () => {
-        if(this._curr_trkseg?.points?.length){
-          const {points, pt_idx} = this._curr_trkseg;
-          this._tool_eleprof.draw(points, pt_idx);
-        }
+        this._setEleprofData(this._curr_feature_data);
       });
 
     //create layer from features, and add it to the map
@@ -336,8 +333,8 @@ export class AppMap{
     const pt_popup = e.map.getOverlayById('pt-popup') as PtPopupOverlay;
 
     // reset state
+    //this._curr_feature_data = null;  //不要清掉，保留最近一筆仍比舊的好
     pt_popup.hide();
-    this._curr_trkseg = null;
 
     const features = this._getFeatures(e);
     features.forEach(feature => {
@@ -355,9 +352,9 @@ export class AppMap{
             pt_popup.popContent(feat, data);
 
           if(show_eleprof)
-            this._tool_eleprof.draw(data.trkseg.points, data.trkseg.pt_idx);
+            this._setEleprofData(data);
           else
-            this._curr_trkseg = data.trkseg; // the 2nd change to show data via the open event if the user open the canvas manually
+            this._curr_feature_data = data; // the 2nd change to show data via the open event if the user open the canvas manually
 
           break;
         }
@@ -375,6 +372,14 @@ export class AppMap{
       return true;
     });
   };
+
+  private _setEleprofData(feature_data){
+    if(!feature_data?.trkseg?.points?.length)
+      return;
+    const { trk: { name }, trkseg: { points, pt_idx } } = feature_data;
+    this._tool_eleprof.title = name;
+    this._tool_eleprof.draw(points, pt_idx);
+  }
 
   // the function is a lightweight version of _getFeatures(),
   // it is used only to determine whether there is any feature at the pixel

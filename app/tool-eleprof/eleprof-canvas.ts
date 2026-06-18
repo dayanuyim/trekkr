@@ -34,7 +34,7 @@ export default class EleprofCanvas {
       padding: {
         left: 60,
         right: 30,
-        top: 20,
+        top: 40,
         bottom: 40
       }
     }, options)

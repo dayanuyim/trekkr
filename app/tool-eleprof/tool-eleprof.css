@@ -3,6 +3,10 @@
 
 :root { interpolate-size: allow-keywords; }
 
+.tool-eleprof details {
+    position: relative;  /* for header absolute*/
+}
+
 /* 針對 details 內容進行動畫設定 */
 .tool-eleprof details::details-content {
     height: 0;
@@ -83,6 +87,20 @@
 }
 */
 
+/* --------- header -------------*/
+
+.tool-eleprof details header {
+    position: absolute;  /* put on the the next element */
+    /* left: 1px; */
+    /* top: 0px; */
+    font-family: sans-serif;
+    font-size: 16px;
+    font-weight: bold;
+    color: #303030;
+    padding: 4px 8px;
+    z-index: 6;
+}
+
 /* --------- canvas -------------*/
 .tool-eleprof details canvas:not(.active){
     pointer-events: none;
@@ -92,6 +110,6 @@
     /*background: rgba(255, 232, 232, .7);*/
     border: solid 1px #d0d0d0;
     border-radius: 8px;
-    z-index: 7;
     box-sizing: border-box;
+    z-index: 5;
 }
