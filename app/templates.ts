@@ -480,17 +480,24 @@ Handlebars.registerHelper("toolbarTop", ()=>{
     return new Handlebars.SafeString(toolbarTop());
 });
 
-export const main = Handlebars.compile(`
-    <div id="pt-popup" class="ol-popup">
-        <div class="pop-resizer">
-            <div class="pop-resizer-content pop-image">
-                <a href="#" class="pop-closer"></a>
-                <div class="pop-content" tabindex="0">
-                    {{popContent}}
-                </div>
+const overlays = Handlebars.compile(`
+<div id="pt-popup" class="ol-popup">
+    <div class="pop-resizer">
+        <div class="pop-resizer-content pop-image">
+            <a href="#" class="pop-closer"></a>
+            <div class="pop-content" tabindex="0">
+                {{popContent}}
             </div>
         </div>
     </div>
+</div>
+<div id="trkseg-pt" class=""></div>
+`);
+
+Handlebars.registerHelper("overlays", ()=> new Handlebars.SafeString(overlays()));
+
+export const main = Handlebars.compile(`
+    <div style="display:none">{{overlays}}</div>
 
     <div class="settings collapsed"></div>
 

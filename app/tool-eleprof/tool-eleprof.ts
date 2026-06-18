@@ -28,6 +28,8 @@ export default class ToolEleprof{
 
     _listeners = {};
 
+    get open(): boolean { return this._details.open; }
+
     constructor(el: HTMLElement){
         this.initElements(el);
         this.init();

@@ -1,7 +1,8 @@
-import { Feature } from 'ol';
+import { Feature, Overlay } from 'ol';
 import { FeatureLike } from 'ol/Feature';
 import { defaults as defaultControls, ScaleLine, OverviewMap, ZoomSlider, Control } from 'ol/control';
 import { defaults as defaultInteractions, DragAndDrop, Modify, Select } from 'ol/interaction';
+//import { linear as linearEasing } from 'ol/easing';
 import { Map, View, } from 'ol';
 import { Tile as TileLayer, Vector as VectorLayer, Graticule } from 'ol/layer';
 import { Vector as VectorSource, OSM } from 'ol/source';
@@ -119,6 +120,13 @@ export class AppMap{
       }),
       overlays: [
         new PtPopupOverlay(document.getElementById('pt-popup')),
+        new Overlay({
+          id: 'trkseg-pt',
+          element: document.getElementById('trkseg-pt'),
+          positioning: 'center-center',
+          stopEvent: false,
+          //autoPan: { animation: { duration: 1000, } },
+        }),
       ],
     });
 
@@ -135,19 +143,16 @@ export class AppMap{
     this._tool_eleprof = new ToolEleprof(document.getElementById('tool-eleprof'))
       .setListener('hover', (pt) => {
         // 1. show hover point in the map
-        this._gpx_layer.setPseudoWpt('trksegpt', pt.coord, {
-          sym: 'Point',
-          scale: 0.4,
-        });
+        this._map.getOverlayById('trkseg-pt').setPosition(pt.coord);
 
         // 2. go to the coord if out of the view extent
         this.centerCoordIfNotVisible(pt.coord);
       })
       .setListener('unhover', () => {
-        this._gpx_layer.rmPseudoWpt('trksegpt');
+        this._map.getOverlayById('trkseg-pt').setPosition(undefined);
       })
       .setListener('closed', () => {
-        this._gpx_layer.rmPseudoWpt('trksegpt');
+        this._map.getOverlayById('trkseg-pt').setPosition(undefined);
       })
       .setListener('open', () => {
         if(this._curr_trkseg?.points?.length){
@@ -163,11 +168,13 @@ export class AppMap{
     });
   };
 
-  private centerCoordIfNotVisible(coord: number[]): void{
+  private centerCoordIfNotVisible(coord: number[], options=null): void{
     // TODO: 之後移到 Opt const data
-    const move_animate_sec = 500; //ms
-    const move_threshold = 0.75;
-    const jump_threshold = 3.00;
+    const opts = Object.assign({
+      move_duration: 500, //ms
+      move_threshold: 0.75,
+      jump_threshold: 3.00,
+    }, options);
 
     // move to the coord if out of the view extent
     const view = this._map.getView();
@@ -175,8 +182,8 @@ export class AppMap{
       return;
 
     const size = this._map.getSize();
-    const move_size = size.map(v => v * move_threshold);
-    const jump_size = size.map(v => v * jump_threshold);
+    const move_size = size.map(v => v * opts.move_threshold);
+    const jump_size = size.map(v => v * opts.jump_threshold);
 
     // to jump
     if(!containsCoordinate(view.calculateExtent(jump_size), coord))
@@ -184,7 +191,11 @@ export class AppMap{
 
     // to move
     if(!containsCoordinate(view.calculateExtent(move_size), coord))
-      return view.animate({center: coord, duration: move_animate_sec});
+      return view.animate({
+        center: coord,
+        duration: opts.move_duration,
+        //easing: linearEasing,
+      });
   }
 
   // ----------------------------------------------------------------
@@ -337,8 +348,8 @@ export class AppMap{
           // try and check whether eleprof is open. (do this ONLY IF TRK IS AVAILABLE, since the canvas may become open.)
           const show_eleprof = data.trkseg?.points?.length && this._tool_eleprof.tryOpening(Opt.eleprof_auto);
           
-          // also show the popup if the eleprof has been shown.
-          const show_popup = !show_eleprof || this._gpx_layer.hasPseudoWpt('trksegpt'); 
+          // also show the popup if the trkseg point has been shown.
+          const show_popup = !show_eleprof || this._map.getOverlayById('trkseg-pt').getPosition();
 
           if(show_popup)
             pt_popup.popContent(feat, data);

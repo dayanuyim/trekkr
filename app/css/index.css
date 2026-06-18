@@ -98,6 +98,18 @@ html, body {
 }
 */
 
+/*================== Overlay ===================*/
+#trkseg-pt {
+  width: 32px;
+  height: 32px;
+  background-image: url("../images/trkseg-pt.svg");
+  background-repeat: no-repeat;
+  background-position: center center;
+  background-size: contain;
+}
+
+/*============ Settings Board ==================*/
+
 /* Remove input[type=number] Arrows/Spinners */
 /* Chrome, Safari, Edge, Opera */
 #setting-layers input::-webkit-outer-spin-button,
@@ -110,8 +122,6 @@ html, body {
   -moz-appearance:textfield;
   appearance:textfield;
 }
-
-/*============ Settings Board ==================*/
 
 .settings {
     position: absolute;
