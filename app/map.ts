@@ -333,7 +333,6 @@ export class AppMap{
     const pt_popup = e.map.getOverlayById('pt-popup') as PtPopupOverlay;
 
     // reset state
-    //this._curr_feature_data = null;  //不要清掉，保留最近一筆仍比舊的好
     pt_popup.hide();
 
     const features = this._getFeatures(e);
@@ -348,13 +347,12 @@ export class AppMap{
           // also show the popup if the trkseg point has been shown.
           const show_popup = !show_eleprof || this._map.getOverlayById('trkseg-pt').getPosition();
 
-          if(show_popup)
-            pt_popup.popContent(feat, data);
+          if(show_popup) pt_popup.popContent(feat, data);
 
-          if(show_eleprof)
-            this._setEleprofData(data);
-          else
-            this._curr_feature_data = data; // the 2nd change to show data via the open event if the user open the canvas manually
+          if(show_eleprof) this._setEleprofData(data);
+
+          // the 2nd change to show data via the open event if the user open the canvas manually
+          this._curr_feature_data = show_eleprof? null: data;
 
           break;
         }

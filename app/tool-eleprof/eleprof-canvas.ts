@@ -352,7 +352,7 @@ export default class EleprofCanvas {
     const padding_y = 8;
     const spacing = 6;
     const pos_offset_x = 10;
-    const pos_offset_y = 10;
+    const pos_offset_y = 5;
 
     const textLines = [
       `距離: ${point.dist.toFixed(0)} m`,
