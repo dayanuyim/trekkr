@@ -262,3 +262,20 @@ export function isEditableElement(el: EventTarget) {
   if (el instanceof HTMLTextAreaElement) return !(el.disabled || el.readOnly);
   return false;
 }
+
+export function rafThrottle(callback) {
+  let ticking = false;
+
+  return function (...args) {
+    // 如果瀏覽器還沒畫完上一幀，就直接攔截並跳過，不重複計算
+    if (ticking) return;
+
+    ticking = true;
+
+    // 配合瀏覽器的重繪時間點（通常是 60Hz 或 120Hz）精準觸發
+    window.requestAnimationFrame(() => {
+      callback.apply(this, args);
+      ticking = false; // 畫面更新完成，解鎖
+    });
+  };
+}

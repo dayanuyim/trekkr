@@ -1,5 +1,6 @@
-import { throttle, debounce } from 'lodash';
+import { debounce } from 'lodash';
 import { clamp, binsearchIndex } from '../lib/utils';
+import { rafThrottle } from '../lib/dom-utils';
 import { getLocalTimeByCoord } from '../common';
 
 export default class EleprofCanvas {
@@ -42,14 +43,14 @@ export default class EleprofCanvas {
   }
 
   private init(){
-    this._canvas.addEventListener('mousemove', throttle(event => {
+    this._canvas.addEventListener('mousemove', rafThrottle(event => {
       const rect = this._canvas.getBoundingClientRect();
       const offsetX = event.clientX - rect.left;
 
       const hover_idx = this.findNearestPointIdx(offsetX);
       if(hover_idx >= 0)
         this.drawProfile(hover_idx);
-    }, 125));
+    }));
 
     this._canvas.addEventListener('mouseleave', debounce(() => {
       this.drawProfile();

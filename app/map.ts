@@ -20,7 +20,7 @@ import { fixGPXNamespace, isTrkFeature } from './ol/gpx-common';
 
 import Opt from './opt';
 import { splitn, mapFind } from './lib/utils';
-import { saveTextAsFile } from './lib/dom-utils';
+import { saveTextAsFile, /*rafThrottle*/ } from './lib/dom-utils';
 import { throttle } from 'lodash';
 import { buildFeatureData, gmapUrl, setGpxFilename } from './common';
 import { CtxMenu } from './ctx-menu';
