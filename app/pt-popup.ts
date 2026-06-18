@@ -56,6 +56,39 @@ function setSubBoardEvents(main: HTMLElement, trigger: HTMLElement, subboard: HT
     });
 }
 
+
+function setResizeEvents(resizer: HTMLElement, resizer_handler: HTMLElement): void
+{
+    resizer_handler.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+
+        // 記錄點擊時的初始游標位置與容器尺寸
+        const init_x = e.clientX;
+        const init_y = e.clientY;
+        const init_w = resizer.offsetWidth;
+        const init_h = resizer.offsetHeight;
+
+        const do_drag = (moveEvent) => {
+            // 右上角縮放邏輯：
+            const new_w = init_w + (moveEvent.clientX - init_x); // 往右拖拽 (moveEvent.clientX 變大) -> 寬度變大
+            const new_h = init_h - (moveEvent.clientY - init_y); // 往上拖拽 (moveEvent.clientY 變小) -> 高度變大
+
+            // 設定最小尺寸限制，避免縮小到不見
+            if (new_w > 100) resizer.style.width  = `${new_w}px`;
+            if (new_h > 100) resizer.style.height = `${new_h}px`;
+        }
+
+        const stop_drag = () => {
+            window.removeEventListener('mousemove', do_drag);
+            window.removeEventListener('mouseup', stop_drag);
+        }
+
+        // bind in window
+        window.addEventListener('mousemove', do_drag);
+        window.addEventListener('mouseup', stop_drag);
+    });
+}
+
 const enter_to_blur_listener = e => {
     if(e.key == "Enter"){
         e.preventDefault();
@@ -129,6 +162,7 @@ const xy_approximate = ([x1, y1], [x2, y2]) => Math.abs(x2-x1) < 0.000001 && Mat
 export class PtPopupOverlay extends Overlay{
     _closer: HTMLElement;
     _resizer: HTMLElement;
+    _resizer_handler: HTMLElement;
     _resizer_content: HTMLElement;
     _content: HTMLElement;
     _image: HTMLElement;
@@ -222,6 +256,7 @@ export class PtPopupOverlay extends Overlay{
         const el = this.getElement();
         this._closer =          el.querySelector<HTMLElement>('.pop-closer');
         this._resizer =         el.querySelector<HTMLElement>('.pop-resizer');
+        this._resizer_handler = this._resizer.querySelector<HTMLElement>('.pop-resizer-handler');
         this._resizer_content = this._resizer.querySelector<HTMLElement>('.pop-resizer-content');
         this._content =         el.querySelector<HTMLElement>('.pop-content');
         this._image =           el.querySelector<HTMLElement>('.pop-image');
@@ -313,17 +348,8 @@ export class PtPopupOverlay extends Overlay{
             highlightElement(this.getElement(), 1000);
         }
 
-        /*
-        // !! NOT WORK! NOT WAY TO CHANGE RESIZE CURSOR !!
-        //change resizer cursor, when mouser in right-top corner
-        this._resizer.onmousemove = e => {
-            const n = 16;
-            const {right, top} = this._resizer.getBoundingClientRect();
-            console.log(`x: ${e.pageX} > (${right} - ${n} = ${right -n}): ${e.pageX > (right - n)}`);
-            console.log(`y: ${e.pageY} < (${top} + ${n} = ${top + n}): ${e.pageY < (right - n)}`);
-            this._resizer.style.cursor= e.pageX > (right - n) && e.pageY < (top + n)? 'nesw-resize' : ''
-        };
-        */
+        // customed resizer
+        setResizeEvents(this._resizer, this._resizer_handler);
 
         // set resizer-conetnt as the same size as the resizer
         this._resize_observer = new ResizeObserver((entries)=>{
@@ -589,7 +615,7 @@ export class PtPopupOverlay extends Overlay{
         const set_ele_content = (value, estimated) =>{
             const ro = readonly || !is_wpt;    // trkpt is viewed as readonly
             this.pt_ele = !value? '-':
-                        ro? fmtEle(value):
+                        (ro || estimated)? fmtEle(value):
                         value;
             readonlyElem(this._pt_ele, ro);
             displayElem(this._pt_ele_est, estimated);

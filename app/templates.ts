@@ -483,6 +483,7 @@ Handlebars.registerHelper("toolbarTop", ()=>{
 const overlays = Handlebars.compile(`
 <div id="pt-popup" class="ol-popup">
     <div class="pop-resizer">
+        <div class="pop-resizer-handler"></div>
         <div class="pop-resizer-content pop-image">
             <a href="#" class="pop-closer"></a>
             <div class="pop-content" tabindex="0">

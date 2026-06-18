@@ -50,7 +50,7 @@ select::-ms-expand {
     filter: drop-shadow(0 1px 4px rgba(0,0,0,0.2));
     /*padding: 15px 2em 15px 15px;*/
     padding: 2px;
-    border-radius: 10px;
+    border-radius: 8px;
     bottom: 12px;
     left: -50px;
     /*min-width: 225px;*/
@@ -112,14 +112,53 @@ select::-ms-expand {
     content: attr(data-placeholder);
 }
 
+/*
+// 使用內建的 resizer
 .pop-resizer.active:not(.disabled) {
-    transform: rotateX(180deg);   /*resize cursor in top-right corner */
+    transform: rotateX(180deg);   //resize cursor in top-right corner
     resize: both;
     overflow: hidden;
 }
-
 .pop-resizer.active:not(.disabled) .pop-resizer-content{
     transform: rotateX(180deg);
+}
+*/
+
+.pop-resizer {
+  position: relative;
+}
+
+/* 自訂的右上角 resizer */
+.pop-resizer.active:not(.disabled) .pop-resizer-handler {
+    position: absolute;
+    top: 0; /* 貼齊最邊緣，以便和外層圓角融合 */
+    right: 0;
+    width: 16px; /* 稍微放大一點，更容易抓取 */
+    height: 16px;
+    cursor: nesw-resize;
+    z-index: 10;
+
+    /* 💡 核心優化：利用多重漸層，畫出「深灰 + 白色高光」的立體雙色刻痕 */
+    background: repeating-linear-gradient(45deg,
+            transparent,
+            transparent 2px,
+            rgba(0, 0, 0, 0.35) 2px, /* 深色陰影線 */
+            rgba(0, 0, 0, 0.35) 3px,
+            rgba(255, 255, 255, 0.7) 3px, /* 白色高光線，創造凹凸刻痕感 */
+            rgba(255, 255, 255, 0.7) 4px);
+
+    /* 💡 遮罩：切出右上三角形，並為右上角加上符合主容器的圓角（假設外層是 8px） */
+    border-top-right-radius: 8px;
+    clip-path: polygon(0 0, 100% 0, 100% 100%);
+
+    /* 互動效果 */
+    opacity: 0.7;
+    transition: all 0.2s ease;
+}
+
+.pop-resizer.active:not(.disabled) .pop-resizer-handler:hover {
+    opacity: 1;
+    transform: scale(1.1);
 }
 
 .pop-closer {
@@ -287,7 +326,7 @@ select::-ms-expand {
 
 .pop-pt-tool button:nth-child(-n+2) {
     position: absolute;
-    right: -24px;
+    right: -16px;
     top: 0px;
 }
 
