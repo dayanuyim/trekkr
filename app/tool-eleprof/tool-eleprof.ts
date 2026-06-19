@@ -6,7 +6,7 @@ import './tool-eleprof.css';
 import EleprofCanvas from './eleprof-canvas';
 
 const toolHTML = /*Handlebars.compile(*/`
-    <details class="open-upward">
+    <details class="open-upward-x">
         <summary>
             <!--<i class="fa-solid fa-chart-area ctrl-btn"></i>-->
             <!--!Font Awesome Free v5.15.4 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2026 Fonticons, Inc.-->

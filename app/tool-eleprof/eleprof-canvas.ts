@@ -355,8 +355,8 @@ export default class EleprofCanvas {
     const pos_offset_y = 5;
 
     const textLines = [
-      `距離: ${point.dist.toFixed(0)} m`,
       `高度: ${point.ele?.toFixed(0)?? '-'} m`,
+      `距離: ${point.dist.toFixed(0)} m`,
       `速度: ${point.speed.toFixed(1)} km/h`,
       `時間: ${getLocalTimeByCoord(point.coord)?.format('YYYY-MM-DD HH:mm:ss')?? '-'}`,
     ];
@@ -374,6 +374,7 @@ export default class EleprofCanvas {
     if (pos_x + pane_w > ctx.canvas.width) {  // 預設往右長
       pos_x = x - pane_w - pos_offset_x;      // 改為往左長（-10 是避開滑鼠點的間距）
     }
+
     let pos_y = y - pane_h - pos_offset_y; // 預設往上長
     if (pos_y < 0) {
       pos_y = y + pos_offset_y;            // 改為往下長（在點的下方，+10 是避開滑鼠指針或黑點本身）

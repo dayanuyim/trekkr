@@ -70,14 +70,23 @@ details.open-upward[open] summary::marker {
     padding: 4px;
     vertical-align: middle;  /* erase the gap between summary and details-content */
     border-style: double;
-    border-width: 4px 1px 1px 1px;
-    border-radius: 4px;
     border-color: lightgray;
+    border-width: 1px 1px 4px 1px;
+    border-radius: 4px;
 }
 
 .tool-eleprof details[open] summary .ctrl-btn {
     color: steelblue;
-    border-style: solid;
+    border-width: 1px 1px 0 1px;
+    border-radius: 4px 4px 0 0;
+}
+
+/* ---- style for open-upward ------*/
+.tool-eleprof details.open-upward summary .ctrl-btn {
+    border-width: 4px 1px 1px 1px;
+}
+
+.tool-eleprof details[open].open-upward summary .ctrl-btn {
     border-width: 0 1px 1px 1px;
     border-radius: 0 0 4px 4px;
 }
