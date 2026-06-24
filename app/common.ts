@@ -298,6 +298,7 @@ interface FeatureData {
     name: string | null;
     desc: string | null;
     color: string | null;
+    seg_num: number;
   } | null,
   pt: {
     coord: number[];
@@ -325,6 +326,7 @@ export function buildFeatureData(feature) {
     name: track.get('name'),
     desc: track.get('desc'),
     color: track.get('color'),
+    seg_num: track.getGeometry().getCoordinates().length,
   } : undefined;
 
   // pt data
@@ -485,4 +487,11 @@ function calcSmoothedSpeed(points: TrksegPoint[], time_win_sec = 0) {
     // 2.3 assign
     curr.speed = speed;
   });
+}
+
+
+export function fmtSnText(idx: number, num: number){
+  if(num <= 1) return '';        // not show if only one
+  if(idx < 0) return `-/${num}`; // may not have index if virtual trkpt
+  return `${idx + 1}/${num}`;
 }

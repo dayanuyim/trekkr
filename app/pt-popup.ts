@@ -6,7 +6,7 @@ import {toTWD97, toTWD67, toTaipowerCoord} from './coord';
 
 //import * as moment from 'moment-timezone';
 import { getSymbol, matchRules, symbol_inv } from './sym'
-import { getEstElevation, getEleOfCoord, setEleOfCoord, getLocalTimeByCoord, gmapUrl, colorCode, complementaryColor, buildFeatureData } from './common'
+import { getEstElevation, getEleOfCoord, setEleOfCoord, getLocalTimeByCoord, gmapUrl, colorCode, complementaryColor, buildFeatureData, fmtSnText } from './common'
 import { olWptFeature, def_trk_color, createGpxText} from './ol/gpx-common';
 import { delayToEnable } from './lib/dom-utils';
 import Opt from './opt';
@@ -640,12 +640,6 @@ export class PtPopupOverlay extends Overlay{
         }
     }
 
-    private fmtSnText(idx, total){
-        if(total <= 1) return '';        // not show if only one
-        if(idx < 0) return `-/${total}`; // may not have index if virtual trkpt
-        return `${idx + 1}/${total}`;
-    }
-
     private setTrackTools(track, {trk, pt, trkseg}){
         if(!track)
             return;
@@ -662,7 +656,7 @@ export class PtPopupOverlay extends Overlay{
             displayElem(this._tool_split_trk, !at_end && j >= 0); // valid j means splitable.
         }
         //header
-        this.pt_trk_seg_sn = this.fmtSnText(trkseg.idx, track.getGeometry().getCoordinates().length);
+        this.pt_trk_seg_sn = fmtSnText(trkseg.idx, trk.seg_num);
 
         //progress bar
         const frg_dist = (j >= 0)? (trkseg.points[j].dist + trkseg.vt_dist): 0;

@@ -101,10 +101,14 @@ details.open-upward[open] summary::marker {
     font-size: 16px;
     font-weight: bold;
     color: #303030;
-    padding: 4px 8px;
+    padding: 8px 8px;
     z-index: 6;
 }
 
+.tool-eleprof details header .subtitle {
+    font-size: 14px;
+    color: #808080;
+}
 /* --------- canvas -------------*/
 .tool-eleprof details canvas {
   display: block; /* Removes the text-line alignment gap completely */

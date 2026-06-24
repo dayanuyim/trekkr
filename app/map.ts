@@ -22,7 +22,7 @@ import Opt from './opt';
 import { splitn, mapFind } from './lib/utils';
 import { saveTextAsFile, /*rafThrottle*/ } from './lib/dom-utils';
 import { throttle } from 'lodash';
-import { buildFeatureData, gmapUrl, setGpxFilename } from './common';
+import { buildFeatureData, fmtSnText, gmapUrl, setGpxFilename } from './common';
 import { CtxMenu } from './ctx-menu';
 import * as LayerRepo from './layer-repo';
 import { PtPopupOverlay } from './pt-popup';
@@ -372,10 +372,11 @@ export class AppMap{
   };
 
   private _setEleprofData(feature_data){
-    if(!feature_data?.trkseg?.points?.length)
+    if(!feature_data.trk || !feature_data?.trkseg?.points?.length)
       return;
-    const { trk: { name }, trkseg: { points, pt_idx } } = feature_data;
+    const { trk: { name, seg_num }, trkseg: { idx, points, pt_idx } } = feature_data;
     this._tool_eleprof.title = name;
+    this._tool_eleprof.subtitle = fmtSnText(idx, seg_num);
     this._tool_eleprof.draw(points, pt_idx);
   }
 
