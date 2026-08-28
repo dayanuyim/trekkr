@@ -240,17 +240,17 @@ export interface FilterRule {
   enabled: boolean;
   type: string;
   text: string;
+  //text_re?: RegExp;
 }
 
 export function matchRule({enabled, type, text}: FilterRule, str: string){
-  if(!str) return false;
-  if(!enabled) return false;
+  if(!str || !enabled) return false;
   switch(type){
       case "contains":   return str.includes(text);
       case "startswith": return str.startsWith(text);
       case "endswith":   return str.endsWith(text);
       case "equals":     return str == text;
-      case "regex":      return str.match(text);
+      case "regex":      return new RegExp(text).test(str);
       default:           return false;
   };
 }

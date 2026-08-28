@@ -1,28 +1,28 @@
 {
     "compilerOptions": {
+        "forceConsistentCasingInFileNames": true,
+        "strict": true,
         "outDir": "./dist/",
         "rootDir": "./app",
         "sourceMap": true,
         "module": "CommonJS",
-        //"module": "NodeNext",
-        //"moduleResolution": "NodeNext",
         "esModuleInterop": true,
         "target": "ES6",
-        //"target": "ESNext",
         "lib": [
             "DOM",
             "ES2019",
-            "ESNext",
+            "ESNext"
         ],
-        //"downlevelIteration": true,
         "allowJs": true,
-        "alwaysStrict": true,
         "noImplicitAny": false,                 // TODO: fix this
         "noImplicitThis": false,                // TODO: fix this
         "strictPropertyInitialization": false,  // TODO: fix this
         "strictNullChecks": false,
+        "types": [
+            "google.maps"
+        ]
     },
     "include": [
-        "app/**/*",
+        "app/**/*"
     ]
 }

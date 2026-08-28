@@ -11,11 +11,13 @@ Object.values<any>(symbols).forEach(s => {
   s.path = (size=32) => `${sym_dir}/${size}/${s.filename}`;
 });
 
+/*
 rules.forEach(r => {
     if(r.type == "regex" && typeof r.text === "string"){
-        r.txet = RegExp(r.text);
+        r.text_re = RegExp(r.text);
     }
 });
+*/
 
 export const def_symbol = symbols['waypoint'];
 
