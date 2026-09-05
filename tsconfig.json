@@ -1,7 +1,5 @@
 {
     "compilerOptions": {
-        "forceConsistentCasingInFileNames": true,
-        "strict": true,
         "outDir": "./dist/",
         "rootDir": "./app",
         "sourceMap": true,
@@ -18,6 +16,8 @@
         "noImplicitThis": false,                // TODO: fix this
         "strictPropertyInitialization": false,  // TODO: fix this
         "strictNullChecks": false,
+        "forceConsistentCasingInFileNames": true,
+        "strict": true,
         "types": [
             "google.maps"
         ]
