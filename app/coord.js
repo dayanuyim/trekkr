@@ -68,14 +68,15 @@ export const toTWD97 = (coordinate) => {
       transform(coordinate.slice(0, 2), WEB_MERCATOR, TWD97).concat(coordinate.slice(2));
 }
 
-export const TM2Sixcodes = (reftm2, sixcodes) => {
-  if(!sixcodes && sixcodes.length != 6)
+export const TM2codes = (reftm2, codes, len) => {
+  if(codes?.length != len || (len % 2 != 0))
     return undefined;
-  const to_tm2 = (ref, code) => (Math.floor(ref / 100000) * 1000 + Number(code)) * 100;
+
+  const to_tm2 = (ref, code) => Math.floor(ref / 100000) * 100000 + Number(code) * Math.pow(10, 5 - code.length);
 
   const [xref, yref] = reftm2;
-  const xcode = sixcodes.slice(0, 3);
-  const ycode = sixcodes.slice(3, 6);
+  const xcode = codes.slice(0, len/2);
+  const ycode = codes.slice(len/2, len);
   return [ to_tm2(xref, xcode), to_tm2(yref, ycode) ];
 }
 

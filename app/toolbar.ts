@@ -1,7 +1,7 @@
 import Opt from './opt';
 import spots from './data/spots.js';
 import { transform, fromLonLat  } from 'ol/proj';
-import { taipowerCoordToTWD67, toTWD67, toTWD97, TM2Sixcodes, WEB_MERCATOR, WGS84, TWD97, TWD67 } from './coord';
+import { taipowerCoordToTWD67, toTWD67, toTWD97, TM2codes, WEB_MERCATOR, WGS84, TWD97, TWD67 } from './coord';
 import { toLonLat } from 'ol/proj';
 import { containsCoordinate } from 'ol/extent';
 import { getDistance } from 'ol/sphere';
@@ -133,16 +133,19 @@ export class Sidebar{
 //  TAIPOWER H2075EE1797
 //  TWD97_6  672878
 //  TWD67_6  664880
+//  TWD97_8  6725 8777
+//  TWD67_8  6642 8798
 ///////////////////////////////////////////
 
 const deg_to_decimal = ([d, m, s]) => Number(d) + m / 60.0 + s / 3600.0;
 const swap = ([a, b]) => [b, a];
 
 /* @ref: webmercator coord */
-const sixcode_parser = (ref, tokens, trans_webcoord_to) => {
-    if(tokens.length == 1 && tokens[0].length == 6){
-        ref = trans_webcoord_to(ref);
-        return TM2Sixcodes(ref, tokens[0]);
+const tm2_code_parser = (ref, trans_ref_to_tm2, tokens, code_len) => {
+    const token = tokens.join("");
+    if(token.length == code_len){
+        ref = trans_ref_to_tm2(ref);
+        return TM2codes(ref, token, code_len);
     }
     return undefined;
 };
@@ -205,7 +208,7 @@ const coordsys_profiles = {
             width: '13em',
         },
         has_ref: true,
-        parse: (ref, tokens) => sixcode_parser(ref, tokens, toTWD97),
+        parse: (ref, tokens) => tm2_code_parser(ref, toTWD97, tokens, 6),
     },
     twd67_6: {
         projection: TWD67,
@@ -215,7 +218,27 @@ const coordsys_profiles = {
             width: '13em',
         },
         has_ref: true,
-        parse: (ref, tokens) => sixcode_parser(ref, tokens, toTWD67),
+        parse: (ref, tokens) => tm2_code_parser(ref, toTWD67, tokens, 6),
+    },
+    twd97_8: {
+        projection: TWD97,
+        placeholder: '八碼 6725 8777',
+        field: {
+            separator: /[^0-9]/,
+            width: '17em',
+        },
+        has_ref: true,
+        parse: (ref, tokens) => tm2_code_parser(ref, toTWD97, tokens, 8),
+    },
+    twd67_8: {
+        projection: TWD67,
+        placeholder: '八碼 6642 8798',
+        field: {
+            separator: /[^0-9]/,
+            width: '17em',
+        },
+        has_ref: true,
+        parse: (ref, tokens) => tm2_code_parser(ref, toTWD67, tokens, 8),
     },
     findspot: {
         projection: WGS84,

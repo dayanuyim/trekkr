@@ -101,6 +101,8 @@ const coordsysMenu = Handlebars.compile(`
         {{selop 'taipower' '電力座標'      ''}}
         {{selop 'twd97_6'  'TWD97&#x3285;' ''}}
         {{selop 'twd67_6'  'TWD67&#x3285;' ''}}
+        {{selop 'twd97_8'  'TWD97&#x3287;' ''}}
+        {{selop 'twd67_8'  'TWD67&#x3287;' ''}}
         {{selop 'findspot' '&#x26F0; 找山' ''}}
     </select>`
 );  /*這邊不要換行 不然會多一個空白*/
