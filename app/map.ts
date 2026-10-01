@@ -679,10 +679,16 @@ export class AppMap{
       this._gpx_layer.createWaypoint(this._ctxmenu_coord);
     });
 
-    ctx.setItem(".item-apply-sym", (el) => {
+    ctx.setItem(".item-wpt-sym-rule", (el) => {
       this._gpx_layer.getWaypoints().forEach(wpt => {
         const symbol = matchRules(wpt.get('name'));
         if (symbol) wpt.set('sym', symbol.name);
+      });
+    });
+
+    ctx.setItem(".item-wpt-sym-dot", (el) => {
+      this._gpx_layer.getWaypoints().forEach(wpt => {
+        wpt.set('sym', 'City (Small)');
       });
     });
 

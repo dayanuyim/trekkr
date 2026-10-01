@@ -520,11 +520,16 @@ const ctxMenuItems = Handlebars.compile(`
         <input type="file" id="open-files" multiple hidden>
     </div>
     <div class="ctx-item-bar"></div>
-    <div class="ctx-item"><a class="item-gmap" target="_blank"><i class="fab fa-google"></i>GoogleMap&nbsp;Here</a></div>
+    <div class="ctx-item"><a class="item-gmap" target="_blank"><i class="fa-brands fa-google"></i>GoogleMap&nbsp;Here</a></div>
     <div class="ctx-item"><a class="item-add-wpt"><i class="fas fa-location-dot"></i>新增航點</a></div>
-    <div class="ctx-item"><a class="item-apply-sym"><i></i>套用&nbsp;Symbol&nbsp;規則</a></div>
+    <div class="ctx-item ctx-item-group"><a class="item-wpt-sym"><i></i>重設航點圖示</a>
+        <div class="ctx-submenu">
+            <div class="ctx-item"><a class="item-wpt-sym-rule"><i class="fa-solid fa-spell-check"></i>套用規則</a></div>
+            <div class="ctx-item"><a class="item-wpt-sym-dot"><i class="fa-solid fa-circle" style="font-size:10px"></i>設為圓點</a></div>
+        </div>
+    </div>
     <div class="ctx-item-bar"></div>
-    <div class="ctx-item ctx-item-group"><i class="fa-solid fa-scissors"></i><a class="item-split-track">分割航段...</a>
+    <div class="ctx-item ctx-item-group"><a class="item-split-track"><i class="fa-solid fa-scissors"></i>分割航段...</a>
         <div class="ctx-submenu">
             <div class="ctx-item"><a class="item-split-tracks-days">依每日</a></div>
         </div>
