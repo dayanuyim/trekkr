@@ -28,6 +28,7 @@ import * as LayerRepo from './layer-repo';
 import { PtPopupOverlay } from './pt-popup';
 import { matchRules } from './sym'
 import { ToolEleprof } from './tool-eleprof';
+import { AreaMarker } from './tool-areamarker';
 
 /*
 //TODO: better way to do this?
@@ -56,6 +57,7 @@ export class AppMap{
   _map: Map
   _gpx_layer: GPXLayer;   //a gpx adapter for VectorLayer
   _tool_eleprof: ToolEleprof;
+  _tool_areamarker: AreaMarker;
   _curr_feature_data = null;
   _ctxmenu_coord;
   _formats: any[] = [
@@ -99,6 +101,7 @@ export class AppMap{
           bar: true,
           text: true,
           maxWidth: 100,
+          //dpi: 109,  //macos
         }),
         new OverviewMap({
           layers: [new TileLayer({ source: new OSM() })]
@@ -157,6 +160,12 @@ export class AppMap{
       .setListener('open', () => {
         this._setEleprofData(this._curr_feature_data);
       });
+
+    // invoke after rendering done
+    this._map.once('rendercomplete', () => {
+      this._tool_areamarker = new AreaMarker(this._map, {
+      });
+    });
 
     //create layer from features, and add it to the map
     drag_interaciton.on('addfeatures', (e) => {
@@ -423,6 +432,17 @@ export class AppMap{
   public renderSync() { this._map.renderSync();}
   public redrawText() { this._map.redrawText(); }
   public getView() { return this._map.getView(); }
+
+  public setScale(scale: number) {
+    const view = this._map.getView();
+    const proj = view.getProjection();
+    const mpu = proj.getMetersPerUnit();  // mters per unit
+    if(!mpu) return;
+
+    const meters_per_pixel = 0.00028;  // OGC standard pixel size in meters
+    const resolution = scale * meters_per_pixel / mpu;
+    view.setResolution(resolution);
+  }
 
 ////////////////////////////////////////////////////////////////
 

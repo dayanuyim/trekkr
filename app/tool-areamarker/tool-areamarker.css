@@ -1,0 +1,116 @@
+:root {
+    --text-color: #5252de;
+}
+
+.tool-areamarker {
+    z-index: 7;
+    position: fixed;
+    top: 100px;
+    left: 100px;
+    color: var(--text-color);
+    background-color: rgba(255,255,0, 0.4);
+    box-sizing: border-box;
+    border: 2px #ffff00 solid;
+    padding: 3px;
+    min-width: 100px;
+    min-height: 100px;
+    overflow: hidden;
+    resize: both;
+}
+
+.tool-areamarker.movable {
+    cursor: grab;
+}
+.tool-areamarker.movable.dragging {
+    cursor: grabbing;
+}
+
+.tool-areamarker.movable .areamarker-anchor-icon {
+    visibility: hidden;
+}
+
+.tool-areamarker .areamarker-header {
+    font-size: 1.5em;
+    font-weight: bold;
+    text-align: center;
+    margin-bottom: 5px;
+}
+
+.tool-areamarker .areamarker-anchor-icon {
+    color: rgba(0,0,0,0.4);
+    font-size: 1.5em;
+    position: absolute;
+    top: 2px;
+    left: 2px;
+}
+
+.tool-areamarker .areamarker-opt {
+    display: inline-block;
+    margin-right: 0.5em;
+    width: 5em;
+    font-size: 1.1em;
+    font-weight: bold;
+    text-align: right;
+}
+
+.tool-areamarker input {
+    background: transparent;
+    border-width: 0 0 1px 0;
+    text-align: center;
+}
+.tool-areamarker input:focus {
+    outline: none;
+    background-color: rgba(255,255,255,0.5);
+}
+
+.tool-areamarker input[type="text"] {
+    border-width: 0 0 1px 0;
+}
+
+.tool-areamarker input[type="number"] {
+    text-align: center;
+    width: 6em;
+}
+
+.tool-areamarker select {
+    border: none;
+    outline: none;
+    appearance: none;
+    padding: 2px;
+    background-color: rgba(255,255,0, 1);
+}
+
+.tool-areamarker select:focus {
+    border: none;
+    outline: none;
+    appearance: none;
+    cursor: pointer;
+}
+
+.areamarker-lock:hover{
+    cursor: pointer;
+}
+.areamarker-lock.locked .fa-lock-open { display: none; }
+.areamarker-lock:not(.locked) .fa-lock { display: none; }
+.areamarker-lock .fa-lock-open { color: green; }
+.areamarker-lock .fa-lock { color: red; }
+
+.areamarker-anchor {
+    width: 18em;
+}
+
+.areamarker-export {
+    display: block;
+    padding: 8px;
+    font-size: 1.2em;
+    font-weight: bold;
+    text-align: center;
+    color: var(--text-color);
+    background-color: rgba(255,255,0, 0.4);
+    border: 1px goldenrod solid;
+}
+
+.areamarker-export:hover {
+    cursor: pointer;
+    background-color: rgba(255,255,255, 0.2);
+}

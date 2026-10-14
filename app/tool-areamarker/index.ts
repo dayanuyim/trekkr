@@ -1,0 +1,1 @@
+export { default as AreaMarker } from './tool-areamarker';

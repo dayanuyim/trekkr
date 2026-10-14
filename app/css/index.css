@@ -367,7 +367,7 @@ html, body {
 
 .toolbar{
     position: relative;
-    z-index: 7;   /* prvent being covered by the map */
+    z-index: 5;   /* prvent being covered by the map */
 }
 
 .toolbar .ctrl-btn {

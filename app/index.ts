@@ -20,6 +20,7 @@ import { Sidebar, Topbar, Footbar } from './toolbar';
 import { setGpxFilename, setDocTitle } from './common';
 import { isEditableElement } from './lib/dom-utils';
 import Opt from './opt';
+//import { ScaleSetter } from './tool-scale-setter';
 
 (async () => {
   main(document.body);
@@ -50,7 +51,8 @@ function main(main_el: HTMLElement)
     .setListener('goto_preview',     (coord) => map.setPreviewWpt(coord))
     .setListener('goto_preview_end', (coord) => map.rmPreviewWpt());
 
-  //const footbar = new Footbar(main_el.querySelector('.toolbar-bottom'));
+  //const scaleSetter = new ScaleSetter(main_el.querySelector('.ol-scale-bar-inner'))
+  //  .setListener('setscale', (scale) => map.setScale(scale));
 
   const settings = new Settings(main_el.querySelector('.settings'))
     .setListener('layers_reorder',  (ids)         => map.setLayers(Opt.layers))

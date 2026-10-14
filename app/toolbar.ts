@@ -1,8 +1,7 @@
 import Opt from './opt';
 import spots from './data/spots.js';
-import { transform, fromLonLat  } from 'ol/proj';
+import { transform, fromLonLat, toLonLat  } from 'ol/proj';
 import { taipowerCoordToTWD67, toTWD67, toTWD97, TM2codes, WEB_MERCATOR, WGS84, TWD97, TWD67 } from './coord';
-import { toLonLat } from 'ol/proj';
 import { containsCoordinate } from 'ol/extent';
 import { getDistance } from 'ol/sphere';
 import {toRadians, toDegrees} from 'ol/math';
