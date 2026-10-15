@@ -63,10 +63,11 @@ import { WEB_MERCATOR, WGS84, TWD97, TWD67 } from './coord';
 import { Coordinate } from 'ol/coordinate';
 
 interface ExportOptions {
-  topleft: Coordinate; // EPSG:4326 [lon, lat]
-  xspan: number;             // 東西向地面距離
-  yspan: number;             // 南北向地面距離
+  lonlat: Coordinate;     // top-left coord
+  xspan: number;          // 東西向地面距離
+  yspan: number;          // 南北向地面距離
   zoom: number;
+  grid_proj?: Projection;
   filename?: string;
 }
 
@@ -74,8 +75,8 @@ export async function exportSourceImage(
   source: XYZ|WMTS,
   opt: ExportOptions,
 ): Promise<void> {
-  const projection = source.getProjection()?? WEB_MERCATOR;
-  if (!projection) {
+  const src_proj = source.getProjection()?? WEB_MERCATOR;
+  if (!src_proj) {
     throw new Error('XYZ source has no projection');
   }
 
@@ -92,14 +93,14 @@ export async function exportSourceImage(
   }
 
   // 1. 以地面距離計算四角經緯度
-  const tl = opt.topleft;
+  const tl = opt.lonlat;
   const tr = offset(tl, opt.xspan, Math.PI / 2);
   const bl = offset(tl, opt.yspan, Math.PI);
   const br = offset(tr, opt.yspan, Math.PI);
 
   // 2. 轉換成 XYZ source 的投影座標，並封裝為 Extent
   const corners = [tl, tr, bl, br].map(
-    coord => transform(coord, WGS84, projection)
+    coord => transform(coord, WGS84, src_proj)
   );
 
   const extent = boundingExtent(corners);
@@ -125,11 +126,11 @@ export async function exportSourceImage(
 
   for (let x = range.minX; x <= range.maxX; x++) {
     for (let y = range.minY; y <= range.maxY; y++) {
-      log_progress(x, y);
+      log_progress(x, y);  // TODO: Progress Bar to Show
 
       const tileCoord: [number, number, number] = [z, x, y];
 
-      const url = getTileUrl(tileCoord, 1, projection);
+      const url = getTileUrl(tileCoord, 1, src_proj);
       if (!url) continue;
 
       const img = new Image();
@@ -151,11 +152,156 @@ export async function exportSourceImage(
     }
   }
 
+  if (opt.grid_proj) {
+    drawImageGrid(ctx, extent, width, height, {
+      proj: opt.grid_proj,
+      interval: 1000,  // every 1km
+    });
+  }
+
   // 6. 匯出 PNG
   const blob = await canvasToBlob(canvas, 'image/png');
   saveBlobAsFile(blob, opt.filename ?? 'map.png');
 }
 
+import type { Extent } from 'ol/extent';
+import type { Projection } from 'ol/proj';
+
+interface GridOptions {
+  proj: Projection;
+  interval?: number;
+  color?: string;
+  lineWidth?: number;
+}
+
+function drawImageGrid(
+  ctx: CanvasRenderingContext2D,
+  extent: Extent,  // web mercator
+  width: number,
+  height: number,
+  opt: GridOptions,
+): void {
+  const {
+    proj,
+    interval = 1000,
+    color = 'rgba(0, 0, 0, 0.65)',
+    lineWidth = 1,
+  } = opt;
+
+  const to_webcoord = (coord: [number, number]) => transform(coord, proj, WEB_MERCATOR);
+
+  // 將輸出範圍的四角轉至 TWD 座標系統，
+  // 用來估算需要繪製的格線範圍。
+  const corners = [
+    [extent[0], extent[1]],
+    [extent[0], extent[3]],
+    [extent[2], extent[1]],
+    [extent[2], extent[3]],
+  ].map((coord) =>
+    transform(coord, WEB_MERCATOR, proj),
+  );
+
+  const xs = corners.map((c) => c[0]);
+  const ys = corners.map((c) => c[1]);
+
+  const minX = Math.min(...xs);
+  const maxX = Math.max(...xs);
+  const minY = Math.min(...ys);
+  const maxY = Math.max(...ys);
+
+  // Projection Coord TWD67/TWD97 ->  Canvas Pixel  (by web coord interpolation)
+  const toPixel = (coord: [number, number]): [number, number] => {
+    const [x, y] = to_webcoord(coord);
+    return [
+      (x - extent[0]) / (extent[2] - extent[0]) * width,
+      (extent[3] - y) / (extent[3] - extent[1]) * height,
+    ];
+  };
+
+  // 每條格線取樣多個點，處理投影轉換後的彎曲。
+  const samples = 32;
+
+  ctx.save();
+  ctx.strokeStyle = color;
+  ctx.lineWidth = lineWidth;
+  ctx.beginPath();
+
+  // 垂直格線：固定 Easting，沿 Northing 方向取樣
+  const startX = Math.floor(minX / interval) * interval;
+
+  for (let x = startX; x <= maxX; x += interval) {
+    for (let i = 0; i <= samples; i++) {
+      const y = minY + (maxY - minY) * i / samples;
+      const [px, py] = toPixel([x, y]);
+
+      (i === 0)? ctx.moveTo(px, py):
+                 ctx.lineTo(px, py);
+    }
+  }
+
+  // 水平格線：固定 Northing，沿 Easting 方向取樣
+  const startY = Math.floor(minY / interval) * interval;
+
+  for (let y = startY; y <= maxY; y += interval) {
+    for (let i = 0; i <= samples; i++) {
+      const x = minX + (maxX - minX) * i / samples;
+      const [px, py] = toPixel([x, y]);
+
+      (i === 0)? ctx.moveTo(px, py):
+                 ctx.lineTo(px, py);
+    }
+  }
+
+  ctx.stroke();
+
+  // 座標標籤設定 ======================================
+  const sz = Math.max(16, Math.round(width/80));
+  ctx.font = `${sz}px sans-serif`;
+  ctx.fillStyle = '#000';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+
+  // 白色描邊，讓文字在底圖上更容易辨識
+  ctx.lineWidth = 6;
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
+
+  const padding = 4;
+
+  const drawLabel = (
+    text: string,
+    x: number,
+    y: number,
+    align: CanvasTextAlign,
+    baseline: CanvasTextBaseline,
+  ) => {
+    ctx.textAlign = align;
+    ctx.textBaseline = baseline;
+    ctx.strokeText(text, x, y);
+    ctx.fillText(text, x, y);
+  };
+
+  // 上、下：Easting
+  for (let x = startX; x <= maxX; x += interval) {
+    const top = toPixel([x, maxY]);
+    const bottom = toPixel([x, minY]);
+    const label = `${Math.round(x)}`;
+
+    drawLabel(label, top[0], padding, 'center', 'top');
+    drawLabel(label, bottom[0], height - padding, 'center', 'bottom');
+  }
+
+  // 左、右：Northing
+  for (let y = startY; y <= maxY; y += interval) {
+    const left = toPixel([minX, y]);
+    const right = toPixel([maxX, y]);
+    const label = `${Math.round(y)}`;
+
+    drawLabel(label, padding, left[1], 'left', 'middle');
+    drawLabel(label, width - padding, right[1], 'right', 'middle');
+  }
+
+  ctx.restore();
+}
 
 ////////////////////////////////////////////////////////////////
 
@@ -272,16 +418,11 @@ export class AppMap{
     this._tool_areamarker = new AreaMarker(this._map, layers)
       .setListener('getoption', opt => {
         console.log(opt);
-        const layer = LayerRepo.get(opt.layer);
-        const proj = opt.coordsys == 'twd67'? TWD67: TWD97;
-        const coord = transform(opt.coord, proj, WGS84);
-        exportSourceImage(layer.getSource(), {
-          topleft: coord,
-          xspan: opt.xspan,
-          yspan: opt.yspan,
-          zoom: opt.zoom,
-        });
-
+        const layer = opt.layer && LayerRepo.get(opt.layer);
+        if(!layer){
+          return alert("未選擇圖層");
+        }
+        exportSourceImage(layer.getSource(), opt);
       });
 
     this._map.once('rendercomplete', () => {

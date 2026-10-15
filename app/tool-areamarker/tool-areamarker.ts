@@ -12,6 +12,8 @@ import * as Handlebars from 'handlebars/dist/handlebars';
 import { taipowerCoordToTWD67, toTWD67, toTWD97, TM2codes, WEB_MERCATOR, WGS84, TWD97, TWD67 } from '../coord';
 import { waitForMapMoveEnd, waitForMapRender } from '../ol-utils';
 
+const to_proj = (coordsys) => (coordsys === "twd67")? TWD67: TWD97;  //TODO: 直援完整 coordsys
+
 // TODO 整合 Topbar 的 goto tool
 const coordsys_profiles = {
     twd97: {
@@ -63,7 +65,7 @@ const toolHTML = Handlebars.compile(`
     </p>
     <p>
         <span class="areamarker-opt">格線</span>
-        <select class="areamarker-coordline">
+        <select class="areamarker-grid-proj">
             <option value="">--座標--</option>
             <option value="twd67">TWD67</option>
             <option value="twd97">TWD97</option>
@@ -125,19 +127,20 @@ interface LayerOpt {
 };
 
 interface AreaMarkerOpt{
-    coordsys: string,
-    coord: Coordinate,
-    xspan: number,
-    yspan: number,
-    coord_locked: boolean,
-    xspan_locked: boolean,
-    yspan_locked: boolean,
-    grid_align: boolean,
-    grid_draw: boolean,
-    gpx_wpt: boolean,
-    gpx_trk: boolean,
-    layer: string,
-    zoom: number,
+    coordsys?: string,
+    coord?: Coordinate,
+    xspan?: number,
+    yspan?: number,
+    coord_locked?: boolean,
+    xspan_locked?: boolean,
+    yspan_locked?: boolean,
+    grid_proj?: string,
+    grid_align?: boolean,
+    grid_draw?: boolean,
+    gpx_wpt?: boolean,
+    gpx_trk?: boolean,
+    layer?: string,
+    zoom?: number,
 }; 
 
 export default class AreaMarker{
@@ -149,6 +152,11 @@ export default class AreaMarker{
     _coord_lock: HTMLElement;
     _xspan_lock: HTMLElement;
     _yspan_lock: HTMLElement;
+    _grid_proj: HTMLSelectElement;
+    _grid_align: HTMLInputElement;
+    _grid_draw: HTMLInputElement;
+    _gpx_wpt: HTMLInputElement;
+    _gpx_trk: HTMLInputElement;
     _layer: HTMLSelectElement;
     _zoom: HTMLInputElement;
 
@@ -171,13 +179,29 @@ export default class AreaMarker{
     get yspan(): number { return parseInt(this._yspan.value); }
     set yspan(val: number) { this._yspan.value = val.toString(); }
 
-    get xspan_locked(): boolean { return this._xspan_lock.classList.contains("locked"); }
-    get yspan_locked(): boolean { return this._yspan_lock.classList.contains("locked"); }
     get coord_locked(): boolean { return this._coord_lock.classList.contains("locked"); }
-
-    set xspan_locked(locked: boolean) { this._xspan_lock.classList.toggle("locked", locked); }
-    set yspan_locked(locked: boolean) { this._yspan_lock.classList.toggle("locked", locked); }
     set coord_locked(locked: boolean) { this._coord_lock.classList.toggle("locked", locked); }
+
+    get xspan_locked(): boolean { return this._xspan_lock.classList.contains("locked"); }
+    set xspan_locked(locked: boolean) { this._xspan_lock.classList.toggle("locked", locked); }
+
+    get yspan_locked(): boolean { return this._yspan_lock.classList.contains("locked"); }
+    set yspan_locked(locked: boolean) { this._yspan_lock.classList.toggle("locked", locked); }
+
+    get grid_proj(): string { return this._grid_proj.value; }
+    set grid_proj(val: string) { this._grid_proj.value = val; }
+
+    get grid_align(): boolean { return this._grid_align.checked; }
+    set grid_align(val: boolean) { this._grid_align.checked = val; }
+
+    get grid_draw(): boolean { return this._grid_draw.checked; }
+    set grid_draw(val: boolean) { this._grid_draw.checked = val; }
+
+    get gpx_wpt(): boolean { return this._gpx_wpt.checked; }
+    set gpx_wpt(val: boolean) { this._gpx_wpt.checked = val; }
+
+    get gpx_trk(): boolean { return this._gpx_trk.checked; }
+    set gpx_trk(val: boolean) { this._gpx_trk.checked = val; }
 
     get layer(): string { return this._layer.value; }
     set layer(val: string) { this._layer.value = val; }
@@ -193,19 +217,23 @@ export default class AreaMarker{
 
     private initElements(layers: Array<LayerOpt>){
         document.body.insertAdjacentHTML('beforeend', toolHTML({layers}));
-        this._base = document.querySelector('.tool-areamarker');
-        this._coordsys = this._base.querySelector(".areamarker-coordsys");
-        this._coord = this._base.querySelector(".areamarker-coord");
-        this._xspan = this._base.querySelector(".areamarker-xspan");
-        this._yspan = this._base.querySelector(".areamarker-yspan");
+        this._base       = document.querySelector('.tool-areamarker');
+        this._coordsys   = this._base.querySelector(".areamarker-coordsys");
+        this._coord      = this._base.querySelector(".areamarker-coord");
+        this._xspan      = this._base.querySelector(".areamarker-xspan");
+        this._yspan      = this._base.querySelector(".areamarker-yspan");
         this._coord_lock = this._base.querySelector(".areamarker-coord-lock");
         this._xspan_lock = this._base.querySelector(".areamarker-xspan-lock");
         this._yspan_lock = this._base.querySelector(".areamarker-yspan-lock");
-        this._layer = this._base.querySelector(".areamarker-layer");
-        this._zoom = this._base.querySelector(".areamarker-zoom");
-
-        this._closer = this._base.querySelector(".areamarker-closer");
-        this._export = this._base.querySelector(".areamarker-export");
+        this._grid_proj  = this._base.querySelector(".areamarker-grid-proj");
+        this._grid_align = this._base.querySelector(".areamarker-grid-align");
+        this._grid_draw  = this._base.querySelector(".areamarker-grid-draw");
+        this._gpx_wpt    = this._base.querySelector(".areamarker-gpx-wpt");
+        this._gpx_trk    = this._base.querySelector(".areamarker-gpx-trk");
+        this._layer      = this._base.querySelector(".areamarker-layer");
+        this._zoom       = this._base.querySelector(".areamarker-zoom");
+        this._closer     = this._base.querySelector(".areamarker-closer");
+        this._export     = this._base.querySelector(".areamarker-export");
     }
 
     private init(){
@@ -336,18 +364,19 @@ export default class AreaMarker{
             coord_locked: false,
             xspan_locked: false,
             yspan_locked: false,
-            grid_align: true,
+            grid_proj: 'twd97',
+            grid_align: false,
             grid_draw: true,
             gpx_wpt: false,
             gpx_trk: false,
-            layer: undefined,
+            layer: "",
             zoom: 16,
         }, opt);
 
         if(opt.coordsys != 'twd67')
             opt.coordsys = 'twd97';   // default to twd97
 
-        const proj = opt.coordsys == 'twd67'? TWD67: TWD97;
+        const proj = to_proj(opt.coordsys);
 
         if(!opt.coord){
             const webcenter = this._map.getView().getCenter();
@@ -364,7 +393,13 @@ export default class AreaMarker{
         this.coord_locked = opt.coord_locked;
         this.xspan_locked = opt.xspan_locked;
         this.yspan_locked = opt.yspan_locked;
+        this.grid_proj = opt.grid_proj;
+        this.grid_align = opt.grid_align;
+        this.grid_draw = opt.grid_draw;
+        this.gpx_wpt = opt.gpx_wpt;
+        this.gpx_trk = opt.gpx_trk;
         this.layer = opt.layer?? "";
+        this.zoom = opt.zoom;
         this.setPanelMovable();
         this.setPanelResize();
 
@@ -390,13 +425,12 @@ export default class AreaMarker{
 
     private getOption(){
         return {
-            coordsys: this.coordsys,
-            coord: this.coord,
+            lonlat: transform(this.coord, to_proj(this.coordsys), WGS84),
             xspan: this.xspan,
             yspan: this.yspan,
-            grid_draw: true,
-            gpx_wpt: false,
-            gpx_trk: false,
+            grid_proj: this.grid_draw? to_proj(this.grid_proj): null,
+            gpx_wpt: this.gpx_wpt,
+            gpx_trk: this.gpx_wpt,
             layer: this.layer,
             zoom: this.zoom,
         };
