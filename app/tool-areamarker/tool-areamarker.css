@@ -5,6 +5,7 @@
 .tool-areamarker {
     z-index: 7;
     position: fixed;
+    transition: top 0.3s ease, left 0.3s ease;
     top: 100px;
     left: 100px;
     color: var(--text-color);
@@ -25,7 +26,7 @@
     cursor: grabbing;
 }
 
-.tool-areamarker.movable .areamarker-anchor-icon {
+.tool-areamarker.movable .areamarker-anchor {
     visibility: hidden;
 }
 
@@ -36,18 +37,36 @@
     margin-bottom: 5px;
 }
 
-.tool-areamarker .areamarker-anchor-icon {
-    color: rgba(0,0,0,0.4);
-    font-size: 1.5em;
+.tool-areamarker .areamarker-anchor{
     position: absolute;
-    top: 2px;
-    left: 2px;
+    top: 0;
+    left: 0;
+    margin: 4px;
+    color: rgba(0,0,0,0.4);
+    font-size: 16px;
+}
+
+.tool-areamarker .areamarker-closer{
+    position: absolute;
+    top: 0;
+    right: 0;
+    padding: 0;
+    margin: 4px;
+    background: transparent;
+    border: none;
+    font-size: 16px;
+    color: #666;
+}
+
+.tool-areamarker .areamarker-closer:hover{
+    color: #222;
+    cursor: pointer;
 }
 
 .tool-areamarker .areamarker-opt {
     display: inline-block;
     margin-right: 0.5em;
-    width: 5em;
+    width: 3em;
     font-size: 1.1em;
     font-weight: bold;
     text-align: right;
@@ -57,10 +76,15 @@
     background: transparent;
     border-width: 0 0 1px 0;
     text-align: center;
+    font-size: 16px;
 }
 .tool-areamarker input:focus {
     outline: none;
     background-color: rgba(255,255,255,0.5);
+}
+
+.tool-areamarker input.invalid {
+    background-color: rgba(255,64,64,0.3);
 }
 
 .tool-areamarker input[type="text"] {
@@ -69,7 +93,7 @@
 
 .tool-areamarker input[type="number"] {
     text-align: center;
-    width: 6em;
+    width: 4.5em;
 }
 
 .tool-areamarker select {
@@ -95,7 +119,7 @@
 .areamarker-lock .fa-lock-open { color: green; }
 .areamarker-lock .fa-lock { color: red; }
 
-.areamarker-anchor {
+.areamarker-coord {
     width: 18em;
 }
 

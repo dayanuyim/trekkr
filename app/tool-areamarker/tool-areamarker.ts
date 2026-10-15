@@ -4,34 +4,59 @@ import { Pixel } from 'ol/pixel';
 import Map from 'ol/Map';
 import { transform, fromLonLat, toLonLat  } from 'ol/proj';
 import { Coordinate, toStringXY } from 'ol/coordinate.js';
+import { containsCoordinate, boundingExtent } from 'ol/extent';
 import { offset } from 'ol/sphere.js';
 
 import * as Handlebars from 'handlebars/dist/handlebars';
-import { coordsysMenu } from '../templates';
+//import { coordsysMenu } from '../templates';
 import { taipowerCoordToTWD67, toTWD67, toTWD97, TM2codes, WEB_MERCATOR, WGS84, TWD97, TWD67 } from '../coord';
+import { waitForMapMoveEnd, waitForMapRender } from '../ol-utils';
+
+// TODO 整合 Topbar 的 goto tool
+const coordsys_profiles = {
+    twd97: {
+        projection: TWD97,
+        placeholder: 'X 242459, Y 2606189',
+        field: {
+            separator: /[^-+.0-9]/,
+            width: '18em',
+        },
+        parse: (tokens) => (tokens.length == 2)? tokens.map(Number): undefined,
+    },
+    twd67: {
+        projection: TWD67,
+        placeholder: 'X 241630, Y 2606394',
+        field: {
+            separator: /[^-+.0-9]/,
+            width: '18em',
+        },
+        parse: (tokens) => (tokens.length == 2)? tokens.map(Number): undefined,
+    }
+};
 
 const toolHTML = Handlebars.compile(`
-<div class="tool-areamarker">
+<div class="tool-areamarker" hidden>
     <header class="areamarker-header">圖檔匯出設定</header>
-    <span class="areamarker-anchor-icon"><i class="fa-solid fa-anchor"></i></span>
+    <span class="areamarker-anchor"><i class="fa-solid fa-anchor"></i></span>
+    <button class="areamarker-closer"><i class="fa-solid fa-circle-xmark"></i></button>
     <p>
-        <span class="areamarker-opt">左上角座標</span>
-        {{coordsysMenu "areamarker-coordsys"}} <input type="text" class="areamarker-anchor" placeholder="X, Y"/>
-        <span class="areamarker-lock areamarker-anchor-lock locked">
+        <span class="areamarker-opt">左上角</span>
+        {{coordsysMenu "areamarker-coordsys"}} <input type="text" class="areamarker-coord" placeholder="X, Y"/>
+        <span class="areamarker-lock areamarker-coord-lock locked">
             <i class="fa-solid fa-lock"></i>
             <i class="fa-solid fa-lock-open"></i>
         </span>
     </p>
     <p>
         <span class="areamarker-opt">尺寸</span>
-        寬 <input type="number" class="areamarker-width" value="1000" min="1000" step="1000"/> 公尺
-        <span class="areamarker-lock areamarker-width-lock">
+        東西向 <input type="number" class="areamarker-xspan" value="1000" min="1000" step="1000"/> 公尺
+        <span class="areamarker-lock areamarker-xspan-lock">
             <i class="fa-solid fa-lock"></i>
             <i class="fa-solid fa-lock-open"></i>
         </span>
         &times;
-        高 <input type="number" class="areamarker-height" value="1000" min="1000" step="1000"/> 公尺
-        <span class="areamarker-lock areamarker-height-lock">
+        南北向 <input type="number" class="areamarker-yspan" value="1000" min="1000" step="1000"/> 公尺
+        <span class="areamarker-lock areamarker-yspan-lock">
             <i class="fa-solid fa-lock"></i>
             <i class="fa-solid fa-lock-open"></i>
         </span>
@@ -57,8 +82,13 @@ const toolHTML = Handlebars.compile(`
     </p>
     <p>
         <span class="areamarker-opt">底圖</span>
-        <span>[通用地圖]</span>
-        縮放層級<input type="number" class="areamarker-zoom" value="17" min="1" max="24" step="1"/>
+        <select class="areamarker-layer">
+            <option value="">--圖層--</option>
+            {{#each layers}}
+                <option value="{{id}}">{{desc}}</option>
+            {{/each}}
+        </select>
+        縮放層級<input type="number" class="areamarker-zoom" value="16" min="1" max="24" step="1"/>
     </p>
     <p>
         <button class="areamarker-export">匯出圖檔</button>
@@ -66,17 +96,17 @@ const toolHTML = Handlebars.compile(`
 </div>
 `);
 
-const array_adds = ([x1, y1]: Coordinate, [x2, y2]: Coordinate) => [x1 + x2, y1 + y2];
+const coordSum = ([x1, y1]: Coordinate, [x2, y2]: Coordinate) => [x1 + x2, y1 + y2];
 
-const webcoordAdds = (webcoord: Coordinate, diff_meter: Coordinate) => {
+const webcoordAddsSpan = (webcoord: Coordinate, diff_meter: Coordinate) => {
     const tm2coord = transform(webcoord, WEB_MERCATOR, TWD97);
-    const newcoord = array_adds(tm2coord, diff_meter);
+    const newcoord = coordSum(tm2coord, diff_meter);
     return transform(newcoord, TWD97, WEB_MERCATOR);
 }
 
 //type Coordinate = [lon: number, lat: number];
 
-function coordAdds(
+function lonlatAddsSpan(
   [lon, lat]: Coordinate,
   [dx, dy]: [number, number],
 ): Coordinate {
@@ -89,15 +119,41 @@ function coordAdds(
   return offset([lon, lat], distance, bearing);
 }
 
+interface LayerOpt {
+    id: string,
+    desc: string,
+};
+
+interface AreaMarkerOpt{
+    coordsys: string,
+    coord: Coordinate,
+    xspan: number,
+    yspan: number,
+    coord_locked: boolean,
+    xspan_locked: boolean,
+    yspan_locked: boolean,
+    grid_align: boolean,
+    grid_draw: boolean,
+    gpx_wpt: boolean,
+    gpx_trk: boolean,
+    layer: string,
+    zoom: number,
+}; 
+
 export default class AreaMarker{
     _base: HTMLElement;
     _coordsys: HTMLSelectElement;
-    _anchor: HTMLInputElement;
-    _width: HTMLInputElement;
-    _height: HTMLInputElement;
-    _anchor_lock: HTMLElement;
-    _width_lock: HTMLElement;
-    _height_lock: HTMLElement;
+    _coord: HTMLInputElement;
+    _xspan: HTMLInputElement;
+    _yspan: HTMLInputElement;
+    _coord_lock: HTMLElement;
+    _xspan_lock: HTMLElement;
+    _yspan_lock: HTMLElement;
+    _layer: HTMLSelectElement;
+    _zoom: HTMLInputElement;
+
+    _closer: HTMLButtonElement;
+    _export: HTMLButtonElement;
 
     _map: Map;
     //_opt: any;
@@ -106,94 +162,74 @@ export default class AreaMarker{
     get coordsys(): string { return this._coordsys.value; }
     set coordsys(val: string) { this._coordsys.value = val; }
 
-    get anchor(): string { return this._anchor.value; }
-    set anchor(val: string) { this._anchor.value = val; }
+    get coord(): Coordinate { return this._coord.value.split(',').map(Number); }
+    set coord(val: Coordinate) { this._coord.value = toStringXY(val); }
 
-    get width(): number { return parseInt(this._width.value); }
-    set width(val: number) { this._width.value = val.toString(); }
+    get xspan(): number { return parseInt(this._xspan.value); }
+    set xspan(val: number) { this._xspan.value = val.toString(); }
 
-    get height(): number { return parseInt(this._height.value); }
-    set height(val: number) { this._height.value = val.toString(); }
+    get yspan(): number { return parseInt(this._yspan.value); }
+    set yspan(val: number) { this._yspan.value = val.toString(); }
 
-    get width_locked(): boolean { return this._width_lock.classList.contains("locked"); }
-    get height_locked(): boolean { return this._height_lock.classList.contains("locked"); }
-    get anchor_locked(): boolean { return this._anchor_lock.classList.contains("locked"); }
+    get xspan_locked(): boolean { return this._xspan_lock.classList.contains("locked"); }
+    get yspan_locked(): boolean { return this._yspan_lock.classList.contains("locked"); }
+    get coord_locked(): boolean { return this._coord_lock.classList.contains("locked"); }
 
-    set width_locked(locked: boolean) { this._width_lock.classList.toggle("locked", locked); }
-    set height_locked(locked: boolean) { this._height_lock.classList.toggle("locked", locked); }
-    set anchor_locked(locked: boolean) { this._anchor_lock.classList.toggle("locked", locked); }
+    set xspan_locked(locked: boolean) { this._xspan_lock.classList.toggle("locked", locked); }
+    set yspan_locked(locked: boolean) { this._yspan_lock.classList.toggle("locked", locked); }
+    set coord_locked(locked: boolean) { this._coord_lock.classList.toggle("locked", locked); }
 
-    constructor(map: Map, opt?){
+    get layer(): string { return this._layer.value; }
+    set layer(val: string) { this._layer.value = val; }
+
+    get zoom(): number { return parseFloat(this._zoom.value); }
+    set zoom(val: number) { this._zoom.value = val.toString(); }
+
+    constructor(map: Map, layers: Array<LayerOpt>){
         this._map = map;
-        opt = Object.assign({
-            coordsys: 'twd97',
-            center: [0, 0],
-            width: 7000,
-            height: 5000,
-            anchor_locked: false,
-            width_locked: false,
-            height_locked: false,
-            grid_align: true,
-            grid_draw: true,
-            gpx_wpt: false,
-            gpx_trk: false,
-            zoom_level: 17,
-        }, opt) 
-
-        this.initElements();
-        this.init(opt);
+        this.initElements(layers);
+        this.init();
     }
 
-    private initElements(){
-        document.body.insertAdjacentHTML('beforeend', toolHTML());
+    private initElements(layers: Array<LayerOpt>){
+        document.body.insertAdjacentHTML('beforeend', toolHTML({layers}));
         this._base = document.querySelector('.tool-areamarker');
         this._coordsys = this._base.querySelector(".areamarker-coordsys");
-        this._anchor = this._base.querySelector(".areamarker-anchor");
-        this._width = this._base.querySelector(".areamarker-width");
-        this._height = this._base.querySelector(".areamarker-height");
-        this._anchor_lock = this._base.querySelector(".areamarker-anchor-lock");
-        this._width_lock = this._base.querySelector(".areamarker-width-lock");
-        this._height_lock = this._base.querySelector(".areamarker-height-lock");
+        this._coord = this._base.querySelector(".areamarker-coord");
+        this._xspan = this._base.querySelector(".areamarker-xspan");
+        this._yspan = this._base.querySelector(".areamarker-yspan");
+        this._coord_lock = this._base.querySelector(".areamarker-coord-lock");
+        this._xspan_lock = this._base.querySelector(".areamarker-xspan-lock");
+        this._yspan_lock = this._base.querySelector(".areamarker-yspan-lock");
+        this._layer = this._base.querySelector(".areamarker-layer");
+        this._zoom = this._base.querySelector(".areamarker-zoom");
+
+        this._closer = this._base.querySelector(".areamarker-closer");
+        this._export = this._base.querySelector(".areamarker-export");
     }
 
-    private init(opt){
-        //const opt = this._opt; 
-        console.log("areamarker initialized", opt);
-
-        const tm2coord = opt.coordsys == 'twd67'? toTWD67: toTWD97;
-
-        //const center = toLonLat(opt.center);
-        const center = this._map.getView().getCenter();
-        const left_top = webcoordAdds(center, [-opt.width/2, opt.height/2]);
-        const right_bottom = webcoordAdds(center, [opt.width/2, -opt.height/2]);
-        const left_top_px = this._map.getPixelFromCoordinate(left_top);
-        const right_bottom_px = this._map.getPixelFromCoordinate(right_bottom);
-        console.log({center, left_top, right_bottom, left_top_px, right_bottom_px});
-
-        // init input fields
-        this.coordsys = opt.coordsys;
-        this.anchor = toStringXY(tm2coord(left_top));   // TODO 根據 coordsys 轉換
-        this.width = opt.width;
-        this.height = opt.height;
-        this.anchor_locked = opt.anchor_locked;
-        this.width_locked = opt.width_locked;
-        this.height_locked = opt.height_locked;
-        this.setPanelMovable();
-        this.setPanelResize();
-        this.setPanelPosSize(left_top_px, right_bottom_px);
-
+    private init(){
         // init event listeners
-        this._anchor_lock.addEventListener('click', (e) => {
-            const locked = this.anchor_locked = !this.anchor_locked;
+        this._closer.addEventListener('click', (e) => {
+            this._base.hidden = true;
+        });
+
+        this._export.addEventListener('click', (e) => {
+            const opt = this.getOption();
+            this._listeners['getoption']?.(opt);
+        });
+
+        this._coord_lock.addEventListener('click', (e) => {
+            const locked = this.coord_locked = !this.coord_locked;
             this.setPanelMovable(!locked);
         });
 
-        this._width_lock.addEventListener('click', (e) => {
-            this.width_locked = !this.width_locked;
+        this._xspan_lock.addEventListener('click', (e) => {
+            this.xspan_locked = !this.xspan_locked;
             this.setPanelResize();
         });
-        this._height_lock.addEventListener('click', (e) => {
-            this.height_locked = !this.height_locked;
+        this._yspan_lock.addEventListener('click', (e) => {
+            this.yspan_locked = !this.yspan_locked;
             this.setPanelResize();
         });
 
@@ -203,7 +239,8 @@ export default class AreaMarker{
         let offset_y = 0;
 
         this._base.addEventListener('mousedown', (e) => {
-            if (this.anchor_locked) return;
+            if (this.coord_locked) return;
+            if (e.target instanceof HTMLInputElement) return;
 
             const rect = this._base.getBoundingClientRect();
 
@@ -235,6 +272,19 @@ export default class AreaMarker{
 
         // panel resize
         // TODO: zoom in/out map if needed
+
+        // set coord
+        this._coord.addEventListener('input', e => {
+            this._coord.classList.remove('invalid');
+        });
+
+        // hotkey to click buttons
+        this._coord.onkeyup = e => {
+            switch(e.key){
+                case 'Enter':
+                    return this.updateLocation(this.coord);
+            }
+        };
     }
 
     private setPanelPos(top_left_px: Pixel){
@@ -259,22 +309,149 @@ export default class AreaMarker{
             left: `${left}px`,
             width: `${width}px`,
             height: `${height}px`,
-            minWidth: `${width * 1000 / this.width }px`,    // set the minWidth pixel to 1000 meter
-            minHeight: `${height * 1000 / this.height }px`,
+            minWidth: `${width * 1000 / this.xspan }px`,    // set the minWidth pixel to 1000 meter
+            minHeight: `${height * 1000 / this.yspan }px`,
         });
     }
 
     setPanelMovable(movable?: boolean){
         if(movable === undefined)
-            movable = !this.anchor_locked;
+            movable = !this.coord_locked;
         this._base.classList.toggle('movable', movable);
     }
 
     private setPanelResize(){
-        this._base.style.resize = this.width_locked?
-            this.height_locked? "none": "vertical":
-            this.height_locked? "horizontal": "both";
+        this._base.style.resize = this.xspan_locked?
+            this.yspan_locked? "none": "vertical":
+            this.yspan_locked? "horizontal": "both";
     }
+
+    // ===================
+    public async show(opt?: AreaMarkerOpt){
+        opt = Object.assign({
+            coordsys: 'twd97',
+            coord: undefined,
+            xspan: 7000,
+            yspan: 5000,
+            coord_locked: false,
+            xspan_locked: false,
+            yspan_locked: false,
+            grid_align: true,
+            grid_draw: true,
+            gpx_wpt: false,
+            gpx_trk: false,
+            layer: undefined,
+            zoom: 16,
+        }, opt);
+
+        if(opt.coordsys != 'twd67')
+            opt.coordsys = 'twd97';   // default to twd97
+
+        const proj = opt.coordsys == 'twd67'? TWD67: TWD97;
+
+        if(!opt.coord){
+            const webcenter = this._map.getView().getCenter();
+            const center = transform(webcenter, WEB_MERCATOR, proj);
+            opt.coord = coordSum(center, [-opt.xspan/2,  opt.yspan/2]);
+        }
+        console.debug("areamarker initialized", opt);
+
+        // init input fields
+        this.coordsys = opt.coordsys;
+        this.coord = opt.coord;          // TODO 根據 coordsys 轉換
+        this.xspan = opt.xspan;
+        this.yspan = opt.yspan;
+        this.coord_locked = opt.coord_locked;
+        this.xspan_locked = opt.xspan_locked;
+        this.yspan_locked = opt.yspan_locked;
+        this.layer = opt.layer?? "";
+        this.setPanelMovable();
+        this.setPanelResize();
+
+        const coord2 = coordSum(opt.coord, [opt.xspan, -opt.yspan]);
+        const left_top = transform(opt.coord, proj, WEB_MERCATOR);
+        const right_bottom = transform(coord2, proj, WEB_MERCATOR);
+
+        // zoom the map to fix the panel
+        const extent = boundingExtent([left_top, right_bottom]);
+        this._map.getView().fit(extent, {
+            padding: [100, 100, 100, 100],
+            duration: 300,
+        });
+        await waitForMapMoveEnd(this._map);
+
+        this.setPanelPosSize(
+            this._map.getPixelFromCoordinate(left_top),
+            this._map.getPixelFromCoordinate(right_bottom),
+        );
+
+        this._base.hidden = false;
+    }
+
+    private getOption(){
+        return {
+            coordsys: this.coordsys,
+            coord: this.coord,
+            xspan: this.xspan,
+            yspan: this.yspan,
+            grid_draw: true,
+            gpx_wpt: false,
+            gpx_trk: false,
+            layer: this.layer,
+            zoom: this.zoom,
+        };
+    }
+
+    // TODO 整合 goto tool ======================
+    private updateLocation(coord_str){
+        if(!coord_str) return;
+
+        // get coordsys profile
+        const coordsys = this.coordsys;
+        const profile = coordsys_profiles[coordsys];
+
+        // get coord
+        const tokens = coord_str.split(profile.field.separator).filter(x=>x);
+        const coord = this.parseTokens(profile, tokens);
+        if(!coord || !containsCoordinate(profile.projection.getExtent(), coord))  //check range
+            return this._coord.classList.add('invalid');
+        this.coord = coord;   // normalize the coord string
+
+        const {width: mw, height: mh} = this._map.getTargetElement().getBoundingClientRect();
+        const {width: aw, height: ah} = this._base.getBoundingClientRect();
+
+        // 方法1: 只移動 Panel
+        const webcoord = transform(coord, profile.projection, WEB_MERCATOR);
+        const pixel = this._map.getPixelFromCoordinate(webcoord);
+        const [px, py] = pixel;
+        if( 0 <= px && px <= (mw - aw) &&
+            0 <= py && py <= (mh - ah))
+        {
+            this.setPanelPos(pixel);
+        }
+        // 方法 2: 同時移動地圖和 panel 至中心點
+        else {
+            // move map
+            const center = coordSum(coord, [this.xspan/2, - this.yspan/2]);
+            const webcenter = transform(center, profile.projection, WEB_MERCATOR);
+            this._map.getView().animate({
+                center: webcenter,
+                duration: 0.3,
+            });
+
+            // mvoe panel
+            this.setPanelPos([(mw-aw)/2, (mh-ah)/2]);
+        }
+    }
+
+    private parseTokens(profile, tokens){
+        if(profile.has_ref){
+            const ref = this._listeners['getcenter']?.();      // webcoord center
+            return ref? profile.parse(ref, tokens): undefined;
+        }
+        return profile.parse(tokens);
+    }
+    // TODO 整合 goto tool ======================
 
     public setListener(event, listener){
         this._listeners[event] = listener;

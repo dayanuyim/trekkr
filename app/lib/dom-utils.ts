@@ -203,21 +203,28 @@ export function tablink(tab_q, init_idx=0, base_el=document.body)
     }
 }
 
-export function saveTextAsFile(textToWrite, fileNameToSaveAs, fileType) {
-    const textFileAsBlob = new Blob([textToWrite], { type: fileType });
+export function canvasToBlob(canvas: HTMLCanvasElement, type = 'image/png', quality = 0.85  ){
+  return new Promise<Blob>((resolve, reject) => {
+    canvas.toBlob((blob) => {
+      if (blob) resolve(blob);
+      else reject(new Error('PNG export failed; check CORS or canvas size'));
+    }, type, quality);
+  });
+}
+
+export function saveBlobAsFile(blob: Blob, filename: string) {
     const anchor = document.createElement('a');
-    anchor.download = fileNameToSaveAs;
-    //anchor.href = window.webkitURL ?
-    //    window.webkitURL.createObjectURL(textFileAsBlob) :
-    //    window.URL.createObjectURL(textFileAsBlob);
-    anchor.href = window.URL.createObjectURL(textFileAsBlob);
-    anchor.style.display = 'none';
-    document.body.appendChild(anchor);
+    anchor.href = window.URL.createObjectURL(blob);
+    anchor.download = filename
     anchor.click();
     setTimeout(()=>{
         window.URL.revokeObjectURL(anchor.href);
-        document.body.removeChild(anchor);
-    })
+    }, 1000);
+}
+
+export function saveTextAsFile(text: string, filetype: string, filename: string) {
+    const blob = new Blob([text], { type: filetype });
+    saveBlobAsFile(blob, filename );
 }
 
 // Delay to enable button

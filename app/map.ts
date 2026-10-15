@@ -9,7 +9,9 @@ import { Vector as VectorSource, OSM } from 'ol/source';
 import { getRenderPixel } from 'ol/render';
 import { platformModifierKeyOnly } from 'ol/events/condition';
 import { Geometry } from 'ol/geom';
-import { createEmpty as createEmptyExtent, extend as extendExtent, containsCoordinate } from 'ol/extent';
+import { createEmpty as createEmptyExtent, extend as extendExtent,
+  getWidth as getExtentWidth, getHeight as getExtentHeight,
+  boundingExtent, containsCoordinate } from 'ol/extent';
 
 import { GeoJSON, IGC, KML, TopoJSON } from 'ol/format';
 import PhotoFormat from './ol/format/Photo';
@@ -20,7 +22,7 @@ import { fixGPXNamespace, isTrkFeature } from './ol/gpx-common';
 
 import Opt from './opt';
 import { splitn, mapFind } from './lib/utils';
-import { saveTextAsFile, /*rafThrottle*/ } from './lib/dom-utils';
+import { saveTextAsFile, saveBlobAsFile, canvasToBlob /*rafThrottle*/ } from './lib/dom-utils';
 import { throttle } from 'lodash';
 import { buildFeatureData, fmtSnText, gmapUrl, setGpxFilename } from './common';
 import { CtxMenu } from './ctx-menu';
@@ -50,6 +52,110 @@ function unionExtents(extents){
   const empty = createEmptyExtent();
   return extents.reduce((res, ext) => extendExtent(res, ext), empty);
 }
+
+const is_image_layer = layer => !layer.legend && layer.type === 'xyz';
+
+// ==================================================
+import { XYZ, WMTS } from 'ol/source';
+import { transform } from 'ol/proj';
+import { offset } from 'ol/sphere';
+import { WEB_MERCATOR, WGS84, TWD97, TWD67 } from './coord';
+import { Coordinate } from 'ol/coordinate';
+
+interface ExportOptions {
+  topleft: Coordinate; // EPSG:4326 [lon, lat]
+  xspan: number;             // 東西向地面距離
+  yspan: number;             // 南北向地面距離
+  zoom: number;
+  filename?: string;
+}
+
+export async function exportSourceImage(
+  source: XYZ|WMTS,
+  opt: ExportOptions,
+): Promise<void> {
+  const projection = source.getProjection()?? WEB_MERCATOR;
+  if (!projection) {
+    throw new Error('XYZ source has no projection');
+  }
+
+  const grid = source.getTileGrid();
+  if (!grid) {
+    throw new Error('XYZ source has no tile grid');
+  }
+
+  const z = opt.zoom;
+
+  const resolution = grid.getResolution(z);
+  if (resolution === undefined) {
+    throw new Error(`Invalid zoom level: ${z}`);
+  }
+
+  // 1. 以地面距離計算四角經緯度
+  const tl = opt.topleft;
+  const tr = offset(tl, opt.xspan, Math.PI / 2);
+  const bl = offset(tl, opt.yspan, Math.PI);
+  const br = offset(tr, opt.yspan, Math.PI);
+
+  // 2. 轉換成 XYZ source 的投影座標，並封裝為 Extent
+  const corners = [tl, tr, bl, br].map(
+    coord => transform(coord, WGS84, projection)
+  );
+
+  const extent = boundingExtent(corners);
+
+  // 3. 建立輸出 Canvas
+  const width = Math.ceil(getExtentWidth(extent) / resolution);
+  const height = Math.ceil(getExtentHeight(extent) / resolution);
+
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+
+  const ctx = canvas.getContext('2d');
+  if (!ctx) throw new Error('Cannot create Canvas');
+
+  // 4. 計算需要的 XYZ tiles
+  const range = grid.getTileRangeForExtentAndZ(extent, z);
+  const getTileUrl = source.getTileUrlFunction();
+
+  const x_sn = (v) => v - range.minX + 1;
+  const y_sn = (v) => v - range.minY + 1;
+  const log_progress = (x, y) => console.log(`Downloading ${x_sn(x)} x ${y_sn(y)} / ${x_sn(range.maxX)} x ${y_sn(range.maxY)}`);
+
+  for (let x = range.minX; x <= range.maxX; x++) {
+    for (let y = range.minY; y <= range.maxY; y++) {
+      log_progress(x, y);
+
+      const tileCoord: [number, number, number] = [z, x, y];
+
+      const url = getTileUrl(tileCoord, 1, projection);
+      if (!url) continue;
+
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.src = url;
+      await img.decode();
+
+      const e = grid.getTileCoordExtent(tileCoord);
+
+      // 5. 依照地圖座標計算瓦片在 Canvas 上的位置
+      const px = Math.round((e[0] - extent[0]) / resolution);   // diff of minx //取整數 避免縫合縫細
+      const py = Math.round((extent[3] - e[3]) / resolution);   // diff of maxy // webcoord y-axis 往上，canvas 反之往下，故用 maxy 而非 miny
+      //const pw = Math.round(getExtentWidth(e) / resolution);  // img.width
+      //const ph = Math.round(getExtentHeight(e) / resolution); // img.height
+
+      ctx.drawImage(img, px, py, img.width, img.height);
+      //ctx.drawImage(img, px, py, pw, ph);
+      //ctx.drawImage(img, px-1, py-1, pw+2, ph+2); // extend 1px to overlayer
+    }
+  }
+
+  // 6. 匯出 PNG
+  const blob = await canvasToBlob(canvas, 'image/png');
+  saveBlobAsFile(blob, opt.filename ?? 'map.png');
+}
+
 
 ////////////////////////////////////////////////////////////////
 
@@ -161,10 +267,25 @@ export class AppMap{
         this._setEleprofData(this._curr_feature_data);
       });
 
-    // invoke after rendering done
-    this._map.once('rendercomplete', () => {
-      this._tool_areamarker = new AreaMarker(this._map, {
+    const layers = Opt.layers.filter(is_image_layer)
+                              .map(({id, desc}) => ({id, desc}));
+    this._tool_areamarker = new AreaMarker(this._map, layers)
+      .setListener('getoption', opt => {
+        console.log(opt);
+        const layer = LayerRepo.get(opt.layer);
+        const proj = opt.coordsys == 'twd67'? TWD67: TWD97;
+        const coord = transform(opt.coord, proj, WGS84);
+        exportSourceImage(layer.getSource(), {
+          topleft: coord,
+          xspan: opt.xspan,
+          yspan: opt.yspan,
+          zoom: opt.zoom,
+        });
+
       });
+
+    this._map.once('rendercomplete', () => {
+      this._tool_areamarker.show();
     });
 
     //create layer from features, and add it to the map
@@ -720,9 +841,15 @@ export class AppMap{
       this._gpx_layer.promoteTrksegs();
     });
 
+    ctx.setItem(".item-save-img", (el) => {
+      const layer = Opt.layers.find(ly => is_image_layer(ly) && ly.checked)?.id;
+      this._tool_areamarker.show({layer});
+    });
+
     ctx.setItem(".item-save-gpx", (el) => {
       const xml = this._gpx_layer.genXml();
-      saveTextAsFile(xml, Opt.rt.gpx_filename || 'my.gpx', 'application/gpx+xml');
+      saveTextAsFile(xml, 'application/gpx+xml', Opt.rt.gpx_filename || 'my.gpx');
     });
   }
+
 }
