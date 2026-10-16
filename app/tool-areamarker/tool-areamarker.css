@@ -41,9 +41,10 @@
     position: absolute;
     top: 0;
     left: 0;
-    margin: 4px;
-    color: rgba(0,0,0,0.4);
-    font-size: 16px;
+    margin: 2px;
+    color: rgba(0, 0, 0, 0.5);
+    font-size: 20px;
+    transform: rotate(-30deg);
 }
 
 .tool-areamarker .areamarker-closer{
@@ -61,6 +62,12 @@
 .tool-areamarker .areamarker-closer:hover{
     color: #222;
     cursor: pointer;
+}
+
+.tool-areamarker p,
+.tool-areamarker span,
+.tool-areamarker header {
+    text-wrap: nowrap;
 }
 
 .tool-areamarker .areamarker-opt {
@@ -100,7 +107,8 @@
     border: none;
     outline: none;
     appearance: none;
-    padding: 2px;
+    padding: 3px;
+    border-radius: 4px;
     background-color: rgba(255,255,0, 1);
 }
 
@@ -120,7 +128,7 @@
 .areamarker-lock .fa-lock { color: red; }
 
 .areamarker-coord {
-    width: 18em;
+    width: 10.5em;
 }
 
 .areamarker-export {

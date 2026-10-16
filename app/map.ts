@@ -60,7 +60,7 @@ import { XYZ, WMTS } from 'ol/source';
 import { transform } from 'ol/proj';
 import { offset } from 'ol/sphere';
 import { WEB_MERCATOR, WGS84, TWD97, TWD67 } from './coord';
-import { Coordinate } from 'ol/coordinate';
+import type { Coordinate } from 'ol/coordinate';
 
 interface ExportOptions {
   lonlat: Coordinate;     // top-left coord
@@ -115,6 +115,10 @@ export async function exportSourceImage(
 
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('Cannot create Canvas');
+
+  // 先填白底，透明的部分才能正常顯示。
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
 
   // 4. 計算需要的 XYZ tiles
   const range = grid.getTileRangeForExtentAndZ(extent, z);
@@ -983,8 +987,10 @@ export class AppMap{
     });
 
     ctx.setItem(".item-save-img", (el) => {
-      const layer = Opt.layers.find(ly => is_image_layer(ly) && ly.checked)?.id;
-      this._tool_areamarker.show({layer});
+      this._tool_areamarker.show({
+        coord: undefined,                                                     // 由目前位置決定，不使用之前的值
+        layer: Opt.layers.find(ly => is_image_layer(ly) && ly.checked)?.id,   // 預設圖層
+      });
     });
 
     ctx.setItem(".item-save-gpx", (el) => {
