@@ -16,6 +16,9 @@ import { waitForMapMoveEnd, waitForMapRender } from '../ol-utils';
 import { throttle, debounce } from 'lodash';
 import { keyEnterToBlur, rafThrottle } from '../lib/dom-utils';
 
+function km_str_to_meter_num(km: string): number { return Math.round(1000 * parseFloat(km)); }
+function meter_num_to_km_str(m: number): string { return (m / 1000).toFixed(3); }
+
 const to_proj = (coordsys) => coordsys_profiles[coordsys].projection;
 
 // TODO 整合 Topbar 的 goto tool
@@ -42,63 +45,69 @@ const coordsys_profiles = {
 
 const toolHTML = Handlebars.compile(`
 <div class="tool-areamarker" hidden>
-    <header class="areamarker-header">圖檔匯出設定</header>
-    <span class="areamarker-anchor"><i class="fa-solid fa-thumbtack"></i></span>
-    <button class="areamarker-closer"><i class="fa-solid fa-circle-xmark"></i></button>
-    <p>
-        <span class="areamarker-opt">左上角</span>
-        {{coordsysMenu "areamarker-coordsys"}} <input type="text" class="areamarker-coord" placeholder="X, Y"/>
-        <span class="areamarker-lock areamarker-coord-lock locked">
-            <i class="fa-solid fa-lock"></i>
-            <i class="fa-solid fa-lock-open"></i>
-        </span>
-    </p>
-    <p>
-        <span class="areamarker-opt">尺寸</span>
-        橫向 <input type="number" class="areamarker-xspan" value="1" min="1" step="1"/> 公里
-        <span class="areamarker-lock areamarker-xspan-lock">
-            <i class="fa-solid fa-lock"></i>
-            <i class="fa-solid fa-lock-open"></i>
-        </span>
-        &times;
-        縱向 <input type="number" class="areamarker-yspan" value="1" min="1" step="1"/> 公里
-        <span class="areamarker-lock areamarker-yspan-lock">
-            <i class="fa-solid fa-lock"></i>
-            <i class="fa-solid fa-lock-open"></i>
-        </span>
-    </p>
-    <p>
-        <span class="areamarker-opt">格線</span>
-        <select class="areamarker-grid-proj">
-            <option value="" disabled hidden>--座標--</option>
-            <option value="twd67">TWD67</option>
-            <option value="twd97">TWD97</option>
-        </select>
-        <input type="checkbox" class="areamarker-grid-align" id="areamarker-grid-align"/>
-        <label for="areamarker-grid-align">對齊格線</label>
-        <input type="checkbox" class="areamarker-grid-draw" id="areamarker-grid-draw"/>
-        <label for="areamarker-grid-draw">顯示格線</label>
-    </p>
-    <p>
-        <span class="areamarker-opt">航跡</span>
-        <input type="checkbox" class="areamarker-gpx-wpt" id="areamarker-gpx-wpt"/>
-        <label for="areamarker-gpx-wpt">顯示航點</label>
-        <input type="checkbox" class="areamarker-gpx-trk" id="areamarker-gpx-trk"/>
-        <label for="areamarker-gpx-trk">顯示航跡</label>
-    </p>
-    <p>
-        <span class="areamarker-opt">底圖</span>
-        <select class="areamarker-layer">
-            <option value="" disabled hidden>--圖層--</option>
-            {{#each layers}}
-                <option value="{{id}}">{{desc}}</option>
-            {{/each}}
-        </select>
-        縮放層級<input type="number" class="areamarker-zoom" value="16" min="1" max="24" step="1" disabled />
-    </p>
-    <p>
-        <button class="areamarker-export">匯出圖檔</button>
-    </p>
+    <section class="areamarker-header">
+        <span class="areamarker-header-title">圖檔匯出設定</span>
+        <span class="areamarker-anchor"><i class="fa-solid fa-thumbtack"></i></span>
+        <button class="areamarker-closer"><i class="fa-solid fa-circle-xmark"></i></button>
+    </section>
+    <section class="areamarker-content">
+        <p>
+            <span class="areamarker-opt">左上角</span>
+            {{coordsysMenu "areamarker-coordsys"}} <input type="text" class="areamarker-coord" placeholder="X, Y"/>
+            <span class="areamarker-lock areamarker-coord-lock locked">
+                <i class="fa-solid fa-lock"></i>
+                <i class="fa-solid fa-lock-open"></i>
+            </span>
+        </p>
+        <p>
+            <span class="areamarker-opt">尺寸</span>
+            橫向 <input type="number" class="areamarker-xspan" value="1" min="1" step="1"/> 公里
+            <span class="areamarker-lock areamarker-xspan-lock">
+                <i class="fa-solid fa-lock"></i>
+                <i class="fa-solid fa-lock-open"></i>
+            </span>
+            &times;
+            縱向 <input type="number" class="areamarker-yspan" value="1" min="1" step="1"/> 公里
+            <span class="areamarker-lock areamarker-yspan-lock">
+                <i class="fa-solid fa-lock"></i>
+                <i class="fa-solid fa-lock-open"></i>
+            </span>
+        </p>
+        <p>
+            <span class="areamarker-opt">格線</span>
+            <select class="areamarker-grid-proj">
+                <option value="" disabled hidden>--座標--</option>
+                <option value="twd67">TWD67</option>
+                <option value="twd97">TWD97</option>
+            </select>
+            <input type="checkbox" class="areamarker-grid-align" id="areamarker-grid-align"/>
+            <label for="areamarker-grid-align">對齊格線</label>
+            <input type="checkbox" class="areamarker-grid-draw" id="areamarker-grid-draw"/>
+            <label for="areamarker-grid-draw">顯示格線</label>
+        </p>
+        <p>
+            <span class="areamarker-opt">航跡</span>
+            <input type="checkbox" class="areamarker-gpx-wpt" id="areamarker-gpx-wpt" disabled/>
+            <label for="areamarker-gpx-wpt">顯示航點</label>
+            <input type="checkbox" class="areamarker-gpx-trk" id="areamarker-gpx-trk" disabled/>
+            <label for="areamarker-gpx-trk">顯示航跡</label>
+        </p>
+        <p>
+            <span class="areamarker-opt">底圖</span>
+            <select class="areamarker-layer">
+                <option value="" disabled hidden>--圖層--</option>
+                {{#each layers}}
+                    <option value="{{id}}">{{desc}}</option>
+                {{/each}}
+            </select>
+            縮放層級<input type="number" class="areamarker-zoom" value="16" min="1" max="24" step="1" disabled />
+        </p>
+        <p>
+            <button class="areamarker-export"><i class="fa-solid fa-file-arrow-down"></i>匯出圖檔</button>
+        </p>
+    </section>
+    <section class="areamarker-footer">
+    </section>
 </div>
 `);
 
@@ -187,11 +196,11 @@ export default class AreaMarker{
     set coord(val: Coordinate) { this._coord.value = (val && val.length >= 2)? toStringXY(val): ''; }
 
     // UI單位為公里，數值為浮點數。但程式內部透過getter/setter 存取，單位為公尺。
-    get xspan(): number { return parseFloat(this._xspan.value)*1000; }
-    set xspan(val: number) { this._xspan.value = (val/1000).toFixed(3); }
+    get xspan(): number { return km_str_to_meter_num(this._xspan.value) }
+    set xspan(val: number) { this._xspan.value = meter_num_to_km_str(val); }
 
-    get yspan(): number { return parseFloat(this._yspan.value)*1000; }
-    set yspan(val: number) { this._yspan.value = (val/1000).toFixed(3); }
+    get yspan(): number { return km_str_to_meter_num(this._yspan.value) }
+    set yspan(val: number) { this._yspan.value = meter_num_to_km_str(val); }
 
     get coord_locked(): boolean { return this._coord_lock.classList.contains("locked"); }
     set coord_locked(locked: boolean) { this._coord_lock.classList.toggle("locked", locked); }
@@ -273,7 +282,17 @@ export default class AreaMarker{
 
         // init event listeners
         this._closer.addEventListener('click', (e) => {
-            this._base.hidden = true;
+            //this._base.hidden = true;
+            // 直接關掉好像有點無趣，這邊用一個動畫，動畫結束才關閉。
+            const on_trans_end = (e) => {
+                if (e.target === this._base && e.propertyName === 'opacity') {
+                    this._base.hidden = true;
+                    this._base.classList.remove('closing');
+                    this._base.removeEventListener('transitionend', on_trans_end);  //用 addEventListener(..., {once: true}) 可能會有風險，應明確進到 if block 後才移除。
+                }
+            };
+            this._base.addEventListener('transitionend', on_trans_end);
+            this._base.classList.add('closing');
         });
 
         this._export.addEventListener('click', (e) => {
@@ -343,7 +362,9 @@ export default class AreaMarker{
                 this.xspan = Math.abs(Math.round(br[0] - tl[0]));
                 this.yspan = Math.abs(Math.round(br[1] - tl[1]));
             }
-            else if (dragging){
+        }, 150));
+        document.addEventListener('mousemove', rafThrottle((e) => {
+            if (dragging){
                 const left = e.clientX - offset_x;
                 const top = e.clientY - offset_y;
 
@@ -355,7 +376,7 @@ export default class AreaMarker{
                 const webcoord = this._map.getCoordinateFromPixel([left, top]);
                 this.coord = transform(webcoord, WEB_MERCATOR, to_proj(this.coordsys));
             }
-        }, 120));
+        }));
 
         document.addEventListener('mouseup', (e) => {
             resizing = false;

@@ -1,5 +1,7 @@
 :root {
-    --text-color: #5252de;
+    --text-color: #202020;
+    --input-color: #202020;
+    --input-bgcolor: rgba(255,255,255,0.3);
 }
 
 .tool-areamarker {
@@ -9,15 +11,113 @@
     top: 100px;
     left: 100px;
     color: var(--text-color);
-    background-color: rgba(255,255,0, 0.4);
     box-sizing: border-box;
-    border: 2px #ffff00 solid;
-    padding: 3px;
+    padding: 1em;
     min-width: 100px;
     min-height: 100px;
     overflow: hidden;
     resize: both;
+
+    /* glass-like panel */
+    background-color: rgba(0, 0, 0, 0.15);
+    border: 1px #a0a0a0 solid;
+    border-radius: 3px;
+    box-shadow: 0 2px 1px 0 rgba(255, 255, 255, 0.4) inset, 0 1px 1px 1px rgba(0, 0, 0, 0.5);
+    overflow: hidden;
+
+    /* close animation */
+    transform-origin: calc(100% - 12px) 12px;   /* the center of closer button */
+    transition:
+        transform 2s ease-in,
+        opacity 2s ease-in;
 }
+
+.tool-areamarker.closing {
+  transform: translateY(300px) rotate(-75deg);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.tool-areamarker:before,
+.tool-areamarker:after{
+  content: "";
+  position: absolute;
+  background: rgba(255, 255, 255, 0.1);
+  width: 42px;
+  height: 100%;
+  top: -10px;
+  right: 50px;
+  transform: rotate(50deg);
+  transform-origin: top center;
+  filter: blur(5px);
+  pointer-events: none;  /* ignore mouse hover */
+}
+
+.tool-areamarker:after{
+  right: -20px;
+  width: 20px;
+}
+
+.tool-areamarker .areamarker-content {
+    padding: 4px;
+    border-radius: 3px;
+}
+
+/* ---------------- Panel Hover --------------------- */
+
+.tool-areamarker:has(.areamarker-content:hover) {
+    color: #202020;
+    background: rgba(255,255,255,0.4);
+    transition: background-color 1.0s ease-out;
+}
+
+.tool-areamarker .areamarker-content:hover input,
+.tool-areamarker .areamarker-content:hover select {
+    background: rgba(0,0,0,0.1);
+}
+
+.tool-areamarker .areamarker-content:hover button {
+    border: 1px #404040 solid;
+}
+
+/* ----------------Panel Not Hover ------------------ */
+
+.tool-areamarker .areamarker-content:not(:hover) *,
+.tool-areamarker:has(.areamarker-content:not(:hover)) .areamarker-header-title {
+    visibility: hidden;
+}
+.tool-areamarker .areamarker-content:not(:hover) .areamarker-coord,
+.tool-areamarker .areamarker-content:not(:hover) .areamarker-xspan,
+.tool-areamarker .areamarker-content:not(:hover) .areamarker-yspan {
+    visibility: visible;
+    pointer-events: none;  /* not able to trigger hover */
+}
+
+.tool-areamarker .areamarker-content:not(:hover) .areamarker-coord {
+    position: absolute;
+    top: 0;
+    left: 0;
+    text-align: left;
+}
+.tool-areamarker .areamarker-content:not(:hover) .areamarker-coord:has(+ .locked) {
+    margin-left: 28px;
+}
+
+.tool-areamarker .areamarker-content:not(:hover) .areamarker-xspan {
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+}
+.tool-areamarker .areamarker-content:not(:hover) .areamarker-yspan {
+    position: absolute;
+    top: 50%;
+    right: 0;
+    transform: translateY(-50%);
+}
+
+
+/*****************************************************/
 
 .tool-areamarker.movable {
     cursor: grab;
@@ -30,11 +130,15 @@
     visibility: hidden;
 }
 
-.tool-areamarker .areamarker-header {
+.tool-areamarker .areamarker-footer {
+    height: 100px;
+}
+
+.tool-areamarker .areamarker-header-title {
     font-size: 1.5em;
     font-weight: bold;
     text-align: center;
-    margin-bottom: 5px;
+    padding: 0 0 4px 4px;
 }
 
 .tool-areamarker .areamarker-anchor{
@@ -44,7 +148,7 @@
     margin: 2px;
     color: rgba(0, 0, 0, 0.5);
     font-size: 20px;
-    transform: rotate(-30deg);
+    transform: rotate(-15deg);
 }
 
 .tool-areamarker .areamarker-closer{
@@ -55,13 +159,22 @@
     margin: 4px;
     background: transparent;
     border: none;
-    font-size: 16px;
-    color: #666;
+    font-size: 20px;
+    color: #484848;
 }
 
 .tool-areamarker .areamarker-closer:hover{
-    color: #222;
+    color: #303030;
     cursor: pointer;
+    animation: spin 1.5s linear;
+}
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(-360deg);
+    }
 }
 
 .tool-areamarker p,
@@ -80,14 +193,19 @@
 }
 
 .tool-areamarker input {
-    background: transparent;
-    border-width: 0 0 1px 0;
+    color: var(--input-color);
+    background: var(--input-bgcolor);
+    border-width: 0 0 0px 0;
+    border-radius: 3px;
     text-align: center;
-    font-size: 16px;
+    text-shadow: px 1px 2px rgba(0, 0, 0, 0.5);
+    /*-webkit-text-stroke: 0.5px #404040;*/
+    font-size: 18px;
 }
+
 .tool-areamarker input:focus {
     outline: none;
-    background-color: rgba(255,255,255,0.5);
+    /*background-color: rgba(255,255,255,0.5);*/
 }
 
 .tool-areamarker input.invalid {
@@ -107,9 +225,10 @@
     border: none;
     outline: none;
     appearance: none;
-    padding: 3px;
+    padding: 4px;
     border-radius: 4px;
-    background-color: rgba(255,255,0, 1);
+    color: var(--text-color);
+    font-size: 16px;
 }
 
 .tool-areamarker select:focus {
@@ -128,6 +247,7 @@
 .areamarker-lock .fa-lock { color: red; }
 
 .areamarker-coord {
+    padding-left: 6px;
     width: 10.5em;
 }
 
@@ -138,11 +258,13 @@
     font-weight: bold;
     text-align: center;
     color: var(--text-color);
-    background-color: rgba(255,255,0, 0.4);
-    border: 1px goldenrod solid;
+    background-color: transparent;
+    border: 1px #404040 solid;
+    border-radius: 4px;
+    transition: background-color 1.0s;
 }
 
 .areamarker-export:hover {
     cursor: pointer;
-    background-color: rgba(255,255,255, 0.2);
+    background-color: rgba(0,0,0, 0.2);
 }
