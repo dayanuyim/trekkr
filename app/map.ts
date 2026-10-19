@@ -1,7 +1,7 @@
 import { Feature, Overlay } from 'ol';
 import { FeatureLike } from 'ol/Feature';
 import { defaults as defaultControls, ScaleLine, OverviewMap, ZoomSlider, Control } from 'ol/control';
-import { defaults as defaultInteractions, DragAndDrop, Modify, Select } from 'ol/interaction';
+import { defaults as defaultInteractions, DragAndDrop, Modify, Select, MouseWheelZoom } from 'ol/interaction';
 //import { linear as linearEasing } from 'ol/easing';
 import { Map, View, } from 'ol';
 import { Tile as TileLayer, Vector as VectorLayer, Graticule } from 'ol/layer';
@@ -85,7 +85,7 @@ export async function exportSourceImage(
     throw new Error('XYZ source has no tile grid');
   }
 
-  const z = opt.zoom;
+  const z = Math.max(1, Math.min(Math.round(opt.zoom), 24));  // should be the integer between 1 ~ 24
 
   const resolution = grid.getResolution(z);
   if (resolution === undefined) {
@@ -160,6 +160,7 @@ export async function exportSourceImage(
     drawImageGrid(ctx, extent, width, height, {
       proj: opt.grid_proj,
       interval: 1000,  // every 1km
+      fontSize: Math.max(12, 40 * Math.pow(2, z - 16)),
     });
   }
 
@@ -176,6 +177,7 @@ interface GridOptions {
   interval?: number;
   color?: string;
   lineWidth?: number;
+  fontSize?: number;
 }
 
 function drawImageGrid(
@@ -190,6 +192,7 @@ function drawImageGrid(
     interval = 1000,
     color = 'rgba(0, 0, 0, 0.65)',
     lineWidth = 1,
+    fontSize = 40,
   } = opt;
 
   const to_webcoord = (coord: [number, number]) => transform(coord, proj, WEB_MERCATOR);
@@ -259,8 +262,7 @@ function drawImageGrid(
   ctx.stroke();
 
   // 座標標籤設定 ======================================
-  const sz = Math.max(16, Math.round(width/80));
-  ctx.font = `${sz}px sans-serif`;
+  ctx.font = `${fontSize}px sans-serif`;
   ctx.fillStyle = '#000';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'top';
@@ -350,6 +352,13 @@ export class AppMap{
       formatConstructors: this._formats,
     });
 
+    // Custom condition function
+    const zoomCondition = (mapBrowserEvent) => {
+      const a = this._tool_areamarker; 
+      const is_areamarker_span_locked = a && !a.hidden && (a.xspan_locked || a.yspan_locked);
+      return !is_areamarker_span_locked;
+    };
+
     this._map = new Map({
       target,
       controls: defaultControls().extend([
@@ -365,7 +374,10 @@ export class AppMap{
         new ZoomSlider(),
         //new SaveCookieControl(),
       ]),
-      interactions: defaultInteractions().extend([
+      interactions: defaultInteractions({
+        mouseWheelZoom: false,  // TODO Support More Zoom Interactions. Although there are many zoom interactions, but only mouseWheelZoom provides 'condition' property to help temporarily disable the zoom behavior.
+      }).extend([
+        new MouseWheelZoom({ condition: zoomCondition }),
         drag_interaciton,
         //new Select(),
       ]),
@@ -429,6 +441,7 @@ export class AppMap{
         exportSourceImage(layer.getSource(), opt);
       });
 
+    // @@ for debugging, REMOTE later
     this._map.once('rendercomplete', () => {
       this._tool_areamarker.show();
     });
@@ -988,7 +1001,9 @@ export class AppMap{
 
     ctx.setItem(".item-save-img", (el) => {
       this._tool_areamarker.show({
-        coord: undefined,                                                     // 由目前位置決定，不使用之前的值
+        coord: undefined,  // reset the coord location according to the curr map location
+        xspan: 7000,       // reset the span anyway
+        yspan: 5000,       // reset the span anyway
         layer: Opt.layers.find(ly => is_image_layer(ly) && ly.checked)?.id,   // 預設圖層
       });
     });

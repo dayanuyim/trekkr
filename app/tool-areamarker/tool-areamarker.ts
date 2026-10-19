@@ -16,10 +16,29 @@ import { waitForMapMoveEnd, waitForMapRender } from '../ol-utils';
 import { throttle, debounce } from 'lodash';
 import { keyEnterToBlur, rafThrottle } from '../lib/dom-utils';
 
+/* 1. SPANs 不改變，但Coordinate 會改變的操作:
+ *  - 拖曳 Panel
+ *  - 直接設定 coordinate
+ *  - 拖曳地圖
+ *  - 地圖 View Resize (視窗大小改變)
+ *  - Auto Alignment
+ * 由於投影緣故，可視需求呼叫 adjustPanelSize() 去微調 panel 大小，以符合現地情況
+ *
+ * 2. 需要 setPanelAlignPos() 的行為：
+ *  - 初始化
+ *  - 參數 boolean 值改變
+ *  - 拖曳行為
+ *      - DnD the panel
+ *      - DnD the map
+ *      - Resize the map
+ *  - 直接設定 coordinate 由於為使用者指定，故不觸發 Alignment 行為
+ */
+
 function km_str_to_meter_num(km: string): number { return Math.round(1000 * parseFloat(km)); }
 function meter_num_to_km_str(m: number): string { return (m / 1000).toFixed(3); }
 
 const to_proj = (coordsys) => coordsys_profiles[coordsys].projection;
+
 
 // TODO 整合 Topbar 的 goto tool
 const coordsys_profiles = {
@@ -100,7 +119,7 @@ const toolHTML = Handlebars.compile(`
                     <option value="{{id}}">{{desc}}</option>
                 {{/each}}
             </select>
-            縮放層級<input type="number" class="areamarker-zoom" value="16" min="1" max="24" step="1" disabled />
+            縮放層級<input type="number" class="areamarker-zoom" value="16" min="1" max="16" step="1" />
         </p>
         <p>
             <button class="areamarker-export"><i class="fa-solid fa-file-arrow-down"></i>匯出圖檔</button>
@@ -180,9 +199,11 @@ export default class AreaMarker{
     _closer: HTMLButtonElement;
     _export: HTMLButtonElement;
 
-    _map: Map;
-    //_opt: any;
-    _listeners = {};
+    map: Map;
+    map_listen_enabled = true;
+    listeners = {};
+
+    get hidden(): boolean { return this._base.hidden === true; }
 
     get coordsys(): string { return this._coordsys.value; }
     set coordsys(val: string) { this._coordsys.value = val; }
@@ -233,7 +254,7 @@ export default class AreaMarker{
     set zoom(val: number) { this._zoom.value = val.toString(); }
 
     constructor(map: Map, layers: Array<LayerOpt>, opt?: AreaMarkerOpt){
-        this._map = map;
+        this.map = map;
         this.initElements(layers);
         this.init(opt);
     }
@@ -297,7 +318,7 @@ export default class AreaMarker{
 
         this._export.addEventListener('click', (e) => {
             const opt = this.fetchOption();
-            this._listeners['getoption']?.(opt);
+            this.listeners['getoption']?.(opt);
         });
 
         this._coord_lock.addEventListener('click', (e) => {
@@ -316,6 +337,14 @@ export default class AreaMarker{
 
         this._grid_align.addEventListener('change', (e) => {
             this.setPanelAlignPos();
+        });
+
+        this._base.querySelectorAll<HTMLInputElement>('input[type="number"][max]').forEach(input => {
+            input.addEventListener('input', () => {
+                if (input.value !== '' && input.valueAsNumber > Number(input.max)) {
+                    input.value = input.max;
+                }
+            });
         });
 
         this._gpx_wpt.addEventListener('change', (e) => {
@@ -355,14 +384,12 @@ export default class AreaMarker{
         });
 
         document.addEventListener('mousemove', throttle((e) => {
-            if(resizing){
-                const {bottom, right} = this._base.getBoundingClientRect();
-                const tl = this.coord;
-                const br = this.fromWebCoord(this._map.getCoordinateFromPixel([right, bottom]));
-                this.xspan = Math.abs(Math.round(br[0] - tl[0]));
-                this.yspan = Math.abs(Math.round(br[1] - tl[1]));
-            }
+            if (resizing) this.evalPanelSpans({
+                evalx: !this.xspan_locked,
+                evaly: !this.yspan_locked,
+            });
         }, 150));
+
         document.addEventListener('mousemove', rafThrottle((e) => {
             if (dragging){
                 const left = e.clientX - offset_x;
@@ -373,8 +400,8 @@ export default class AreaMarker{
                 this._base.style.top = `${top}px`;
 
                 // Update coord of the position
-                const webcoord = this._map.getCoordinateFromPixel([left, top]);
-                this.coord = transform(webcoord, WEB_MERCATOR, to_proj(this.coordsys));
+                this.evalPanelCoord()
+                //this.adjustPanelSize();  // 微調 panel 大小，必免失真
             }
         }));
 
@@ -385,48 +412,128 @@ export default class AreaMarker{
                 dragging = false;
                 this._base.classList.remove('dragging');
 
+                //this.adjustPanelSize();  // 微調 panel 大小，必免失真
                 this.setPanelAlignPos();
             }
         });
-
-        // TODO handle the map zoom in/out
-        // TODO handle the map shift
 
         // user inputs =========================
         this._coord.addEventListener('input', e => {
             this._coord.classList.remove('invalid');
         });
 
-        this._coord.addEventListener('blur', e => {
-            this.updateCoord(this._coord.value);
+        this._coord.addEventListener('blur', async (e) => {
+            const coord = this.parseCoordByText(this._coord.value);
+            if(!coord)
+                return this._coord.classList.add('invalid');
+            await this.movePanelToCoord(coord);  // 要等 move 結束，才做下一個動作
+            this.adjustPanelSize();              // 微調 panel 大小，必免失真
         })
 
         this._xspan.addEventListener('blur', e => {
-            this.updateSpans(this.xspan, this.yspan);
+            this.adjustPanelSize(this.xspan, this.yspan, true);
         })
 
         this._yspan.addEventListener('blur', e => {
-            this.updateSpans(this.xspan, this.yspan);
+            this.adjustPanelSize(this.xspan, this.yspan, true);
         })
 
         keyEnterToBlur(this._coord);
         keyEnterToBlur(this._xspan);
         keyEnterToBlur(this._yspan);
+
+        // Map Events =============================
+        this.setMapListeners();
     }
 
-    private async updateSpans(xspan, yspan){
+    private setMapListeners(){
+        const elem = this.map.getTargetElement();
+        const view = this.map.getView();
+
+        // 注意：要等 panel 初始化，故要判斷 panel 是否 hidden
+
+        // Map pan events.
+        let pan_resolution;
+        let map_panning = false;
+
+        this.map.on('movestart', () => {
+            map_panning = true;
+            pan_resolution = view.getResolution();
+        });
+
+        this.map.on('moveend', () => {
+            map_panning = false;
+        });
+
+        view.on('change:center', throttle((event) => {
+            if(this.hidden || !this.map_listen_enabled) return;
+            if (map_panning && view.getResolution() === pan_resolution){  // 確認為人類操作，且非 zoom in/out
+                this.evalPanelCoord();
+                this.adjustPanelSize();  // 微調 panel 大小，必免失真
+                this.setPanelAlignPos();
+            }
+        }, 150));
+
+        // Map zoom event
+        view.on('change:resolution', throttle(() => {
+            if(this.hidden || !this.map_listen_enabled) return;
+            // TODO re-fit the panel or restrict the user to zoom in/out according to xspan/yspan locks.
+            this.evalPanelCoord();
+            this.evalPanelSpans();
+        }, 150));
+
+        // Map resize observer
+        // 與 map pan 行為很相似，但並不會觸發 change:center 事件
+        // 另外 windows size 改變，也會有是否需要重新 fit 的議題
+        const map_resize_observer = new ResizeObserver(throttle( ([entry])=>{
+            if(this.hidden || !this.map_listen_enabled) return;
+            //const { width, height } = entry.contentRect;  //這個資訊好像不重要，因 panel 並不跟著 window 變化而移動
+            this.evalPanelCoord();
+            //this.adjustPanelSize();  // 微調 panel 大小，必免失真
+            this.setPanelAlignPos();
+        }, 150));
+
+        map_resize_observer.observe(elem);
+    }
+
+    private evalPanelCoord()
+    {
+        const { left, top } = this._base.getBoundingClientRect()
+        const webcoord = this.map.getCoordinateFromPixel([left, top]);
+        this.coord = transform(webcoord, WEB_MERCATOR, this.getProj());
+    }
+
+    private evalPanelSpans({
+        evalx = true,
+        evaly = true,
+    } = {}){
+        if(!evalx && !evaly) return;
+        
+        const {right, bottom} = this._base.getBoundingClientRect();
+        const [br_x, br_y] = this.toProjCoord(this.map.getCoordinateFromPixel([right, bottom]));
+        const [tl_x, tl_y] = this.coord;
+
+        const mpu = this.getProj().getMetersPerUnit();
+        if(evalx) this.xspan = Math.abs(Math.round(br_x - tl_x)) * mpu;
+        if(evaly) this.yspan = Math.abs(Math.round(br_y - tl_y)) * mpu;
+    }
+
+    private async adjustPanelSize(xspan?: number, yspan?: number, autofit = false){
+        xspan = xspan || this.xspan;
+        yspan = yspan || this.yspan;
+
         const br = this.calcCoord(this.coord, [xspan, -yspan]);
         const bottom_right = this.toWebCoord(br);
-        const [ px, py ] = this._map.getPixelFromCoordinate(bottom_right);
+        const [ px, py ] = this.map.getPixelFromCoordinate(bottom_right);
 
-        const { width: mw, height: mh } = this._map.getTargetElement().getBoundingClientRect();
-        if(px <= mw && py <= mh){
-            const { top, left } = this._base.getBoundingClientRect();
-            this.setPanelSize(px - left, py - top);
-        }
-        else{
+        const { width: mw, height: mh } = this.map.getTargetElement().getBoundingClientRect();
+        if(autofit && (px > mw || py > mh)){
             const top_left = this.toWebCoord(this.coord);
             await this.fitsPanelToMap(top_left, bottom_right);
+        }
+        else{
+            const { top, left } = this._base.getBoundingClientRect();
+            this.setPanelSize(px - left, py - top);
         }
     }
 
@@ -495,28 +602,28 @@ export default class AreaMarker{
 
         // update the new top-left coord
         const top_left = diffCoord(coord, diffs[i]);
-        this._updateCoord(top_left);
+        this.movePanelToCoord(top_left);
     }
 
     // TODO 整合 goto tool ======================
-    private updateCoord(coord_str: string){
-        if(!coord_str) return;
+    private parseCoordByText(coord_txt: string): Coordinate {
+        if(!coord_txt) return undefined;
 
         // get coordsys profile
         const coordsys = this.coordsys;
         const profile = coordsys_profiles[coordsys];
 
         // get coord
-        const tokens = coord_str.split(profile.field.separator).filter(x=>x);
+        const tokens = coord_txt.split(profile.field.separator).filter(x=>x);
         const coord = this.parseTokens(profile, tokens);
         if(!coord || !containsCoordinate(profile.projection.getExtent(), coord))  //check range
-            return this._coord.classList.add('invalid');
-
-        this._updateCoord(coord);
+            return undefined;
+        return coord;
     }
+
     private parseTokens(profile, tokens){
         if(profile.has_ref){
-            const ref = this._listeners['getcenter']?.();      // webcoord center
+            const ref = this.map.getView().getCenter(); // webcoord center
             return ref? profile.parse(ref, tokens): undefined;
         }
         return profile.parse(tokens);
@@ -524,19 +631,19 @@ export default class AreaMarker{
 
     // ============================================================ 
 
-    private _updateCoord(coord: Coordinate){
+    private async movePanelToCoord(coord: Coordinate){
 
         // re-format anyway to normalize the coord string
         this.coord = coord;
 
-        const proj = coordsys_profiles[this.coordsys].projection;
+        const proj = this.getProj();
 
-        const {width: mw, height: mh} = this._map.getTargetElement().getBoundingClientRect();
+        const {width: mw, height: mh} = this.map.getTargetElement().getBoundingClientRect();
         const {width: aw, height: ah} = this._base.getBoundingClientRect();
 
         // 方法1: 只移動 Panel
         const webcoord = transform(coord, proj, WEB_MERCATOR);
-        const pixel = this._map.getPixelFromCoordinate(webcoord);
+        const pixel = this.map.getPixelFromCoordinate(webcoord);
         const [px, py] = pixel;
         if( 0 <= px && px <= (mw - aw) &&
             0 <= py && py <= (mh - ah))
@@ -548,34 +655,46 @@ export default class AreaMarker{
             // move map
             const center = diffCoord(coord, [this.xspan/2, - this.yspan/2]);
             const webcenter = transform(center, proj, WEB_MERCATOR);
-            this._map.getView().animate({
-                center: webcenter,
-                duration: 0.3,
-            });
+            try{
+                this.map_listen_enabled = false; // avoid to trigger change:center (pan) event
 
-            // mvoe panel
-            this.setPanelPos([(mw-aw)/2, (mh-ah)/2]);
+                this.map.getView().animate({
+                    center: webcenter,
+                    duration: 0.3,
+                });
+
+                // mvoe panel
+                this.setPanelPos([(mw-aw)/2, (mh-ah)/2]);
+
+                await waitForMapMoveEnd(this.map);
+            }
+            finally {
+                this.map_listen_enabled = true;
+            }
         }
     }
 
     // ===================
     public async show(opt?: AreaMarkerOpt){
+        // 避免未關閉 Panel 情況下，map events 的干擾
+        this._base.hidden = true;
+
         console.debug("areamarker initialized", opt);
         this.applyOption(opt);
 
-        const proj = to_proj(this.coordsys);
+        const proj = this.getProj();
 
         // Get left-top point
         const left_top = this.coord?
             transform(this.coord, proj, WEB_MERCATOR):
-            shiftWebCoord(this._map.getView().getCenter(), [-this.xspan/2,  this.yspan/2]);  // 由目前的位置 決定左上座標
+            shiftWebCoord(this.map.getView().getCenter(), [-this.xspan/2,  this.yspan/2]);  // 由目前的位置 決定左上座標
 
         const right_bottom = shiftWebCoord(left_top, [this.xspan, -this.yspan]);
 
         if(!this.coord)
             this.coord = transform(left_top, WEB_MERCATOR, proj);
 
-        // fit the map and opose the panel
+        // fit the map and pose the panel
         await this.fitsPanelToMap(left_top, right_bottom);
 
         // Set Attributes
@@ -591,16 +710,23 @@ export default class AreaMarker{
         // Zoom the map to fix the panel
         const extent = boundingExtent([left_top, right_bottom]);
 
-        this._map.getView().fit(extent, {
-            padding: [100, 100, 100, 100],
-            duration: 300,
-        });
-        await waitForMapMoveEnd(this._map);
+        try {
+            this.map_listen_enabled = false;  // avoid to trigger change:resolution (zoom) event
+
+            this.map.getView().fit(extent, {
+                padding: [100, 100, 100, 100],
+                duration: 300,
+            });
+            await waitForMapMoveEnd(this.map);
+        }
+        finally {
+            this.map_listen_enabled = true;
+        }
 
         // Settle the panel
         this.setPanelPosSize(
-            this._map.getPixelFromCoordinate(left_top),
-            this._map.getPixelFromCoordinate(right_bottom),
+            this.map.getPixelFromCoordinate(left_top),
+            this.map.getPixelFromCoordinate(right_bottom),
         );
     }
 
@@ -631,22 +757,26 @@ export default class AreaMarker{
 
     // utilts ======================
     // 若座標系統是 TM2，直接使用 TM2，減少轉換造成的誤差。
+    private getProj(){
+        return to_proj(this.coordsys);
+    }
+
     private calcCoord(coord: Coordinate, diff: [number, number]){
         return (['twd67', 'twd97'].includes(this.coordsys))? // TM2
             diffCoord(coord, diff):
-            shiftCoord(to_proj(this.coordsys), coord, diff);
+            shiftCoord(this.getProj(), coord, diff);
     }
 
     private toWebCoord(coord: Coordinate){
-        return transform(coord, to_proj(this.coordsys), WEB_MERCATOR);
+        return transform(coord, this.getProj(), WEB_MERCATOR);
     }
 
-    private fromWebCoord(webcoord: Coordinate){
-        return transform(webcoord, WEB_MERCATOR, to_proj(this.coordsys));
+    private toProjCoord(webcoord: Coordinate){
+        return transform(webcoord, WEB_MERCATOR, this.getProj());
     }
 
     public setListener(event, listener){
-        this._listeners[event] = listener;
+        this.listeners[event] = listener;
         return this;
     }
 }

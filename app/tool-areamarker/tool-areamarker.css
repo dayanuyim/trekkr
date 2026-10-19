@@ -28,8 +28,8 @@
     /* close animation */
     transform-origin: calc(100% - 12px) 12px;   /* the center of closer button */
     transition:
-        transform 2s ease-in,
-        opacity 2s ease-in;
+        transform 1.0s ease-in,
+        opacity 1.0s ease-in;
 }
 
 .tool-areamarker.closing {
@@ -68,7 +68,7 @@
 .tool-areamarker:has(.areamarker-content:hover) {
     color: #202020;
     background: rgba(255,255,255,0.4);
-    transition: background-color 1.0s ease-out;
+    transition: background-color 1.5s ease-out;
 }
 
 .tool-areamarker .areamarker-content:hover input,
