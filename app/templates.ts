@@ -536,7 +536,7 @@ const ctxMenuItems = Handlebars.compile(`
     </div>
     <div class="ctx-item"><a class="item-promote-trksegs"><i class="fa-solid fa-route"></i>所有航段轉為航跡</a></div>
     <div class="ctx-item-bar"></div>
-    <div class="ctx-item"><a class="item-save-img"><i class="fa-solid fa-file-image"></i>匯出圖檔</a></div>
+    <div class="ctx-item"><a class="item-save-img"><i class="fa-solid fa-file-image"></i>匯出圖檔<span class="item-subicon"><i class="fa-solid fa-rotate-right"></i></span></a></div>
     <div class="ctx-item"><a class="item-save-gpx"><i class="fas fa-file-contract"></i>匯出&nbsp;GPX&nbsp;航跡檔</a></div>
 `);
 Handlebars.registerHelper("ctxMenuItems", ()=>{

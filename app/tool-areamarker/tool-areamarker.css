@@ -192,6 +192,17 @@
     text-align: right;
 }
 
+/* TODO 不支援的 coordsys 先 disable */
+.areamarker-coordsys option[value="wgs84"],
+.areamarker-coordsys option[value="taipower"],
+.areamarker-coordsys option[value="twd67_6"],
+.areamarker-coordsys option[value="twd97_6"],
+.areamarker-coordsys option[value="twd67_8"],
+.areamarker-coordsys option[value="twd97_8"],
+.areamarker-coordsys option[value="findspot"]{
+    display: none;
+}
+
 .tool-areamarker input {
     color: var(--input-color);
     background: var(--input-bgcolor);

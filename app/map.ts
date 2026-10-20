@@ -401,6 +401,8 @@ export class AppMap{
       ],
     });
 
+    this.setZoomSliderThumbText();
+
     // pseudo gpx layer
     this._gpx_layer = new GPXLayer({
       style: new GPXStyle({
@@ -452,6 +454,37 @@ export class AppMap{
       this.addGpxFeatures(e.features);
     });
   };
+
+  private setZoomSliderThumbText(){
+    // 1. 動態建立 Tooltip 元素
+    const thumb = document.querySelector('.ol-zoomslider-thumb');
+    const zoomText = document.createElement('span');
+    zoomText.className = 'ol-zoomslider-thumb-text';
+    thumb.appendChild(zoomText);
+
+    // 2. 更新數值函式
+    const updateSliderText = () => {
+      const currentZoom = this._map.getView().getZoom();
+      // 顯示四捨五入後的整數層級。若允許小數縮放，可改用 currentZoom.toFixed(1)
+      zoomText.textContent = `Zoom: ${currentZoom.toFixed(1)}`;
+    };
+
+    // 初始化與視圖變動監聽
+    updateSliderText();
+    this._map.getView().on('change:resolution', throttle(updateSliderText, 150));
+
+    // 3. 監聽拖曳狀態（確保滑鼠移出滑桿、但仍在拖曳時 Tooltip 不會消失）
+    const startDragging = () => thumb.classList.add('is-dragging');
+    const stopDragging = () => thumb.classList.remove('is-dragging');
+
+    // 滑鼠與觸控按下的時候，啟用拖曳狀態
+    thumb.addEventListener('mousedown', startDragging);
+    thumb.addEventListener('touchstart', startDragging);
+
+    // 放開滑鼠或結束觸控時，關閉拖曳狀態（監聽 window 確保放開滑鼠時若不在滑塊上也能觸發）
+    window.addEventListener('mouseup', stopDragging);
+    window.addEventListener('touchend', stopDragging);
+  }
 
   private centerCoordIfNotVisible(coord: number[], options=null): void{
     // TODO: 之後移到 Opt const data
@@ -951,6 +984,7 @@ export class AppMap{
     map_el.addEventListener('contextmenu', e => {
       this._ctxmenu_coord = this._map.getEventCoordinate(e);
       ctx.show(e);
+      ctx.setItemClass(".item-save-img", 'sub', !this._tool_areamarker.hidden);
     });
 
     map_el.addEventListener("click", e => {

@@ -5,6 +5,7 @@ import './css/index.css';
 import './css/tab.css';
 import './css/ctx-menu.css';
 import './css/popup.css';
+import './css/ol-zoomslider-thumb.css';
 
 import '@fortawesome/fontawesome-free/js/fontawesome';
 import '@fortawesome/fontawesome-free/js/solid';

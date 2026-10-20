@@ -27,13 +27,21 @@ export class CtxMenu {
       this._menu.classList.remove('visible');
   }
 
-  public setItem(cls, cb){
-    if(!cls.startsWith(".")) cls = `.${cls}`;
-    const el = this._menu.querySelector<HTMLAnchorElement>(`a${cls}`);
+  private queryItem(item){
+    if(!item.startsWith(".")) item = `.${item}`;
+    return this._menu.querySelector<HTMLAnchorElement>(`a${item}`);
+  }
+
+  public setItem(item, cb){
+    const el = this.queryItem(item);
     el.addEventListener('click', () => {
       cb(el);
       this._menu.classList.remove('visible');
     });
+  }
+  public setItemClass(item, cls, enabled=true){
+    const el = this.queryItem(item);
+    el.classList.toggle(cls, enabled);
   }
 }
 

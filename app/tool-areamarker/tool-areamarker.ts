@@ -104,7 +104,8 @@ const toolHTML = Handlebars.compile(`
             <input type="checkbox" class="areamarker-grid-draw" id="areamarker-grid-draw"/>
             <label for="areamarker-grid-draw">顯示格線</label>
         </p>
-        <p>
+        <!------ TODO: 之後再實作 先 disable ------------------->
+        <p hidden>
             <span class="areamarker-opt">航跡</span>
             <input type="checkbox" class="areamarker-gpx-wpt" id="areamarker-gpx-wpt" disabled/>
             <label for="areamarker-gpx-wpt">顯示航點</label>
@@ -200,10 +201,13 @@ export default class AreaMarker{
     _export: HTMLButtonElement;
 
     map: Map;
-    map_listen_enabled = true;
+    //map_listen_enabled = true;
+    map_resize_observer;
+    map_on_change_resolution;
+    map_on_change_center;
     listeners = {};
 
-    get hidden(): boolean { return this._base.hidden === true; }
+    get hidden(): boolean { return this._base.hidden !== false; }
 
     get coordsys(): string { return this._coordsys.value; }
     set coordsys(val: string) { this._coordsys.value = val; }
@@ -447,7 +451,6 @@ export default class AreaMarker{
     }
 
     private setMapListeners(){
-        const elem = this.map.getTargetElement();
         const view = this.map.getView();
 
         // 注意：要等 panel 初始化，故要判斷 panel 是否 hidden
@@ -465,35 +468,50 @@ export default class AreaMarker{
             map_panning = false;
         });
 
-        view.on('change:center', throttle((event) => {
-            if(this.hidden || !this.map_listen_enabled) return;
+        this.map_on_change_center = throttle((event) => {
+            if(this.hidden) return;
             if (map_panning && view.getResolution() === pan_resolution){  // 確認為人類操作，且非 zoom in/out
                 this.evalPanelCoord();
                 this.adjustPanelSize();  // 微調 panel 大小，必免失真
                 this.setPanelAlignPos();
             }
-        }, 150));
+        }, 150);
 
         // Map zoom event
-        view.on('change:resolution', throttle(() => {
-            if(this.hidden || !this.map_listen_enabled) return;
+        this.map_on_change_resolution = throttle(() => {
+            if(this.hidden) return;
             // TODO re-fit the panel or restrict the user to zoom in/out according to xspan/yspan locks.
             this.evalPanelCoord();
+            //console.debug('zoom listener to eval spans');
             this.evalPanelSpans();
-        }, 150));
+        }, 150);
+
 
         // Map resize observer
         // 與 map pan 行為很相似，但並不會觸發 change:center 事件
         // 另外 windows size 改變，也會有是否需要重新 fit 的議題
-        const map_resize_observer = new ResizeObserver(throttle( ([entry])=>{
-            if(this.hidden || !this.map_listen_enabled) return;
+        this.map_resize_observer = new ResizeObserver(throttle( ([entry])=>{
+            if(this.hidden) return;
             //const { width, height } = entry.contentRect;  //這個資訊好像不重要，因 panel 並不跟著 window 變化而移動
             this.evalPanelCoord();
             //this.adjustPanelSize();  // 微調 panel 大小，必免失真
             this.setPanelAlignPos();
         }, 150));
+    }
+    private enableMapListeners(enabled: boolean){
+        const elem = this.map.getTargetElement();
+        const view = this.map.getView();
 
-        map_resize_observer.observe(elem);
+        if(enabled){
+            view.on('change:center', this.map_on_change_center);
+            view.on('change:resolution', this.map_on_change_resolution);
+            this.map_resize_observer.observe(elem);
+        }
+        else{
+            view.un('change:center', this.map_on_change_center);
+            view.un('change:resolution', this.map_on_change_resolution);
+            this.map_resize_observer.unobserve(elem);
+        }
     }
 
     private evalPanelCoord()
@@ -527,7 +545,7 @@ export default class AreaMarker{
         const [ px, py ] = this.map.getPixelFromCoordinate(bottom_right);
 
         const { width: mw, height: mh } = this.map.getTargetElement().getBoundingClientRect();
-        if(autofit && (px > mw || py > mh)){
+        if(autofit /*&& (px > mw || py > mh)*/){
             const top_left = this.toWebCoord(this.coord);
             await this.fitsPanelToMap(top_left, bottom_right);
         }
@@ -656,7 +674,7 @@ export default class AreaMarker{
             const center = diffCoord(coord, [this.xspan/2, - this.yspan/2]);
             const webcenter = transform(center, proj, WEB_MERCATOR);
             try{
-                this.map_listen_enabled = false; // avoid to trigger change:center (pan) event
+                this.enableMapListeners(false);
 
                 this.map.getView().animate({
                     center: webcenter,
@@ -669,7 +687,7 @@ export default class AreaMarker{
                 await waitForMapMoveEnd(this.map);
             }
             finally {
-                this.map_listen_enabled = true;
+                this.enableMapListeners(true);
             }
         }
     }
@@ -711,7 +729,7 @@ export default class AreaMarker{
         const extent = boundingExtent([left_top, right_bottom]);
 
         try {
-            this.map_listen_enabled = false;  // avoid to trigger change:resolution (zoom) event
+            this.enableMapListeners(false);
 
             this.map.getView().fit(extent, {
                 padding: [100, 100, 100, 100],
@@ -720,7 +738,7 @@ export default class AreaMarker{
             await waitForMapMoveEnd(this.map);
         }
         finally {
-            this.map_listen_enabled = true;
+            this.enableMapListeners(true);
         }
 
         // Settle the panel
