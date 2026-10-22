@@ -39,7 +39,6 @@ function meter_num_to_km_str(m: number): string { return (m / 1000).toFixed(3); 
 
 const to_proj = (coordsys) => coordsys_profiles[coordsys].projection;
 
-
 // TODO 整合 Topbar 的 goto tool
 const coordsys_profiles = {
     twd97: {
@@ -64,10 +63,10 @@ const coordsys_profiles = {
 
 const toolHTML = Handlebars.compile(`
 <div class="tool-areamarker" hidden>
+    <span class="areamarker-anchor"><i class="fa-solid fa-thumbtack"></i></span>
+    <button class="areamarker-closer"><i class="fa-solid fa-circle-xmark"></i></button>
     <section class="areamarker-header">
         <span class="areamarker-header-title">圖檔匯出設定</span>
-        <span class="areamarker-anchor"><i class="fa-solid fa-thumbtack"></i></span>
-        <button class="areamarker-closer"><i class="fa-solid fa-circle-xmark"></i></button>
     </section>
     <section class="areamarker-content">
         <p>
@@ -123,10 +122,19 @@ const toolHTML = Handlebars.compile(`
             縮放層級<input type="number" class="areamarker-zoom" value="16" min="1" max="16" step="1" />
         </p>
         <p>
-            <button class="areamarker-export"><i class="fa-solid fa-file-arrow-down"></i>匯出圖檔</button>
+            <button class="areamarker-setup"><i class="fa-solid fa-file-arrow-down"></i>匯出圖檔</button>
+            <button class="areamarker-abort"><i class="fa-solid fa-circle-stop"></i>取消匯出</button>
         </p>
     </section>
     <section class="areamarker-footer">
+        <div class="areamarker-prog" aria-label="圖檔輸出進度" >
+            <div class="areamarker-prog-heading">
+                <strong class="areamarker-prog-status"></strong>
+                <span class="areamarker-prog-percent">0</span>
+            </div>
+            <progress class="areamarker-prog-bar" value="0" max="100" aria-label="輸出進度" aria-valuetext="0%" ></progress>
+            <p class="areamarker-prog-msg" role="status" aria-live="polite" ></p>
+        </div>
     </section>
 </div>
 `);
@@ -198,7 +206,13 @@ export default class AreaMarker{
     _zoom: HTMLInputElement;
 
     _closer: HTMLButtonElement;
-    _export: HTMLButtonElement;
+    _setup: HTMLButtonElement;
+    _abort: HTMLButtonElement;
+
+    _prog_status: HTMLElement;
+    _prog_percent: HTMLElement;
+    _prog_bar: HTMLProgressElement;
+    _prog_msg: HTMLElement;
 
     map: Map;
     //map_listen_enabled = true;
@@ -257,6 +271,18 @@ export default class AreaMarker{
     get zoom(): number { return parseFloat(this._zoom.value); }
     set zoom(val: number) { this._zoom.value = val.toString(); }
 
+    get prog_status(): string { return this._prog_status.innerText; }
+    set prog_status(val: string) { this._prog_status.innerHTML = val; }
+
+    get prog_percent(): string { return this._prog_percent.innerText; }
+    set prog_percent(val: string) { this._prog_percent.innerHTML = val; }
+
+    get prog_bar(): number { return this._prog_bar.value; }
+    set prog_bar(val: number) { this._prog_bar.value = val; }
+
+    get prog_msg(): string { return this._prog_msg.innerText; }
+    set prog_msg(val: string) { this._prog_msg.innerHTML = val; }
+
     constructor(map: Map, layers: Array<LayerOpt>, opt?: AreaMarkerOpt){
         this.map = map;
         this.initElements(layers);
@@ -265,23 +291,28 @@ export default class AreaMarker{
 
     private initElements(layers: Array<LayerOpt>){
         document.body.insertAdjacentHTML('beforeend', toolHTML({layers}));
-        this._base       = document.querySelector('.tool-areamarker');
-        this._coordsys   = this._base.querySelector(".areamarker-coordsys");
-        this._coord      = this._base.querySelector(".areamarker-coord");
-        this._xspan      = this._base.querySelector(".areamarker-xspan");
-        this._yspan      = this._base.querySelector(".areamarker-yspan");
-        this._coord_lock = this._base.querySelector(".areamarker-coord-lock");
-        this._xspan_lock = this._base.querySelector(".areamarker-xspan-lock");
-        this._yspan_lock = this._base.querySelector(".areamarker-yspan-lock");
-        this._grid_proj  = this._base.querySelector(".areamarker-grid-proj");
-        this._grid_align = this._base.querySelector(".areamarker-grid-align");
-        this._grid_draw  = this._base.querySelector(".areamarker-grid-draw");
-        this._gpx_wpt    = this._base.querySelector(".areamarker-gpx-wpt");
-        this._gpx_trk    = this._base.querySelector(".areamarker-gpx-trk");
-        this._layer      = this._base.querySelector(".areamarker-layer");
-        this._zoom       = this._base.querySelector(".areamarker-zoom");
-        this._closer     = this._base.querySelector(".areamarker-closer");
-        this._export     = this._base.querySelector(".areamarker-export");
+        this._base         = document.querySelector('.tool-areamarker');
+        this._coordsys     = this._base.querySelector(".areamarker-coordsys");
+        this._coord        = this._base.querySelector(".areamarker-coord");
+        this._xspan        = this._base.querySelector(".areamarker-xspan");
+        this._yspan        = this._base.querySelector(".areamarker-yspan");
+        this._coord_lock   = this._base.querySelector(".areamarker-coord-lock");
+        this._xspan_lock   = this._base.querySelector(".areamarker-xspan-lock");
+        this._yspan_lock   = this._base.querySelector(".areamarker-yspan-lock");
+        this._grid_proj    = this._base.querySelector(".areamarker-grid-proj");
+        this._grid_align   = this._base.querySelector(".areamarker-grid-align");
+        this._grid_draw    = this._base.querySelector(".areamarker-grid-draw");
+        this._gpx_wpt      = this._base.querySelector(".areamarker-gpx-wpt");
+        this._gpx_trk      = this._base.querySelector(".areamarker-gpx-trk");
+        this._layer        = this._base.querySelector(".areamarker-layer");
+        this._zoom         = this._base.querySelector(".areamarker-zoom");
+        this._closer       = this._base.querySelector(".areamarker-closer");
+        this._setup        = this._base.querySelector(".areamarker-setup");
+        this._abort        = this._base.querySelector(".areamarker-abort");
+        this._prog_status  = this._base.querySelector(".areamarker-prog-status");
+        this._prog_percent = this._base.querySelector(".areamarker-prog-percent");
+        this._prog_bar     = this._base.querySelector(".areamarker-prog-bar");
+        this._prog_msg     = this._base.querySelector(".areamarker-prog-msg");
     }
 
     private init(opt?){
@@ -304,6 +335,7 @@ export default class AreaMarker{
 
         this.applyOption(opt);
 
+        this.initProgress();
 
         // init event listeners
         this._closer.addEventListener('click', (e) => {
@@ -311,6 +343,7 @@ export default class AreaMarker{
             // 直接關掉好像有點無趣，這邊用一個動畫，動畫結束才關閉。
             const on_trans_end = (e) => {
                 if (e.target === this._base && e.propertyName === 'opacity') {
+                    this.enableMapListeners(false);  //關閉不必要的 listeners
                     this._base.hidden = true;
                     this._base.classList.remove('closing');
                     this._base.removeEventListener('transitionend', on_trans_end);  //用 addEventListener(..., {once: true}) 可能會有風險，應明確進到 if block 後才移除。
@@ -320,9 +353,13 @@ export default class AreaMarker{
             this._base.classList.add('closing');
         });
 
-        this._export.addEventListener('click', (e) => {
+        this._setup.addEventListener('click', (e) => {
             const opt = this.fetchOption();
-            this.listeners['getoption']?.(opt);
+            this.listeners['setup']?.(opt);
+        });
+
+        this._abort.addEventListener('click', (e) => {
+            this.listeners['abort']?.();
         });
 
         this._coord_lock.addEventListener('click', (e) => {
@@ -410,14 +447,17 @@ export default class AreaMarker{
         }));
 
         document.addEventListener('mouseup', (e) => {
-            resizing = false;
-
+            if(resizing){
+                resizing = false;
+                this.fitsPanelToMap();
+            }
             if(dragging){
                 dragging = false;
                 this._base.classList.remove('dragging');
 
                 //this.adjustPanelSize();  // 微調 panel 大小，必免失真
                 this.setPanelAlignPos();
+                this.fitsPanelToMap();
             }
         });
 
@@ -430,7 +470,7 @@ export default class AreaMarker{
             const coord = this.parseCoordByText(this._coord.value);
             if(!coord)
                 return this._coord.classList.add('invalid');
-            await this.movePanelToCoord(coord);  // 要等 move 結束，才做下一個動作
+            await this.adjustPanelPos(coord);  // 要等 move 結束，才做下一個動作
             this.adjustPanelSize();              // 微調 panel 大小，必免失真
         })
 
@@ -446,7 +486,7 @@ export default class AreaMarker{
         keyEnterToBlur(this._xspan);
         keyEnterToBlur(this._yspan);
 
-        // Map Events =============================
+        // Map Events =========
         this.setMapListeners();
     }
 
@@ -498,6 +538,7 @@ export default class AreaMarker{
             this.setPanelAlignPos();
         }, 150));
     }
+
     private enableMapListeners(enabled: boolean){
         const elem = this.map.getTargetElement();
         const view = this.map.getView();
@@ -536,120 +577,9 @@ export default class AreaMarker{
         if(evaly) this.yspan = Math.abs(Math.round(br_y - tl_y)) * mpu;
     }
 
-    private async adjustPanelSize(xspan?: number, yspan?: number, autofit = false){
-        xspan = xspan || this.xspan;
-        yspan = yspan || this.yspan;
-
-        const br = this.calcCoord(this.coord, [xspan, -yspan]);
-        const bottom_right = this.toWebCoord(br);
-        const [ px, py ] = this.map.getPixelFromCoordinate(bottom_right);
-
-        const { width: mw, height: mh } = this.map.getTargetElement().getBoundingClientRect();
-        if(autofit /*&& (px > mw || py > mh)*/){
-            const top_left = this.toWebCoord(this.coord);
-            await this.fitsPanelToMap(top_left, bottom_right);
-        }
-        else{
-            const { top, left } = this._base.getBoundingClientRect();
-            this.setPanelSize(px - left, py - top);
-        }
-    }
-
-    private setPanelPos([x, y]: Pixel){
-        Object.assign(this._base.style, {
-            top: `${y}px`,
-            left: `${x}px`,
-        });
-    }
-
-    private setPanelSize(width: number, height: number){
-        if(width <= 0 || height <= 0)
-            return;
-        Object.assign(this._base.style, {
-            width: `${width}px`,
-            height: `${height}px`,
-            minWidth: `${width * 1000 / this.xspan }px`,    // set the minWidth pixel to 1000 meter
-            minHeight: `${height * 1000 / this.yspan }px`,
-        });
-    }
-
-    // The function is to SET the POSITION either.
-    // This should be reasonable to align all relative attributes consistent.
-    private setPanelPosSize(top_left_px: Pixel, down_right_px: Pixel){
-        const [left, top] = top_left_px;
-        const [right, bottom] = down_right_px;
-        const width = right - left;
-        const height = bottom - top;
-
-        this.setPanelPos(top_left_px);
-        this.setPanelSize(width, height);
-    }
-
-    setPanelMovable(movable?: boolean){
-        if(movable === undefined)
-            movable = !this.coord_locked;
-        this._base.classList.toggle('movable', movable);
-    }
-
-    private setPanelResizer(){
-        this._base.style.resize = this.xspan_locked?
-            this.yspan_locked? "none": "vertical":
-            this.yspan_locked? "horizontal": "both";
-    }
-
-    private setPanelAlignPos(){
-        if(this.coord_locked || !this.grid_align) return;
-
-        const scale = 1000;
-        const round = (n): number => Math.round(n / scale) * scale;
-        const differ = (c1, c2): [number, number] => [c2[0] - c1[0], c2[1] - c1[1]];
-
-        // 需測試的角落。若 span 是格線倍數的情況下，不需每個角落都測試。
-        const coord = this.coord;
-        const corners = [coord];                                                       // top-left  
-        if(this.xspan % scale != 0) corners.push(this.calcCoord(coord, [this.xspan, 0]));   // top-right
-        if(this.yspan % scale != 0) corners.push(this.calcCoord(coord, [0, -this.yspan]));  // bottom-left
-        if(this.yspan % scale != 0 && this.yspan % scale != 0)
-            corners.push(this.calcCoord(coord, [this.xspan, -this.yspan]));                 // bottom-right
-
-        // get the minimum difference
-        const rounds = corners.map(coord => coord.map(round));
-        const diffs = corners.map((coord, i) => differ(coord, rounds[i]));
-        const dists = diffs.map(([x, y]) => x ** 2 + y ** 2);
-        const i = dists.indexOf(Math.min(...dists));
-
-        // update the new top-left coord
-        const top_left = diffCoord(coord, diffs[i]);
-        this.movePanelToCoord(top_left);
-    }
-
-    // TODO 整合 goto tool ======================
-    private parseCoordByText(coord_txt: string): Coordinate {
-        if(!coord_txt) return undefined;
-
-        // get coordsys profile
-        const coordsys = this.coordsys;
-        const profile = coordsys_profiles[coordsys];
-
-        // get coord
-        const tokens = coord_txt.split(profile.field.separator).filter(x=>x);
-        const coord = this.parseTokens(profile, tokens);
-        if(!coord || !containsCoordinate(profile.projection.getExtent(), coord))  //check range
-            return undefined;
-        return coord;
-    }
-
-    private parseTokens(profile, tokens){
-        if(profile.has_ref){
-            const ref = this.map.getView().getCenter(); // webcoord center
-            return ref? profile.parse(ref, tokens): undefined;
-        }
-        return profile.parse(tokens);
-    }
-
     // ============================================================ 
 
-    private async movePanelToCoord(coord: Coordinate){
+    private async adjustPanelPos(coord: Coordinate){
 
         // re-format anyway to normalize the coord string
         this.coord = coord;
@@ -692,6 +622,121 @@ export default class AreaMarker{
         }
     }
 
+    private async adjustPanelSize(xspan?: number, yspan?: number, autofit = false){
+        xspan = xspan || this.xspan;
+        yspan = yspan || this.yspan;
+
+        const br = this.calcCoord(this.coord, [xspan, -yspan]);
+        const bottom_right = this.toWebCoord(br);
+        const [ px, py ] = this.map.getPixelFromCoordinate(bottom_right);
+
+        const { width: mw, height: mh } = this.map.getTargetElement().getBoundingClientRect();
+        if(autofit /*&& (px > mw || py > mh)*/){
+            const top_left = this.toWebCoord(this.coord);
+            await this.fitsPanelToMap(top_left, bottom_right);
+        }
+        else{
+            const { top, left } = this._base.getBoundingClientRect();
+            this.setPanelSize(px - left, py - top);
+        }
+    }
+
+    // ============================================================ 
+
+    private setPanelPos([x, y]: Pixel){
+        Object.assign(this._base.style, {
+            top: `${y}px`,
+            left: `${x}px`,
+        });
+    }
+
+    private setPanelSize(width: number, height: number){
+        if(width <= 0 || height <= 0)
+            return;
+        Object.assign(this._base.style, {
+            width: `${width}px`,
+            height: `${height}px`,
+            minWidth: `${width * 500 / this.xspan }px`,    // set the minWidth pixel to 500 meter
+            minHeight: `${height * 500 / this.yspan }px`,
+        });
+    }
+
+    // The function is to SET the POSITION either.
+    // This should be reasonable to align all relative attributes consistent.
+    private setPanelPosSize(top_left_px: Pixel, down_right_px: Pixel){
+        const [left, top] = top_left_px;
+        const [right, bottom] = down_right_px;
+        const width = right - left;
+        const height = bottom - top;
+
+        this.setPanelPos(top_left_px);
+        this.setPanelSize(width, height);
+    }
+
+    // ============================================================ 
+
+    setPanelMovable(movable?: boolean){
+        if(movable === undefined)
+            movable = !this.coord_locked;
+        this._base.classList.toggle('movable', movable);
+    }
+
+    private setPanelResizer(){
+        this._base.style.resize = this.xspan_locked?
+            this.yspan_locked? "none": "vertical":
+            this.yspan_locked? "horizontal": "both";
+    }
+
+    private setPanelAlignPos(){
+        if(this.coord_locked || !this.grid_align) return;
+
+        const scale = 1000;
+        const round = (n): number => Math.round(n / scale) * scale;
+        const differ = (c1, c2): [number, number] => [c2[0] - c1[0], c2[1] - c1[1]];
+
+        // 需測試的角落。若 span 是格線倍數的情況下，不需每個角落都測試。
+        const coord = this.coord;
+        const corners = [coord];                                                       // top-left  
+        if(this.xspan % scale != 0) corners.push(this.calcCoord(coord, [this.xspan, 0]));   // top-right
+        if(this.yspan % scale != 0) corners.push(this.calcCoord(coord, [0, -this.yspan]));  // bottom-left
+        if(this.yspan % scale != 0 && this.yspan % scale != 0)
+            corners.push(this.calcCoord(coord, [this.xspan, -this.yspan]));                 // bottom-right
+
+        // get the minimum difference
+        const rounds = corners.map(coord => coord.map(round));
+        const diffs = corners.map((coord, i) => differ(coord, rounds[i]));
+        const dists = diffs.map(([x, y]) => x ** 2 + y ** 2);
+        const i = dists.indexOf(Math.min(...dists));
+
+        // update the new top-left coord
+        const top_left = diffCoord(coord, diffs[i]);
+        this.adjustPanelPos(top_left);
+    }
+
+    // TODO 整合 goto tool ======================
+    private parseCoordByText(coord_txt: string): Coordinate {
+        if(!coord_txt) return undefined;
+
+        // get coordsys profile
+        const coordsys = this.coordsys;
+        const profile = coordsys_profiles[coordsys];
+
+        // get coord
+        const tokens = coord_txt.split(profile.field.separator).filter(x=>x);
+        const coord = this.parseTokens(profile, tokens);
+        if(!coord || !containsCoordinate(profile.projection.getExtent(), coord))  //check range
+            return undefined;
+        return coord;
+    }
+
+    private parseTokens(profile, tokens){
+        if(profile.has_ref){
+            const ref = this.map.getView().getCenter(); // webcoord center
+            return ref? profile.parse(ref, tokens): undefined;
+        }
+        return profile.parse(tokens);
+    }
+
     // ===================
     public async show(opt?: AreaMarkerOpt){
         // 避免未關閉 Panel 情況下，map events 的干擾
@@ -720,11 +765,17 @@ export default class AreaMarker{
         this.setPanelResizer();
         this.setPanelAlignPos();
 
+        // enable map handler
+        this.enableMapListeners(true);
+
         // showing
         this._base.hidden = false;
     }
 
-    private async fitsPanelToMap(left_top: Coordinate, right_bottom: Coordinate){  //webcoord
+    private async fitsPanelToMap(left_top?: Coordinate, right_bottom?: Coordinate){  //webcoord
+        left_top     = left_top     || this.toWebCoord(this.coord);
+        right_bottom = right_bottom || this.toWebCoord(this.calcCoord(this.coord, [this.xspan, -this.yspan]));
+
         // Zoom the map to fix the panel
         const extent = boundingExtent([left_top, right_bottom]);
 
@@ -771,6 +822,21 @@ export default class AreaMarker{
             layer: this.layer,
             zoom: this.zoom,
         };
+    }
+
+    public onProcess(status: string, progress: number, msg: string){
+        this.prog_status = status;
+        this.prog_percent = progress.toFixed(1);
+        this.prog_bar = progress;
+        this.prog_msg = msg;
+
+        const processing = (0 < progress && progress < 100);
+        this._setup.disabled = processing;
+        this._abort.hidden = !processing;
+    }
+
+    private initProgress(){
+        this.onProcess("準備就緒", 0,  "設定完成後，按下「匯出圖檔」");
     }
 
     // utilts ======================

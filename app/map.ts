@@ -74,99 +74,122 @@ interface ExportOptions {
 export async function exportSourceImage(
   source: XYZ|WMTS,
   opt: ExportOptions,
+  on_progress?,
+  on_abort?,
 ): Promise<void> {
-  const src_proj = source.getProjection()?? WEB_MERCATOR;
-  if (!src_proj) {
-    throw new Error('XYZ source has no projection');
-  }
+  try{
+    on_progress?.("參數檢查", 0, "正在檢查參數設定…");
 
-  const grid = source.getTileGrid();
-  if (!grid) {
-    throw new Error('XYZ source has no tile grid');
-  }
-
-  const z = Math.max(1, Math.min(Math.round(opt.zoom), 24));  // should be the integer between 1 ~ 24
-
-  const resolution = grid.getResolution(z);
-  if (resolution === undefined) {
-    throw new Error(`Invalid zoom level: ${z}`);
-  }
-
-  // 1. 以地面距離計算四角經緯度
-  const tl = opt.lonlat;
-  const tr = offset(tl, opt.xspan, Math.PI / 2);
-  const bl = offset(tl, opt.yspan, Math.PI);
-  const br = offset(tr, opt.yspan, Math.PI);
-
-  // 2. 轉換成 XYZ source 的投影座標，並封裝為 Extent
-  const corners = [tl, tr, bl, br].map(
-    coord => transform(coord, WGS84, src_proj)
-  );
-
-  const extent = boundingExtent(corners);
-
-  // 3. 建立輸出 Canvas
-  const width = Math.ceil(getExtentWidth(extent) / resolution);
-  const height = Math.ceil(getExtentHeight(extent) / resolution);
-
-  const canvas = document.createElement('canvas');
-  canvas.width = width;
-  canvas.height = height;
-
-  const ctx = canvas.getContext('2d');
-  if (!ctx) throw new Error('Cannot create Canvas');
-
-  // 先填白底，透明的部分才能正常顯示。
-  ctx.fillStyle = '#fff';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-  // 4. 計算需要的 XYZ tiles
-  const range = grid.getTileRangeForExtentAndZ(extent, z);
-  const getTileUrl = source.getTileUrlFunction();
-
-  const x_sn = (v) => v - range.minX + 1;
-  const y_sn = (v) => v - range.minY + 1;
-  const log_progress = (x, y) => console.log(`Downloading ${x_sn(x)} x ${y_sn(y)} / ${x_sn(range.maxX)} x ${y_sn(range.maxY)}`);
-
-  for (let x = range.minX; x <= range.maxX; x++) {
-    for (let y = range.minY; y <= range.maxY; y++) {
-      log_progress(x, y);  // TODO: Progress Bar to Show
-
-      const tileCoord: [number, number, number] = [z, x, y];
-
-      const url = getTileUrl(tileCoord, 1, src_proj);
-      if (!url) continue;
-
-      const img = new Image();
-      img.crossOrigin = 'anonymous';
-      img.src = url;
-      await img.decode();
-
-      const e = grid.getTileCoordExtent(tileCoord);
-
-      // 5. 依照地圖座標計算瓦片在 Canvas 上的位置
-      const px = Math.round((e[0] - extent[0]) / resolution);   // diff of minx //取整數 避免縫合縫細
-      const py = Math.round((extent[3] - e[3]) / resolution);   // diff of maxy // webcoord y-axis 往上，canvas 反之往下，故用 maxy 而非 miny
-      //const pw = Math.round(getExtentWidth(e) / resolution);  // img.width
-      //const ph = Math.round(getExtentHeight(e) / resolution); // img.height
-
-      ctx.drawImage(img, px, py, img.width, img.height);
-      //ctx.drawImage(img, px, py, pw, ph);
-      //ctx.drawImage(img, px-1, py-1, pw+2, ph+2); // extend 1px to overlayer
+    const src_proj = source.getProjection() ?? WEB_MERCATOR;
+    if (!src_proj) {
+      throw new Error('XYZ source has no projection');
     }
-  }
 
-  if (opt.grid_proj) {
-    drawImageGrid(ctx, extent, width, height, {
-      proj: opt.grid_proj,
-      interval: 1000,  // every 1km
-      fontSize: Math.max(12, 40 * Math.pow(2, z - 16)),
-    });
-  }
+    const grid = source.getTileGrid();
+    if (!grid) {
+      throw new Error('XYZ source has no tile grid');
+    }
 
-  // 6. 匯出 PNG
-  const blob = await canvasToBlob(canvas, 'image/png');
-  saveBlobAsFile(blob, opt.filename ?? 'map.png');
+    const z = Math.max(1, Math.min(Math.round(opt.zoom), 24));  // should be the integer between 1 ~ 24
+
+    const resolution = grid.getResolution(z);
+    if (resolution === undefined) {
+      throw new Error(`Invalid zoom level: ${z}`);
+    }
+
+    // 1. 以地面距離計算四角經緯度
+    const tl = opt.lonlat;
+    const tr = offset(tl, opt.xspan, Math.PI / 2);
+    const bl = offset(tl, opt.yspan, Math.PI);
+    const br = offset(tr, opt.yspan, Math.PI);
+
+    // 2. 轉換成 XYZ source 的投影座標，並封裝為 Extent
+    const corners = [tl, tr, bl, br].map(
+      coord => transform(coord, WGS84, src_proj)
+    );
+
+    const extent = boundingExtent(corners);
+
+    // 3. 建立輸出 Canvas
+    on_progress?.("環境初始化", 3, "正在初始化畫布…");
+
+    const width = Math.ceil(getExtentWidth(extent) / resolution);
+    const height = Math.ceil(getExtentHeight(extent) / resolution);
+
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) throw new Error('Cannot create Canvas');
+
+    // 先填白底，透明的部分才能正常顯示。
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // 4. 計算需要的 XYZ tiles
+    const range = grid.getTileRangeForExtentAndZ(extent, z);
+    const getTileUrl = source.getTileUrlFunction();
+
+    const x_sn = (v) => v - range.minX + 1;
+    const y_sn = (v) => v - range.minY + 1;
+    const padding = (v) => v.toString().padStart(2, " ")
+    const x_num = x_sn(range.maxX);
+    const y_num = y_sn(range.maxY);
+    const prog_msg = (x, y) => `正在下載地圖圖磚 ${padding(x_sn(x))} x ${padding(y_sn(y))} / ${x_num} x ${y_num}`;
+    const prog_percent = (x, y) => 5 + 90 * ((x_sn(x) - 1) * y_num + y_sn(y)) / (x_num * y_num);  // 下載加權 90%，起始 5%
+
+    for (let x = range.minX; x <= range.maxX; x++) {
+      for (let y = range.minY; y <= range.maxY; y++) {
+        if (on_abort?.()) {
+          on_progress?.("已取消", 0, "匯出工作已取消");
+          return;
+        }
+        on_progress?.("圖磚下載", prog_percent(x, y), prog_msg(x, y));
+
+        const tileCoord: [number, number, number] = [z, x, y];
+
+        const url = getTileUrl(tileCoord, 1, src_proj);
+        if (!url) continue;
+
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.src = url;
+        await img.decode();
+
+        const e = grid.getTileCoordExtent(tileCoord);
+
+        // 5. 依照地圖座標計算瓦片在 Canvas 上的位置
+        const px = Math.round((e[0] - extent[0]) / resolution);   // diff of minx //取整數 避免縫合縫細
+        const py = Math.round((extent[3] - e[3]) / resolution);   // diff of maxy // webcoord y-axis 往上，canvas 反之往下，故用 maxy 而非 miny
+        //const pw = Math.round(getExtentWidth(e) / resolution);  // img.width
+        //const ph = Math.round(getExtentHeight(e) / resolution); // img.height
+
+        ctx.drawImage(img, px, py, img.width, img.height);
+        //ctx.drawImage(img, px, py, pw, ph);
+        //ctx.drawImage(img, px-1, py-1, pw+2, ph+2); // extend 1px to overlayer
+      }
+    }
+
+    if (opt.grid_proj) {
+      on_progress?.("格線繪製", 96, `正在繪製${opt.grid_proj}座標格線與標註`);
+      drawImageGrid(ctx, extent, width, height, {
+        proj: opt.grid_proj,
+        interval: 1000,  // every 1km
+      });
+    }
+
+    // 6. 匯出 PNG
+    on_progress?.("檔案製作", 98, `正在產生 PNG 圖檔`);
+    const blob = await canvasToBlob(canvas, 'image/png');
+
+    on_progress?.("匯出完成", 100, `匯出完成，請儲存圖檔`);
+    saveBlobAsFile(blob, opt.filename ?? 'map.png');
+  }
+  catch(e){
+      console.error(e);
+      on_progress?.("執行錯誤", 0, e.toString());
+  }
 }
 
 import type { Extent } from 'ol/extent';
@@ -177,7 +200,6 @@ interface GridOptions {
   interval?: number;
   color?: string;
   lineWidth?: number;
-  fontSize?: number;
 }
 
 function drawImageGrid(
@@ -192,7 +214,6 @@ function drawImageGrid(
     interval = 1000,
     color = 'rgba(0, 0, 0, 0.65)',
     lineWidth = 1,
-    fontSize = 40,
   } = opt;
 
   const to_webcoord = (coord: [number, number]) => transform(coord, proj, WEB_MERCATOR);
@@ -262,7 +283,8 @@ function drawImageGrid(
   ctx.stroke();
 
   // 座標標籤設定 ======================================
-  ctx.font = `${fontSize}px sans-serif`;
+  const sz = Math.max(12, Math.round(Math.min(width/58, height/58))); // for A4 (7x5), width 3241 x height 2315 is 40px
+  ctx.font = `${sz}px sans-serif`;
   ctx.fillStyle = '#000';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'top';
@@ -316,6 +338,7 @@ export class AppMap{
   _gpx_layer: GPXLayer;   //a gpx adapter for VectorLayer
   _tool_eleprof: ToolEleprof;
   _tool_areamarker: AreaMarker;
+  _tool_areamarker_abort: boolean;
   _curr_feature_data = null;
   _ctxmenu_coord;
   _formats: any[] = [
@@ -431,28 +454,35 @@ export class AppMap{
         this._setEleprofData(this._curr_feature_data);
       });
 
-    const layers = Opt.layers.filter(is_image_layer)
-                              .map(({id, desc}) => ({id, desc}));
+    const layers = Opt.layers.filter(is_image_layer).map(({id, desc}) => ({id, desc}));
     this._tool_areamarker = new AreaMarker(this._map, layers)
-      .setListener('getoption', opt => {
-        console.log(opt);
+      .setListener('setup', opt => {
         const layer = opt.layer && LayerRepo.get(opt.layer);
-        if(!layer){
+        if(!layer)
           return alert("未選擇圖層");
-        }
-        exportSourceImage(layer.getSource(), opt);
-      });
 
-    // @@ for debugging, REMOTE later
-    this._map.once('rendercomplete', () => {
-      this._tool_areamarker.show();
-    });
+        this._tool_areamarker_abort = false;
+        exportSourceImage(
+          layer.getSource(),
+          opt,
+          (status, prog, msg) => this._tool_areamarker.onProcess(status, prog, msg),
+          () => this._tool_areamarker_abort,
+        );
+      })
+      .setListener('abort', () => {
+        this._tool_areamarker_abort = true;
+      });
 
     //create layer from features, and add it to the map
     drag_interaciton.on('addfeatures', (e) => {
       setGpxFilename(e.file.name);
       this.addGpxFeatures(e.features);
     });
+
+    // @@ for easy to debug when init done
+    //this._map.once('rendercomplete', () => {
+    //  this._tool_areamarker.show();
+    //});
   };
 
   private setZoomSliderThumbText(){

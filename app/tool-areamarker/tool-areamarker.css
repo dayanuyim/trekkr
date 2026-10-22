@@ -23,7 +23,6 @@
     border: 1px #a0a0a0 solid;
     border-radius: 3px;
     box-shadow: 0 2px 1px 0 rgba(255, 255, 255, 0.4) inset, 0 1px 1px 1px rgba(0, 0, 0, 0.5);
-    overflow: hidden;
 
     /* close animation */
     transform-origin: calc(100% - 12px) 12px;   /* the center of closer button */
@@ -67,7 +66,7 @@
 
 .tool-areamarker:has(.areamarker-content:hover) {
     color: #202020;
-    background: rgba(255,255,255,0.4);
+    background: rgba(255,255,255,0.7);
     transition: background-color 1.5s ease-out;
 }
 
@@ -83,7 +82,8 @@
 /* ----------------Panel Not Hover ------------------ */
 
 .tool-areamarker .areamarker-content:not(:hover) *,
-.tool-areamarker:has(.areamarker-content:not(:hover)) .areamarker-header-title {
+.tool-areamarker:has(.areamarker-content:not(:hover)) .areamarker-header,
+.tool-areamarker:has(.areamarker-content:not(:hover)) .areamarker-footer {
     visibility: hidden;
 }
 .tool-areamarker .areamarker-content:not(:hover) .areamarker-coord,
@@ -145,10 +145,10 @@
     position: absolute;
     top: 0;
     left: 0;
-    margin: 2px;
+    margin: 2px 0;
     color: rgba(0, 0, 0, 0.5);
     font-size: 20px;
-    transform: rotate(-15deg);
+    transform: rotate(15deg);
 }
 
 .tool-areamarker .areamarker-closer{
@@ -262,10 +262,10 @@
     width: 10.5em;
 }
 
-.areamarker-export {
-    display: block;
+.tool-areamarker button {
     padding: 8px;
-    font-size: 1.2em;
+    margin-right: 8px;
+    font-size: 16px;
     font-weight: bold;
     text-align: center;
     color: var(--text-color);
@@ -275,7 +275,59 @@
     transition: background-color 1.0s;
 }
 
-.areamarker-export:hover {
+.tool-areamarker button:disabled:hover {
+    cursor: not-allowed;
+}
+
+.tool-areamarker button:not(:disabled):hover {
     cursor: pointer;
-    background-color: rgba(0,0,0, 0.2);
+    background-color: rgba(0,0,0, 0.1);
+}
+
+.tool-areamarker .areamarker-abort {
+    color: rgb(151, 47, 47);
+    background-color: rgba(128, 0, 0, .1);
+}
+
+/* Progress Bar ---------------------------- */
+
+.areamarker-prog {
+    max-width: 462px;
+    box-sizing: border-box;
+    padding: 8px;
+}
+
+.areamarker-prog-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 6px;
+}
+
+.areamarker-prog-status {
+    font-size: 16px;
+}
+
+.areamarker-prog-percent {
+    font-size: 16px;
+    font-weight: 700;
+    font-variant-numeric: slashed-zero;
+}
+
+.areamarker-prog-percent:after {
+    content: "%";
+}
+
+.areamarker-prog-bar {
+    width: 100%
+}
+
+.areamarker-prog-msg {
+    white-space: pre;
+    min-height: 40px;
+    margin: 8px 0 0;
+    color: #202020;
+    font-size: 14px;
+    line-height: 1.6;
 }
