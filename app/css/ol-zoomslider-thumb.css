@@ -1,0 +1,46 @@
+
+/* Tooltip 氣泡樣式（預設隱藏） */
+.ol-zoomslider-thumb-text {
+  position: absolute;
+  left: 34px; /* 移到滑桿右側，避免擋住滑桿 */
+  top: 50%;
+  transform: translateY(-50%);
+  background-color: #007bff;
+  color: white;
+  padding: 4px 8px;
+  font-size: 12px;
+  font-family: Arial, sans-serif;
+  font-weight: bold;
+  border-radius: 4px;
+  white-space: nowrap;
+  pointer-events: none; /* 避免干擾滑鼠事件 */
+  user-select: none;
+  
+  /* 動態特效：預設透明度為 0 且稍微往左靠（做出浮現位移感） */
+  opacity: 0;
+  margin-left: -5px;
+  transition: opacity 0.2s ease, margin-left 0.2s ease;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+/* Tooltip 的小箭頭 */
+.ol-zoomslider-thumb-text::before {
+  content: '';
+  position: absolute;
+  right: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+  border-width: 5px;
+  border-style: solid;
+  border-color: transparent #007bff transparent transparent;
+}
+
+/* 觸發條件：
+   1. 當滑鼠 hover 滑桿本體時 
+   2. 當使用者正在拖曳滑塊時（透過 JS 動態加上 .is-dragging 類別）
+*/
+.ol-zoomslider:hover .ol-zoomslider-thumb-text,
+.ol-zoomslider-thumb.is-dragging .ol-zoomslider-thumb-text {
+  opacity: 1;
+  margin-left: 0;
+}
