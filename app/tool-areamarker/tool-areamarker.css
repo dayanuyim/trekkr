@@ -1,7 +1,8 @@
 :root {
     --text-color: #202020;
     --input-color: #202020;
-    --input-bgcolor: rgba(255,255,255,0.3);
+    --input-bgcolor: rgba(0,0,0,0.1);
+    --marker-bgcolor: rgba(255,255,255,0.3);
 }
 
 .tool-areamarker {
@@ -23,12 +24,6 @@
     border: 1px #a0a0a0 solid;
     border-radius: 3px;
     box-shadow: 0 2px 1px 0 rgba(255, 255, 255, 0.4) inset, 0 1px 1px 1px rgba(0, 0, 0, 0.5);
-
-    /* close animation */
-    transform-origin: calc(100% - 12px) 12px;   /* the center of closer button */
-    transition:
-        transform 1.0s ease-in,
-        opacity 1.0s ease-in;
 }
 
 .tool-areamarker.closing {
@@ -64,52 +59,52 @@
 
 /* ---------------- Panel Hover --------------------- */
 
+.tool-areamarker.doing,
 .tool-areamarker:has(.areamarker-content:hover) {
-    color: #202020;
     background: rgba(255,255,255,0.7);
     transition: background-color 1.5s ease-out;
 }
 
-.tool-areamarker .areamarker-content:hover input,
-.tool-areamarker .areamarker-content:hover select {
-    background: rgba(0,0,0,0.1);
+/* transition 動畫要發生在 hover 時，而非 not hover，故不能反過來寫
+.tool-areamarker:not(.doing):not(:has(.areamarker-content:hover)) {
+    background-color: rgba(0, 0, 0, 0.15);
+    transition: background-color 1.5s ease-out;
 }
+*/
 
-.tool-areamarker .areamarker-content:hover button {
-    border: 1px #404040 solid;
-}
+/* ---------------- Panel 精簡模式 ------------------ */
 
-/* ----------------Panel Not Hover ------------------ */
-
-.tool-areamarker .areamarker-content:not(:hover) *,
-.tool-areamarker:has(.areamarker-content:not(:hover)) .areamarker-header,
-.tool-areamarker:has(.areamarker-content:not(:hover)) .areamarker-footer {
+.tool-areamarker:not(.doing) .areamarker-content:not(:hover) *,
+.tool-areamarker:not(.doing):has(.areamarker-content:not(:hover)) .areamarker-header,
+.tool-areamarker:not(.doing):has(.areamarker-content:not(:hover)) .areamarker-footer {
     visibility: hidden;
 }
-.tool-areamarker .areamarker-content:not(:hover) .areamarker-coord,
-.tool-areamarker .areamarker-content:not(:hover) .areamarker-xspan,
-.tool-areamarker .areamarker-content:not(:hover) .areamarker-yspan {
+.tool-areamarker:not(.doing) .areamarker-content:not(:hover) .areamarker-coord,
+.tool-areamarker:not(.doing) .areamarker-content:not(:hover) .areamarker-xspan,
+.tool-areamarker:not(.doing) .areamarker-content:not(:hover) .areamarker-yspan {
+    color: #202020;
     visibility: visible;
     pointer-events: none;  /* not able to trigger hover */
+    background: var(--marker-bgcolor);
 }
 
-.tool-areamarker .areamarker-content:not(:hover) .areamarker-coord {
+.tool-areamarker:not(.doing) .areamarker-content:not(:hover) .areamarker-coord {
     position: absolute;
     top: 0;
     left: 0;
     text-align: left;
 }
-.tool-areamarker .areamarker-content:not(:hover) .areamarker-coord:has(+ .locked) {
+.tool-areamarker:not(.doing) .areamarker-content:not(:hover) .areamarker-coord:has(+ .locked) {
     margin-left: 28px;
 }
 
-.tool-areamarker .areamarker-content:not(:hover) .areamarker-xspan {
+.tool-areamarker:not(.doing) .areamarker-content:not(:hover) .areamarker-xspan {
     position: absolute;
     bottom: 0;
     left: 50%;
     transform: translateX(-50%);
 }
-.tool-areamarker .areamarker-content:not(:hover) .areamarker-yspan {
+.tool-areamarker:not(.doing) .areamarker-content:not(:hover) .areamarker-yspan {
     position: absolute;
     top: 50%;
     right: 0;
@@ -149,6 +144,14 @@
     color: rgba(0, 0, 0, 0.5);
     font-size: 20px;
     transform: rotate(15deg);
+}
+
+.tool-areamarker {
+    /* close animation */
+    transform-origin: calc(100% - 12px) 12px;   /* the center of closer button */
+    transition:
+        transform 1.0s ease-in,
+        opacity 1.0s ease-in;
 }
 
 .tool-areamarker .areamarker-closer{
@@ -239,6 +242,7 @@
     padding: 4px;
     border-radius: 4px;
     color: var(--text-color);
+    background: var(--input-bgcolor);
     font-size: 16px;
 }
 
@@ -262,7 +266,7 @@
     width: 10.5em;
 }
 
-.tool-areamarker button {
+.tool-areamarker .areamarker-content button {
     padding: 8px;
     margin-right: 8px;
     font-size: 16px;
@@ -275,19 +279,25 @@
     transition: background-color 1.0s;
 }
 
-.tool-areamarker button:disabled:hover {
-    cursor: not-allowed;
-}
-
-.tool-areamarker button:not(:disabled):hover {
+.tool-areamarker .areamarker-content button:not(:disabled):hover {
     cursor: pointer;
     background-color: rgba(0,0,0, 0.1);
 }
 
-.tool-areamarker .areamarker-abort {
+.tool-areamarker .areamarker-content button:disabled {
+    cursor: not-allowed;
+    color: #808080;
+}
+
+/* abort button */
+.tool-areamarker .areamarker-content button.areamarker-abort {
     color: rgb(151, 47, 47);
     background-color: rgba(128, 0, 0, .1);
 }
+.tool-areamarker:not(.doing) .areamarker-content button.areamarker-abort {
+    display: none;
+}
+
 
 /* Progress Bar ---------------------------- */
 

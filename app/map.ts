@@ -48,12 +48,15 @@ function findLayerByFeature(map, feature){
 }
 */
 
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
 function unionExtents(extents){
   const empty = createEmptyExtent();
   return extents.reduce((res, ext) => extendExtent(res, ext), empty);
 }
 
 const is_image_layer = layer => !layer.legend && layer.type === 'xyz';
+const is_grid_layer  = layer => layer.legend && layer.type === 'grid';
 
 // ==================================================
 import { XYZ, WMTS } from 'ol/source';
@@ -141,10 +144,10 @@ export async function exportSourceImage(
 
     for (let x = range.minX; x <= range.maxX; x++) {
       for (let y = range.minY; y <= range.maxY; y++) {
-        if (on_abort?.()) {
-          on_progress?.("已取消", 0, "匯出工作已取消");
-          return;
-        }
+        if (on_abort?.()) 
+          return on_progress?.("已取消", 0, "匯出工作已取消");
+
+        //await sleep(200);  // @@! for testing
         on_progress?.("圖磚下載", prog_percent(x, y), prog_msg(x, y));
 
         const tileCoord: [number, number, number] = [z, x, y];
@@ -479,10 +482,10 @@ export class AppMap{
       this.addGpxFeatures(e.features);
     });
 
-    // @@ for easy to debug when init done
-    //this._map.once('rendercomplete', () => {
-    //  this._tool_areamarker.show();
-    //});
+    // @@ for easy to debug when init
+    this._map.once('rendercomplete', () => {
+      //this._tool_areamarker.show();
+    });
   };
 
   private setZoomSliderThumbText(){
@@ -1069,6 +1072,7 @@ export class AppMap{
         xspan: 7000,       // reset the span anyway
         yspan: 5000,       // reset the span anyway
         layer: Opt.layers.find(ly => is_image_layer(ly) && ly.checked)?.id,   // 預設圖層
+        grid_coordsys: Opt.layers.find(ly => is_grid_layer(ly) && ly.checked)?.id?.replace(/^GRID_/, '')?.toLowerCase(),  // TODO 比較好的方式把 layer id 轉成 coordsys id ??
       });
     });
 
