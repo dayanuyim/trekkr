@@ -203,7 +203,22 @@ export function tablink(tab_q, init_idx=0, base_el=document.body)
     }
 }
 
-export function canvasToBlob(canvas: HTMLCanvasElement, type = 'image/png', quality = 0.85  ){
+export async function canvasToBlob(canvas: HTMLCanvasElement, type: string, opt?){
+    opt = Object.assign({
+        quality: 0.85,
+    }, opt);
+
+    switch(type){
+        case 'png':
+            return await canvasToImgBlob(canvas, 'image/png', opt);
+        case 'pdf':
+            return canvasToPdfBlob(canvas, opt);
+        default: 
+            throw new Error(`Unknown type ${type} for canvasToBlob to convert`);
+    }
+}
+
+export function canvasToImgBlob(canvas: HTMLCanvasElement, type = 'image/png', quality = 0.85  ){
   return new Promise<Blob>((resolve, reject) => {
     canvas.toBlob((blob) => {
       if (blob) resolve(blob);
@@ -211,6 +226,94 @@ export function canvasToBlob(canvas: HTMLCanvasElement, type = 'image/png', qual
     }, type, quality);
   });
 }
+
+import { jsPDF } from 'jspdf';
+
+export function canvasToPdfBlob(canvas, opt?) {
+
+    const pdf = new jsPDF({
+        orientation: (canvas.height >= canvas.width)? 'portrait': 'landscape',
+        unit: 'mm',
+        format: opt.pagesize?? 'a4',
+        compress: true,
+    });
+
+    const imgData = canvas.toDataURL('image/png');
+
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+
+    // 等比例縮放，完整放入 A4
+    const scale =Math.min(          // mm/pixel
+        pageWidth / canvas.width,
+        pageHeight / canvas.height,
+        opt.scale?? 1,
+    );
+
+    const width = canvas.width * scale;
+    const height = canvas.height * scale;
+
+    // 置中
+    const x = (pageWidth - width) / 2;
+    const y = (pageHeight - height) / 2;
+
+    pdf.addImage(imgData, 'PNG', x, y, width, height);
+    return pdf.output('blob');
+}
+
+/*
+function canvasBlobToPdf(blob) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+
+        reader.onerror = () => reject(reader.error);
+
+        reader.onload = () => {
+            try {
+                const pdf = new jsPDF({
+                    orientation: 'portrait',
+                    unit: 'mm',
+                    format: 'a4'
+                });
+
+                const pageWidth = pdf.internal.pageSize.getWidth();
+                const pageHeight = pdf.internal.pageSize.getHeight();
+
+                // 取得圖片尺寸
+                const img = new Image();
+
+                img.onload = () => {
+                    const scale = Math.min(
+                        pageWidth / img.width,
+                        pageHeight / img.height
+                    );
+
+                    const width = img.width * scale;
+                    const height = img.height * scale;
+
+                    pdf.addImage(
+                        reader.result,
+                        blob.type === 'image/jpeg' ? 'JPEG' : 'PNG',
+                        (pageWidth - width) / 2,
+                        (pageHeight - height) / 2,
+                        width,
+                        height
+                    );
+
+                    resolve(pdf.output('blob'));
+                };
+
+                img.onerror = reject;
+                img.src = reader.result;
+            } catch (error) {
+                reject(error);
+            }
+        };
+
+        reader.readAsDataURL(blob);
+    });
+}
+*/
 
 export function saveBlobAsFile(blob: Blob, filename: string) {
     const anchor = document.createElement('a');

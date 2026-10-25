@@ -36,6 +36,10 @@ import { keyEnterToBlur, rafThrottle } from '../lib/dom-utils';
 function km_str_to_meter_num(km: string): number { return Math.round(1000 * parseFloat(km)); }
 function meter_num_to_km_str(m: number): string { return (m / 1000).toFixed(3); }
 
+function getLayerDefaultZoom(layer: string): number {
+    return (['EMAP5',  'NLSC_PHOTO_MIX'].includes(layer))?  16: 15;   // 通用地圖預設16，其餘15
+}
+
 const to_proj = (coordsys) => coordsys_profiles[coordsys].projection;
 
 // TODO 整合 Topbar 的 goto tool
@@ -123,6 +127,19 @@ const toolHTML = Handlebars.compile(`
             縮放層級<input type="number" class="areamarker-zoom" value="16" min="1" max="16" step="1" />
         </p>
         <p>
+            <span class="areamarker-opt">格式</span>
+            <select class="areamarker-filetype">
+                <option value="" disabled hidden>--格式--</option>
+                <option value="png">PNG</option>
+                <option value="pdf">PDF</option>
+            </select>
+            <select class="areamarker-pagesize">
+                <option value="" disabled hidden>--PDF紙張--</option>
+                <option value="a3">A3</option>
+                <option value="a4">A4</option>
+            </select>
+        </p>
+        <p>
             <button class="areamarker-setup"><i class="fa-solid fa-file-arrow-down"></i>匯出圖檔</button>
             <button class="areamarker-abort"><i class="fa-solid fa-circle-stop"></i>取消匯出</button>
         </p>
@@ -206,6 +223,8 @@ export default class AreaMarker{
     _gpx_trk: HTMLInputElement;
     _layer: HTMLSelectElement;
     _zoom: HTMLInputElement;
+    _filetype: HTMLSelectElement;
+    _pagesize: HTMLSelectElement;
 
     _closer: HTMLButtonElement;
     _setup: HTMLButtonElement;
@@ -277,6 +296,12 @@ export default class AreaMarker{
     get zoom(): number { return parseFloat(this._zoom.value); }
     set zoom(val: number) { this._zoom.value = val.toString(); }
 
+    get filetype(): string { return this._filetype.value; }
+    set filetype(val: string) { this._filetype.value = val; }
+
+    get pagesize(): string { return this._pagesize.value; }
+    set pagesize(val: string) { this._pagesize.value = val; }
+
     get prog_status(): string { return this._prog_status.innerText; }
     set prog_status(val: string) { this._prog_status.innerHTML = val; }
 
@@ -313,6 +338,8 @@ export default class AreaMarker{
         this._gpx_trk       = this._base.querySelector(".areamarker-gpx-trk");
         this._layer         = this._base.querySelector(".areamarker-layer");
         this._zoom          = this._base.querySelector(".areamarker-zoom");
+        this._filetype      = this._base.querySelector(".areamarker-filetype");
+        this._pagesize      = this._base.querySelector(".areamarker-pagesize");
         this._closer        = this._base.querySelector(".areamarker-closer");
         this._setup         = this._base.querySelector(".areamarker-setup");
         this._abort         = this._base.querySelector(".areamarker-abort");
@@ -333,7 +360,7 @@ export default class AreaMarker{
     }
 
     private init(opt?){
-        opt = Object.assign({
+        this.applyOption(Object.assign({
             coordsys: 'twd97',
             coord: undefined,
             xspan: 7000,
@@ -348,9 +375,9 @@ export default class AreaMarker{
             gpx_trk: false,
             layer: "",
             zoom: 16,
-        }, opt);
-
-        this.applyOption(opt);
+            filetype: 'pdf',
+            pagesize: 'a4',
+        }, opt));
 
         this.initProgress();
 
@@ -405,6 +432,10 @@ export default class AreaMarker{
                 }
             });
         });
+
+        this._layer.addEventListener('change', e => {
+            this.zoom = getLayerDefaultZoom(this.layer);
+        })
 
         this._gpx_wpt.addEventListener('change', (e) => {
             if(this._gpx_wpt.checked) alert('Not Implement Yet!');
@@ -587,10 +618,10 @@ export default class AreaMarker{
         // 需測試的角落。若 span 是格線倍數的情況下，不需每個角落都測試。
         const coord = this.coord;
         const corners = [coord];                                                            // top-left
-        if(this.xspan % scale != 0) corners.push(this.calcCoord(coord, [this.xspan, 0]));   // top-right
-        if(this.yspan % scale != 0) corners.push(this.calcCoord(coord, [0, -this.yspan]));  // bottom-left
+        if(this.xspan % scale != 0) corners.push(this.calcProjCoord(coord, [this.xspan, 0]));   // top-right
+        if(this.yspan % scale != 0) corners.push(this.calcProjCoord(coord, [0, -this.yspan]));  // bottom-left
         if(this.yspan % scale != 0 && this.yspan % scale != 0)
-            corners.push(this.calcCoord(coord, [this.xspan, -this.yspan]));                 // bottom-right
+            corners.push(this.calcProjCoord(coord, [this.xspan, -this.yspan]));                 // bottom-right
 
         // get the minimum difference
         const rounds = corners.map(coord => coord.map(round));
@@ -621,7 +652,7 @@ export default class AreaMarker{
 
     private async fitPanelPanning(){
         const top_left     = this.toWebCoord(this.coord);
-        const bottom_right = this.toWebCoord(this.calcCoord(this.coord, [this.xspan, -this.yspan]));
+        const bottom_right = this.toWebCoord(this.calcProjCoord(this.coord, [this.xspan, -this.yspan]));
 
         const extent = this.map.getView().calculateExtent();
 
@@ -632,7 +663,7 @@ export default class AreaMarker{
                 this.enableMapListeners(false);
 
                 this.map.getView().animate({
-                    center: this.toWebCoord(this.calcCoord(this.coord, [this.xspan/2, - this.yspan/2])),
+                    center: this.toWebCoord(this.calcProjCoord(this.coord, [this.xspan/2, - this.yspan/2])),
                     duration: 0.3,
                 });
 
@@ -656,7 +687,7 @@ export default class AreaMarker{
         const [px, py] = is_ui_ready?
             [ x + width, y + height]:
             this.map.getPixelFromCoordinate(
-                this.toWebCoord(this.calcCoord(this.coord, [this.xspan, -this.yspan])));  //bottom-right
+                this.toWebCoord(this.calcProjCoord(this.coord, [this.xspan, -this.yspan])));  //bottom-right
 
         // new width/height
         if(!is_ui_ready){
@@ -675,7 +706,7 @@ export default class AreaMarker{
     // ZOOM Fit 之後再放置 Panel。建議必要時才使用，減少畫面跳動
     private async fitPanel(left_top?: Coordinate, right_bottom?: Coordinate){  //webcoord
         left_top     = left_top     || this.toWebCoord(this.coord);
-        right_bottom = right_bottom || this.toWebCoord(this.calcCoord(this.coord, [this.xspan, -this.yspan]));
+        right_bottom = right_bottom || this.toWebCoord(this.calcProjCoord(this.coord, [this.xspan, -this.yspan]));
 
         // Zoom the map to fit the panel
         const extent = boundingExtent([left_top, right_bottom]);
@@ -779,15 +810,11 @@ export default class AreaMarker{
         //console.debug("areamarker initialized", opt);
         this.applyOption(opt);
 
-        const proj = this.getProj();
-
-        // Get left-top point
-        const left_top = this.coord?
-            transform(this.coord, proj, WEB_MERCATOR):
-            shiftWebCoord(this.map.getView().getCenter(), [-this.xspan/2,  this.yspan/2]);  // 由目前的位置 決定左上座標
-
-        if(!this.coord)
-            this.coord = this.toProjCoord(left_top);
+        // Get left-top coord
+        if(!this.coord){
+            const center = this.toProjCoord(this.map.getView().getCenter());
+            this.coord = this.calcProjCoord(center, [-this.xspan/2,  this.yspan/2]);
+        }
 
         // align the grid
         this.evalPanelAlignCoord();
@@ -802,6 +829,8 @@ export default class AreaMarker{
         // enable map handler
         this.enableMapListeners(true);
 
+        // other options
+
         // showing
         this._base.hidden = false;
     }
@@ -815,6 +844,8 @@ export default class AreaMarker{
 
         if(!opt.coordsys)
             opt.coordsys = opt.grid_coordsys;
+
+        opt.zoom = getLayerDefaultZoom(opt.layer);
 
         Object.assign(this, opt);
     }
@@ -831,6 +862,8 @@ export default class AreaMarker{
             gpx_trk: this.gpx_wpt,
             layer: this.layer,
             zoom: this.zoom,
+            filetype: this.filetype,
+            pagesize: this.pagesize,
         };
     }
 
@@ -850,12 +883,13 @@ export default class AreaMarker{
     }
 
     // utilts ======================
+
     // 若座標系統是 TM2，直接使用 TM2，減少轉換造成的誤差。
     private getProj(){
         return to_proj(this.coordsys);
     }
 
-    private calcCoord(coord: Coordinate, diff: [number, number]){
+    private calcProjCoord(coord: Coordinate, diff: [number, number]){
         return (['twd67', 'twd97'].includes(this.coordsys))? // TM2
             diffCoord(coord, diff):
             shiftCoord(this.getProj(), coord, diff);

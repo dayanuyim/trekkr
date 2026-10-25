@@ -72,6 +72,8 @@ interface ExportOptions {
   zoom: number;
   grid_proj?: Projection;
   filename?: string;
+  filetype?: string;
+  pagesize?: string;  // jsPDF's format: a3, a4,...
 }
 
 export async function exportSourceImage(
@@ -182,12 +184,18 @@ export async function exportSourceImage(
       });
     }
 
-    // 6. 匯出 PNG
-    on_progress?.("檔案製作", 98, `正在產生 PNG 圖檔`);
-    const blob = await canvasToBlob(canvas, 'image/png');
+    const geo_scale = 25000;
 
-    on_progress?.("匯出完成", 100, `匯出完成，請儲存圖檔`);
-    saveBlobAsFile(blob, opt.filename ?? 'map.png');
+    // 6.1 依 type 生出 blbo 檔
+    on_progress?.("檔案製作", 98, `正在產生 ${opt.filetype.toUpperCase()} 檔案`);
+    const blob = await canvasToBlob(canvas, opt.filetype, {
+      scale: opt.xspan * 1000 / geo_scale / canvas.width,    // mm/pixel
+      pagesize: opt.pagesize,
+    });
+
+    // 6.2 匯出檔案
+    on_progress?.("匯出完成", 100, `匯出完成，請儲存檔案`);
+    saveBlobAsFile(blob, opt.filename?? `map.${opt.filetype.toLowerCase()}`);
   }
   catch(e){
       console.error(e);
