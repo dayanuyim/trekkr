@@ -2,10 +2,8 @@
 import layer_conf from './data/layer-conf';
 import Cookies from 'js-cookie';
 //import { zlibSync, unzlibSync } from 'fflate';
-import {isEqual} from 'lodash';
+import { isEqual, throttle} from 'lodash';
 import { copyIfKeyDefined } from './lib/utils';
-
-let _cookies_save_timers = {};
 
 class Opt{
     static instance = undefined;
@@ -14,6 +12,8 @@ class Opt{
             Opt.instance = new Opt();
         return Opt.instance;
     }
+
+    lazySave;
 
     //cookie options
     _version = 9;
@@ -69,6 +69,23 @@ class Opt{
         //reset properties
         this.spy.enabled = false;
         //console.log('opt', JSON.stringify(this, null, 2));
+
+       this.lazySave = throttle((topkey) => {
+            const cookies_opt = {sameSite: 'strict'};
+            const version_key = '_version';
+
+            const value = JSON.stringify(this.getStrippedValue(topkey));
+
+            // after encodeURIComponent, cookie may exceed the limit 4096 bytes. we warn if the cookie seems too large.
+            if(value.length >= 2600)
+                console.warn(`The cookie size is too larger: ${value.length}`)
+
+            //console.debug(new Date(), `Saving ${topkey} to cookie:`, value);
+            Cookies.set(topkey, value, cookies_opt);
+            Cookies.set(version_key, this[version_key], cookies_opt);  //for future compatibility check
+        }, 2000, {
+            trailing: true, leading: true
+        });
     }
 
     private load() {
@@ -135,29 +152,6 @@ class Opt{
             this.lazySave(topkey);
         }
         return is_changed;
-    }
-
-    private lazySave(topkey){
-
-        const cookies_opt = {sameSite: 'strict'};
-        const version_key = '_version';
-
-        if(_cookies_save_timers[topkey])
-            clearTimeout(_cookies_save_timers[topkey]);
-
-        _cookies_save_timers[topkey] = setTimeout(() => {
-            _cookies_save_timers[topkey] = null;
-
-            const value = JSON.stringify(this.getStrippedValue(topkey));
-            //console.log(`Saving ${topkey} to cookie:`, value);
-
-            // after encodeURIComponent, cookie may exceed the limit 4096 bytes. we warn if the cookie seems too large.
-            if(value.length >= 2600)
-                console.warn(`The cookie size is too larger: ${value.length}`)
-
-            Cookies.set(topkey, value, cookies_opt);
-            Cookies.set(version_key, this[version_key], cookies_opt);  //for future compatibility check
-        }, 2000);
     }
 
     public getStrippedValue(key){
