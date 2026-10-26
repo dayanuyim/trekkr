@@ -714,17 +714,27 @@ export default class AreaMarker{
 
     // ZOOM Fit 之後再放置 Panel。建議必要時才使用，減少畫面跳動
     private async fitPanel(left_top?: Coordinate, right_bottom?: Coordinate){  //webcoord
+        // the extent to be fit
         left_top     = left_top     || this.toWebCoord(this.coord);
         right_bottom = right_bottom || this.toWebCoord(this.calcProjCoord(this.coord, [this.xspan, -this.yspan]));
-
-        // Zoom the map to fit the panel
         const extent = boundingExtent([left_top, right_bottom]);
 
+        // min panel w/h to be visible
+        const pw = Math.max(this.init_width,  this.init_height * (this.xspan / this.yspan));
+        const ph = Math.max(this.init_height, this.init_width  * (this.yspan / this.xspan));
+
+        // padding top/down and left/right
+        const cramp = v => Math.max(20, Math.min(v, 250));
+        const {width: mw, height: mh} = this.map.getTargetElement().getBoundingClientRect();
+        const padx = cramp((mw - pw)/2);
+        const pady = cramp((mh - ph)/2);
+
+        // Zoom the map to fit the panel
         try {
             this.enableMapListeners(false);
 
             this.map.getView().fit(extent, {
-                padding: [120, 120, 120, 120],
+                padding: [pady, padx, pady, padx], //top, right, bottom, left
                 duration: 300,
             });
             await waitForMapMoveEnd(this.map);
