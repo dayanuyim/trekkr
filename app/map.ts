@@ -72,7 +72,7 @@ interface ExportOptions {
   zoom: number;
   grid_proj?: Projection;
   filename?: string;
-  filetype?: string;
+  filetypes: string[];
   pagesize?: string;  // jsPDF's format: a3, a4,...
 }
 
@@ -184,18 +184,25 @@ export async function exportSourceImage(
       });
     }
 
+    // 6. 製作檔案
     const geo_scale = 25000;
+    const filenames = opt.filetypes.map(filetype => `${opt.filename?? "map"}.${filetype.toLowerCase()}`);
+    const file_prog = i => 96 + 3* (i+1) / opt.filetypes.length;  // 96~99
 
-    // 6.1 依 type 生出 blbo 檔
-    on_progress?.("檔案製作", 98, `正在產生 ${opt.filetype.toUpperCase()} 檔案`);
-    const blob = await canvasToBlob(canvas, opt.filetype, {
-      scale: opt.xspan * 1000 / geo_scale / canvas.width,    // mm/pixel
-      pagesize: opt.pagesize,
-    });
+    await Promise.allSettled(opt.filetypes.map(async(filetype, i) => {
+      on_progress?.("檔案製作", file_prog(i), `正在產生 ${filetype.toUpperCase()} 檔案`);
 
-    // 6.2 匯出檔案
-    on_progress?.("匯出完成", 100, `匯出完成，請儲存檔案`);
-    saveBlobAsFile(blob, opt.filename?? `map.${opt.filetype.toLowerCase()}`);
+      // 6.1 依 type 生出 blbo 檔
+      const blob = await canvasToBlob(canvas, filetype, {
+        scale: opt.xspan * 1000 / geo_scale / canvas.width,    // mm/pixel
+        pagesize: opt.pagesize,
+      });
+
+      // 6.2 匯出檔案
+      saveBlobAsFile(blob, filenames[i]);
+    }));
+
+    on_progress?.("匯出完成", 100, `匯出完成，請儲存檔案(${filenames.length}個)：${filenames.join(", ")}`);
   }
   catch(e){
       console.error(e);
@@ -319,11 +326,14 @@ function drawImageGrid(
     ctx.fillText(text, x, y);
   };
 
+  //TODO 如果要印非 TM2 格線，這段要拉出去變成 callback
+  const to_label = (v) => ((v % 1000) < 50)? Math.round(v/1000).toString(): "";   //只印 TM2/KM 格線
+
   // 上、下：Easting
   for (let x = startX; x <= maxX; x += interval) {
     const top = toPixel([x, maxY]);
     const bottom = toPixel([x, minY]);
-    const label = `${Math.round(x)}`;
+    const label = to_label(x);
 
     drawLabel(label, top[0], padding, 'center', 'top');
     drawLabel(label, bottom[0], height - padding, 'center', 'bottom');
@@ -333,7 +343,7 @@ function drawImageGrid(
   for (let y = startY; y <= maxY; y += interval) {
     const left = toPixel([minX, y]);
     const right = toPixel([maxX, y]);
-    const label = `${Math.round(y)}`;
+    const label = to_label(y);
 
     drawLabel(label, padding, left[1], 'left', 'middle');
     drawLabel(label, width - padding, right[1], 'right', 'middle');

@@ -128,16 +128,17 @@ const toolHTML = Handlebars.compile(`
         </p>
         <p>
             <span class="areamarker-opt">格式</span>
-            <select class="areamarker-filetype">
-                <option value="" disabled hidden>--格式--</option>
-                <option value="png">PNG</option>
-                <option value="pdf">PDF</option>
-            </select>
-            <select class="areamarker-pagesize">
-                <option value="" disabled hidden>--PDF紙張--</option>
-                <option value="a3">A3</option>
-                <option value="a4">A4</option>
-            </select>
+            <span class="areamarker-filetypes">
+                <input type="checkbox" value="png" id="areamarker-filetypes-png"/>
+                <label for="areamarker-filetypes-png">PNG圖檔</label>
+                <input type="checkbox" value="pdf" id="areamarker-filetypes-pdf"/>
+                <label for="areamarker-filetypes-pdf">PDF檔</label>
+                <select class="areamarker-pagesize">
+                    <option value="" disabled hidden>--紙張--</option>
+                    <option value="a3">A3</option>
+                    <option value="a4">A4</option>
+                </select>
+            </span>
         </p>
         <p>
             <button class="areamarker-setup"><i class="fa-solid fa-file-arrow-down"></i>匯出圖檔</button>
@@ -223,7 +224,7 @@ export default class AreaMarker{
     _gpx_trk: HTMLInputElement;
     _layer: HTMLSelectElement;
     _zoom: HTMLInputElement;
-    _filetype: HTMLSelectElement;
+    _filetypes: HTMLElement;
     _pagesize: HTMLSelectElement;
 
     _closer: HTMLButtonElement;
@@ -296,8 +297,14 @@ export default class AreaMarker{
     get zoom(): number { return parseFloat(this._zoom.value); }
     set zoom(val: number) { this._zoom.value = val.toString(); }
 
-    get filetype(): string { return this._filetype.value; }
-    set filetype(val: string) { this._filetype.value = val; }
+    get filetypes(): string[] {
+        return Array.from(this._filetypes.querySelectorAll<HTMLInputElement>('input:checked')).map(i => i.value);
+    }
+    set filetypes(vals: string[]) {
+        this._filetypes.querySelectorAll<HTMLInputElement>('input[type="checkbox"]').forEach(ckbox => {
+            ckbox.checked = vals.includes(ckbox.value);
+        });
+    }
 
     get pagesize(): string { return this._pagesize.value; }
     set pagesize(val: string) { this._pagesize.value = val; }
@@ -338,7 +345,7 @@ export default class AreaMarker{
         this._gpx_trk       = this._base.querySelector(".areamarker-gpx-trk");
         this._layer         = this._base.querySelector(".areamarker-layer");
         this._zoom          = this._base.querySelector(".areamarker-zoom");
-        this._filetype      = this._base.querySelector(".areamarker-filetype");
+        this._filetypes     = this._base.querySelector(".areamarker-filetypes");
         this._pagesize      = this._base.querySelector(".areamarker-pagesize");
         this._closer        = this._base.querySelector(".areamarker-closer");
         this._setup         = this._base.querySelector(".areamarker-setup");
@@ -375,7 +382,7 @@ export default class AreaMarker{
             gpx_trk: false,
             layer: "",
             zoom: 16,
-            filetype: 'pdf',
+            filetypes: ['png', 'pdf'],
             pagesize: 'a4',
         }, opt));
 
@@ -399,6 +406,8 @@ export default class AreaMarker{
 
         this._setup.addEventListener('click', (e) => {
             const opt = this.fetchOption();
+            if(!opt.filetypes.length)
+                return alert("未選擇檔案輸出格式");
             this.listeners['setup']?.(opt);
         });
 
@@ -862,7 +871,7 @@ export default class AreaMarker{
             gpx_trk: this.gpx_wpt,
             layer: this.layer,
             zoom: this.zoom,
-            filetype: this.filetype,
+            filetypes: this.filetypes,
             pagesize: this.pagesize,
         };
     }
