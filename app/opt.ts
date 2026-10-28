@@ -16,7 +16,7 @@ class Opt{
     lazySave;
 
     //cookie options
-    _version = 9;
+    _version = 10;
     xy = [13461784.981041275, 2699338.9447048027];    //xy = fromLonLat([120.929272, 23.555519]);
     zoom = 15;
     coordsys = 'twd67';

@@ -95,6 +95,7 @@ Handlebars.registerHelper("colorboardItems", (options)=>{
 const coordsysMenu = Handlebars.compile(`
     <select class="{{cls}}" dir="ltr">
         {{selop ''         '-'             'disabled hidden'}}
+        {{selop 'findspot' '&#x26F0; 山岳' ''}}
         {{selop 'wgs84'    'WGS84'         ''}}
         {{selop 'twd97'    'TWD97'         ''}}
         {{selop 'twd67'    'TWD67'         ''}}
@@ -103,7 +104,6 @@ const coordsysMenu = Handlebars.compile(`
         {{selop 'twd67_6'  'TWD67&#x3285;' ''}}
         {{selop 'twd97_8'  'TWD97&#x3287;' ''}}
         {{selop 'twd67_8'  'TWD67&#x3287;' ''}}
-        {{selop 'findspot' '&#x26F0; 找山' ''}}
     </select>`
 );  /*這邊不要換行 不然會多一個空白*/
 
