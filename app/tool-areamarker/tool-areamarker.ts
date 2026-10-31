@@ -108,12 +108,11 @@ const toolHTML = Handlebars.compile(`
             <input type="checkbox" class="areamarker-grid-draw" id="areamarker-grid-draw"/>
             <label for="areamarker-grid-draw">顯示格線</label>
         </p>
-        <!------ TODO: 之後再實作 先 disable ------------------->
-        <p hidden>
+        <p>
             <span class="areamarker-opt">航跡</span>
-            <input type="checkbox" class="areamarker-gpx-wpt" id="areamarker-gpx-wpt" disabled/>
+            <input type="checkbox" class="areamarker-gpx-wpt" id="areamarker-gpx-wpt"/>
             <label for="areamarker-gpx-wpt">顯示航點</label>
-            <input type="checkbox" class="areamarker-gpx-trk" id="areamarker-gpx-trk" disabled/>
+            <input type="checkbox" class="areamarker-gpx-trk" id="areamarker-gpx-trk"/>
             <label for="areamarker-gpx-trk">顯示航跡</label>
         </p>
         <p>
@@ -378,7 +377,7 @@ export default class AreaMarker{
             grid_coordsys: 'twd97',
             grid_align: false,
             grid_draw: true,
-            gpx_wpt: false,
+            gpx_wpt: true,
             gpx_trk: false,
             layer: "",
             zoom: 16,
@@ -444,17 +443,7 @@ export default class AreaMarker{
 
         this._layer.addEventListener('change', e => {
             this.zoom = getLayerDefaultZoom(this.layer);
-        })
-
-        this._gpx_wpt.addEventListener('change', (e) => {
-            if(this._gpx_wpt.checked) alert('Not Implement Yet!');
-            this.gpx_wpt = false;
-        })
-
-        this._gpx_trk.addEventListener('change', (e) => {
-            if(this._gpx_trk.checked) alert('Not Implement Yet!');
-            this.gpx_trk = false;
-        })
+        });
 
         // panel dragging ==========
         let resizing = false;

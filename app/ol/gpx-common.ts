@@ -242,8 +242,8 @@ function addGpxTracks(node, trks) {
     const layout = trk.getGeometry().getLayout();
     trk.getGeometry().getCoordinates().forEach(trkseg => {
       node = node.ele('trkseg');
-      trkseg.forEach(coords => {
-        const [x, y, ele, time] = getXYZMOfCoord(coords, layout);
+      trkseg.forEach(coord => {
+        const [x, y, ele, time] = getXYZMOfCoord(coord, layout);
         const [lon, lat] = toLonLat([x, y]).map(fmt_coord);
         node = node.ele('trkpt', { lat, lon });
         if (ele)  node.ele('ele').txt(fmt_ele(ele)).up();
