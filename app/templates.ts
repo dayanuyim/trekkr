@@ -149,8 +149,8 @@ export const popContent = Handlebars.compile(`
     <!-------------- Wpt or Trkpt -------------->
     <div class="pop-pt">
         <fieldset class="pop-pt-tool">
-            <button class="pop-tool-mk-wpt" title="Make Wpt"><i class="fas fa-map-pin"></i></button>
-            <button class="pop-tool-rm-wpt" title="Delete Wpt"><i class="fas fa-trash-can"></i></button>
+            <button class="pop-tool-mk-wpt" title="Make Wpt"><i class="fa-solid fa-map-pin"></i></button>
+            <button class="pop-tool-rm-wpt" title="Delete Wpt"><i class="fa-solid fa-trash-can"></i></button>
         </fieldset>
 
         <div class="pop-pt-header">
@@ -169,7 +169,7 @@ export const popContent = Handlebars.compile(`
             <span class="pop-pt-coord-value">N/A</span>
             <a class="pop-pt-gmap" href="{{gmap coordinate}}" target="_blank">
                 <img src="./images/googleg.png" alt="Google G">
-                <!--<i class="fab fa-google"></i>-->
+                <!--<i class="fa-brands fa-google"></i>-->
             </a>
         </div>
 
@@ -241,7 +241,7 @@ export const symboard = Handlebars.compile(`
         {{symboardItem basics.length extras}}
     </div>
     <div class="pop-symboard-footer">
-        <label for="pop-symboard-filter"><i class="fas fa-magnifying-glass"></i></label>
+        <label for="pop-symboard-filter"><i class="fa-solid fa-magnifying-glass"></i></label>
         <input type="text" id="pop-symboard-filter" class="pop-symboard-filter" placeholder="Search...">
     </div>
 `);
@@ -263,7 +263,7 @@ export const mkLayer = Handlebars.compile(`
             </button>
         </span>
         <input type="number" class="ly-ctrl ly-opt ly-opt-opacity" max="100" min="0" step="5" value="{{mul opacity 100}}">
-        <i class="fas fa-percent"></i>
+        <i class="fa-solid fa-percent"></i>
         {{#if (isdefined seefilter)}}{{filterPanel seefilter}}{{/if}}
     </li>
     {{/with}}
@@ -281,14 +281,14 @@ Handlebars.registerHelper("layer", (layer, options) => {
             <input class="ly-checked" type="checkbox" ${checked? 'checked': ''}><!--
          --><span class="ly-desc">${desc}</span>
             <input class="ly-opacity" type="number" max="100" min="0" step="5" value="${Math.floor(opacity*100)}">
-            <i class="fas fa-percent"></i>
+            <i class="fa-solid fa-percent"></i>
         </li>
 `)});
 */
 
 export const settings = Handlebars.compile(`
     <div class="settings-ctrl ol-control">
-        <button class="btn-toggle"><i class="fas fa-gear"></i></button>
+        <button class="btn-toggle"><i class="fa-solid fa-gear"></i></button>
     </div>
     <div class="settings-main">
         <div class="tab">
@@ -516,12 +516,12 @@ export const main = Handlebars.compile(`
 `);
 
 const ctxMenuItems = Handlebars.compile(`
-    <div class="ctx-item"><a class="item-open-files"><i class="fas fa-file-circle-plus"></i>匯入檔案...</a>
+    <div class="ctx-item"><a class="item-open-files"><i class="fa-solid fa-file-circle-plus"></i>匯入檔案...</a>
         <input type="file" id="open-files" multiple hidden>
     </div>
     <div class="ctx-item-bar"></div>
     <div class="ctx-item"><a class="item-gmap" target="_blank"><i class="fa-brands fa-google"></i>GoogleMap&nbsp;Here</a></div>
-    <div class="ctx-item"><a class="item-add-wpt"><i class="fas fa-location-dot"></i>新增航點</a></div>
+    <div class="ctx-item"><a class="item-add-wpt"><i class="fa-solid fa-location-dot"></i>新增航點</a></div>
     <div class="ctx-item ctx-item-group"><a class="item-wpt-sym"><i></i>重設航點圖示</a>
         <div class="ctx-submenu">
             <div class="ctx-item"><a class="item-wpt-sym-rule"><i class="fa-solid fa-spell-check"></i>套用規則</a></div>
@@ -537,7 +537,7 @@ const ctxMenuItems = Handlebars.compile(`
     <div class="ctx-item"><a class="item-promote-trksegs"><i class="fa-solid fa-route"></i>所有航段轉為航跡</a></div>
     <div class="ctx-item-bar"></div>
     <div class="ctx-item"><a class="item-save-img"><i class="fa-solid fa-crop-simple"></i>匯出圖檔<span class="item-subicon"><i class="fa-solid fa-rotate-right"></i></span></a></div>
-    <div class="ctx-item"><a class="item-save-gpx"><i class="fas fa-file-contract"></i>匯出&nbsp;GPX&nbsp;航跡檔</a></div>
+    <div class="ctx-item"><a class="item-save-gpx"><i class="fa-solid fa-file-contract"></i>匯出&nbsp;GPX&nbsp;航跡檔</a></div>
 `);
 Handlebars.registerHelper("ctxMenuItems", ()=>{
     return new Handlebars.SafeString(ctxMenuItems());

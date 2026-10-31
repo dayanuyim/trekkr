@@ -7,11 +7,85 @@ import './css/ctx-menu.css';
 import './css/popup.css';
 import './css/ol-zoomslider-thumb.css';
 
-import '@fortawesome/fontawesome-free/js/fontawesome';
-import '@fortawesome/fontawesome-free/js/solid';
-import '@fortawesome/fontawesome-free/js/regular';
-import '@fortawesome/fontawesome-free/js/brands';
+//import '@fortawesome/fontawesome-free/js/fontawesome';
+//import '@fortawesome/fontawesome-free/js/solid';
+//import '@fortawesome/fontawesome-free/js/regular';
+//import '@fortawesome/fontawesome-free/js/brands';
 //import '@fortawesome/fontawesome-free/css/all.min.css';
+
+import { library, dom } from '@fortawesome/fontawesome-svg-core';
+import {
+  faChartArea,
+  faCircle,
+  faCircleStop,
+  faCircleXmark,
+  faCropSimple,
+  faCrosshairs,
+  faEarthAsia,
+  faEye,
+  faEyeLowVision,
+  faFileArrowDown,
+  faFileCirclePlus,
+  faFileContract,
+  faGear,
+  faHouseUser,
+  faLink,
+  faLocationDot,
+  faLock,
+  faLockOpen,
+  faMagnifyingGlass,
+  faMapPin,
+  faPercent,
+  faRotateRight,
+  faRoute,
+  faScissors,
+  faSpellCheck,
+  faThumbtack,
+  faTrashCan,
+} from '@fortawesome/free-solid-svg-icons';
+import {
+  faGoogle,
+  faCreativeCommons,
+  faCreativeCommonsPd,
+  faCreativeCommonsBy,
+  faCreativeCommonsSa,
+} from '@fortawesome/free-brands-svg-icons';
+library.add(
+  faGoogle,
+  faCreativeCommons,
+  faCreativeCommonsPd,
+  faCreativeCommonsBy,
+  faCreativeCommonsSa,
+  faChartArea,
+  faCircle,
+  faCircleStop,
+  faCircleXmark,
+  faCropSimple,
+  faCrosshairs,
+  faEarthAsia,
+  faEye,
+  faEyeLowVision,
+  faFileArrowDown,
+  faFileCirclePlus,
+  faFileContract,
+  faGear,
+  faHouseUser,
+  faLink,
+  faLocationDot,
+  faLock,
+  faLockOpen,
+  faMapPin,
+  faMagnifyingGlass,
+  faPercent,
+  faRotateRight,
+  faRoute,
+  faScissors,
+  faSpellCheck,
+  faThumbtack,
+  faTrashCan,
+);
+dom.watch();
+
 
 import './coord';
 import * as templates from './templates';
