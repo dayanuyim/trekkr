@@ -5,8 +5,9 @@
   "description": "the map viewer for trekking",
   "main": "index.js",
   "scripts": {
-    "build": "webpack",
-    "start": "nodemon server.js",
+    "build": "cross-env NODE_ENV=production  webpack",
+    "dev":   "cross-env NODE_ENV=development webpack",
+    "start": "cross-env NODE_ENV=development nodemon server.js",
     "test": "mocha --watch --reporter min",
     "postinstall": "patch-package"
   },
@@ -20,6 +21,7 @@
     "@types/topojson-specification": "^1.0.5",
     "bidirectional-map": "^2.0.0",
     "copy-webpack-plugin": "^14.0.0",
+    "cross-env": "^10.1.0",
     "css-loader": "^7.1.4",
     "exifreader": "^4.21.1",
     "file-loader": "^6.2.0",

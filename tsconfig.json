@@ -3,7 +3,8 @@
         "outDir": "./dist/",
         "rootDir": "./app",
         "sourceMap": true,
-        "module": "CommonJS",
+        //"module": "CommonJS",
+        "module": "ESNext",   //支援動態載入 module
         "esModuleInterop": true,
         "target": "ES6",
         "lib": [

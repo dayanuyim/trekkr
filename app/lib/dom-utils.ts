@@ -212,7 +212,7 @@ export async function canvasToBlob(canvas: HTMLCanvasElement, type: string, opt?
         case 'png':
             return await canvasToImgBlob(canvas, 'image/png', opt);
         case 'pdf':
-            return canvasToPdfBlob(canvas, opt);
+            return await canvasToPdfBlob(canvas, opt);
         default: 
             throw new Error(`Unknown type ${type} for canvasToBlob to convert`);
     }
@@ -227,9 +227,9 @@ export function canvasToImgBlob(canvas: HTMLCanvasElement, type = 'image/png', q
   });
 }
 
-import { jsPDF } from 'jspdf';
-
-export function canvasToPdfBlob(canvas, opt?) {
+//import { jsPDF } from 'jspdf';
+export async function canvasToPdfBlob(canvas, opt?) {
+    const { jsPDF } = await import('jspdf');  //dynamically loading
 
     const pdf = new jsPDF({
         orientation: (canvas.height >= canvas.width)? 'portrait': 'landscape',
