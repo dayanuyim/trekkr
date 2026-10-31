@@ -4,6 +4,7 @@ const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 const CopyWebpackPlugin = require('copy-webpack-plugin')
+const MomentTimezoneDataPlugin = require('moment-timezone-data-webpack-plugin');
 const webpack = require('webpack');
 
 const isProduction = process.env.NODE_ENV === 'production';
@@ -44,6 +45,10 @@ module.exports = {
                 { from: 'app/data', to: 'data' },
                 { from: 'app/images', to: 'images' },
             ]
+        }),
+        new MomentTimezoneDataPlugin({
+            startYear: 2000,
+            endYear: 2035,
         }),
     ],
     module: {

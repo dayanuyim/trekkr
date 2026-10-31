@@ -1,6 +1,7 @@
 'use strict';
 
 import * as moment from 'moment-timezone';
+//import moment from 'moment-timezone/builds/moment-timezone-with-data-10-year-range';
 import tzlookup from '@photostructure/tz-lookup';
 
 import {Feature} from 'ol';
