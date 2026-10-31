@@ -5,6 +5,7 @@ const HtmlWebpackPlugin = require('html-webpack-plugin');
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 const CopyWebpackPlugin = require('copy-webpack-plugin')
 const MomentTimezoneDataPlugin = require('moment-timezone-data-webpack-plugin');
+//const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer');
 const webpack = require('webpack');
 
 const isProduction = process.env.NODE_ENV === 'production';
@@ -50,6 +51,14 @@ module.exports = {
             startYear: 2000,
             endYear: 2035,
         }),
+        new webpack.IgnorePlugin({
+            resourceRegExp: /^\.\/locale$/,
+            contextRegExp: /moment$/,
+        }),
+        //new BundleAnalyzerPlugin({
+        //    analyzerMode: 'static',
+        //    openAnalyzer: true,
+        //}),
     ],
     module: {
         rules: [{

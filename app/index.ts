@@ -7,13 +7,14 @@ import './css/ctx-menu.css';
 import './css/popup.css';
 import './css/ol-zoomslider-thumb.css';
 
+// @deprecated 不要 import 整包
 //import '@fortawesome/fontawesome-free/js/fontawesome';
 //import '@fortawesome/fontawesome-free/js/solid';
 //import '@fortawesome/fontawesome-free/js/regular';
 //import '@fortawesome/fontawesome-free/js/brands';
 //import '@fortawesome/fontawesome-free/css/all.min.css';
 
-import { library, dom } from '@fortawesome/fontawesome-svg-core';
+/*/
 import {
   faChartArea,
   faCircle,
@@ -50,6 +51,41 @@ import {
   faCreativeCommonsBy,
   faCreativeCommonsSa,
 } from '@fortawesome/free-brands-svg-icons';
+/*/
+import { faChartArea }         from '@fortawesome/free-solid-svg-icons/faChartArea';
+import { faCircle }            from '@fortawesome/free-solid-svg-icons/faCircle';
+import { faCircleStop }        from '@fortawesome/free-solid-svg-icons/faCircleStop';
+import { faCircleXmark }       from '@fortawesome/free-solid-svg-icons/faCircleXmark';
+import { faCropSimple }        from '@fortawesome/free-solid-svg-icons/faCropSimple';
+import { faCrosshairs }        from '@fortawesome/free-solid-svg-icons/faCrosshairs';
+import { faEarthAsia }         from '@fortawesome/free-solid-svg-icons/faEarthAsia';
+import { faEye }               from '@fortawesome/free-solid-svg-icons/faEye';
+import { faEyeLowVision }      from '@fortawesome/free-solid-svg-icons/faEyeLowVision';
+import { faFileArrowDown }     from '@fortawesome/free-solid-svg-icons/faFileArrowDown';
+import { faFileCirclePlus }    from '@fortawesome/free-solid-svg-icons/faFileCirclePlus';
+import { faFileContract }      from '@fortawesome/free-solid-svg-icons/faFileContract';
+import { faGear }              from '@fortawesome/free-solid-svg-icons/faGear';
+import { faHouseUser }         from '@fortawesome/free-solid-svg-icons/faHouseUser';
+import { faLink }              from '@fortawesome/free-solid-svg-icons/faLink';
+import { faLocationDot }       from '@fortawesome/free-solid-svg-icons/faLocationDot';
+import { faLock }              from '@fortawesome/free-solid-svg-icons/faLock';
+import { faLockOpen }          from '@fortawesome/free-solid-svg-icons/faLockOpen';
+import { faMagnifyingGlass }   from '@fortawesome/free-solid-svg-icons/faMagnifyingGlass';
+import { faMapPin }            from '@fortawesome/free-solid-svg-icons/faMapPin';
+import { faPercent }           from '@fortawesome/free-solid-svg-icons/faPercent';
+import { faRotateRight }       from '@fortawesome/free-solid-svg-icons/faRotateRight';
+import { faRoute }             from '@fortawesome/free-solid-svg-icons/faRoute';
+import { faScissors }          from '@fortawesome/free-solid-svg-icons/faScissors';
+import { faSpellCheck }        from '@fortawesome/free-solid-svg-icons/faSpellCheck';
+import { faThumbtack }         from '@fortawesome/free-solid-svg-icons/faThumbtack';
+import { faTrashCan }          from '@fortawesome/free-solid-svg-icons/faTrashCan';
+import { faGoogle }            from '@fortawesome/free-brands-svg-icons/faGoogle';
+import { faCreativeCommons }   from '@fortawesome/free-brands-svg-icons/faCreativeCommons';
+import { faCreativeCommonsPd } from '@fortawesome/free-brands-svg-icons/faCreativeCommonsPd';
+import { faCreativeCommonsBy } from '@fortawesome/free-brands-svg-icons/faCreativeCommonsBy';
+import { faCreativeCommonsSa } from '@fortawesome/free-brands-svg-icons/faCreativeCommonsSa';
+//*/
+import { library, dom } from '@fortawesome/fontawesome-svg-core';
 library.add(
   faGoogle,
   faCreativeCommons,
