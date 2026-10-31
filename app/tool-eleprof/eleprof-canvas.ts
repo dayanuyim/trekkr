@@ -1,4 +1,4 @@
-import { debounce } from 'lodash';
+import { debounce } from 'lodash-es';
 import { clamp, binsearchIndex } from '../lib/utils';
 import { rafThrottle } from '../lib/dom-utils';
 import { getLocalTimeByCoord } from '../common';

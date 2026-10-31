@@ -2,7 +2,7 @@
 import layer_conf from './data/layer-conf';
 import Cookies from 'js-cookie';
 //import { zlibSync, unzlibSync } from 'fflate';
-import { isEqual, throttle} from 'lodash';
+import { isEqual, throttle} from 'lodash-es';
 import { copyIfKeyDefined } from './lib/utils';
 
 class Opt{

@@ -13,7 +13,7 @@ import * as Handlebars from 'handlebars/dist/handlebars';
 //import { coordsysMenu } from '../templates';
 import { taipowerCoordToTWD67, toTWD67, toTWD97, TM2codes, WEB_MERCATOR, WGS84, TWD97, TWD67 } from '../coord';
 import { waitForMapMoveEnd, waitForMapRender } from '../ol-utils';
-import { throttle } from 'lodash';
+import { throttle } from 'lodash-es';
 import { keyEnterToBlur, rafThrottle } from '../lib/dom-utils';
 
 /* 1. SPANs 不改變，但Coordinate 會改變的操作:
