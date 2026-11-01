@@ -197,8 +197,8 @@ export class AppMap{
       this.addGpxFeatures(e.features);
     });
 
-    // @@ for easy to debug when init
-    this._map.once('rendercomplete', () => {
+    this._map.once('rendercomplete', async () => {
+      // @@ for easy to debug when init
       //this._tool_areamarker.show();
     });
   };

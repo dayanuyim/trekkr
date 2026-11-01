@@ -17,7 +17,9 @@ module.exports = {
         filename:      isProduction?  '[name].[contenthash].js':       'main.js',
         chunkFilename: isProduction?  '[name].[contenthash].chunk.js': '[id].chunk.js',
         path: path.resolve(__dirname, 'dist'),
-        //clean: true,
+        clean: {
+            keep: /\.git/
+        },
     },
     resolve: {
         extensions: [".ts", ".tsx", "..."],  //... means default: .js, .json, .wasm

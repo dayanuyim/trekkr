@@ -29,6 +29,20 @@ function toRenderFeature(feature){
  */
 class Photo extends FeatureFormat {
 
+  /*
+  // TODO
+  // 改成 dynamically loading 在不修改框架(支援async)的情況下，似乎找不到好的時機？
+  // 除了拖曳、右鍵，也需考慮 url 載入。再則對啟動速度也影響有限，故先不使用。
+  exif;
+  _ready;
+  preload() {
+    return this._ready ??= import('exifreader').then(module => {
+      this.exif = module;
+      //console.debug('exifreader is loaded');
+    });
+  }
+   */
+
   _listeners = {};
 
   /**
@@ -85,6 +99,11 @@ class Photo extends FeatureFormat {
     if (!source) {
       return [];
     }
+
+    //if (!this.exif){
+    //  console.error('Photo FeatureFormat: exifreader is not loaded')
+    //  return [];
+    //}
 
     const url = window.URL || window.webkitURL;
 
