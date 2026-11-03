@@ -327,6 +327,7 @@ export default
         desc: '通用地圖',
         checked: false,
         opacity: 1.0,
+        prtzoom: 16,
     },
     {
         id: 'NLSC_PHOTO_MIX',
@@ -336,6 +337,7 @@ export default
         desc: '通用地圖(空照+等高線)',
         checked: false,
         opacity: 1.0,
+        prtzoom: 16,
     },
     {
         id: 'NLSC_PHOTO2',
@@ -365,6 +367,7 @@ export default
         desc: '2017-上河台灣全覽圖(北島)',
         checked: false,
         opacity: 1.0,
+        prtzoom: 16,
     },
     {
         id: 'B25000',

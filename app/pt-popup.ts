@@ -343,7 +343,7 @@ export class PtPopupOverlay extends Overlay{
             const text = (this._data.trk)?
                     createGpxText([], [this._feature]):
                     createGpxText([this._feature], []);
-            e.clipboardData.setData('text', text);
+            e.clipboardData.setData('text/plain', text);
             //navigator.clipboard?.writeText(text);  // the clipboard is not available for unsecure connection
             highlightElement(this.getElement(), 1000);
         }

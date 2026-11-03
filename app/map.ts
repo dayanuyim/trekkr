@@ -182,7 +182,11 @@ export class AppMap{
         this._setEleprofData(this._curr_feature_data);
       });
 
-    const layers = Opt.layers.filter(is_image_layer).map(({id, desc}) => ({id, desc}));
+    const layers = Opt.layers.filter(is_image_layer).map( layer=> ({
+      id: layer.id,
+      desc: layer.desc,
+      prtzoom: layer.prtzoom?? 15,  // default print zoom level
+    }));
     this._tool_areamarker = new AreaMarker(this._map, layers)
       .setListener('setup', opt => {
         this._exportLayerImage(opt);

@@ -36,10 +36,6 @@ import { keyEnterToBlur, rafThrottle } from '../lib/dom-utils';
 function km_str_to_meter_num(km: string): number { return Math.round(1000 * parseFloat(km)); }
 function meter_num_to_km_str(m: number): string { return (m / 1000).toFixed(3); }
 
-function getLayerDefaultZoom(layer: string): number {
-    return (['EMAP5',  'NLSC_PHOTO_MIX'].includes(layer))?  16: 15;   // 通用地圖預設16，其餘15
-}
-
 const to_proj = (coordsys) => coordsys_profiles[coordsys].projection;
 
 // TODO 整合 Topbar 的 goto tool
@@ -120,7 +116,7 @@ const toolHTML = Handlebars.compile(`
             <select class="areamarker-layer">
                 <option value="" disabled hidden>--圖層--</option>
                 {{#each layers}}
-                    <option value="{{id}}">{{desc}}</option>
+                    <option value="{{id}}" data-prtzoom="{{prtzoom}}">{{desc}}</option>
                 {{/each}}
             </select>
             縮放層級<input type="number" class="areamarker-zoom" value="16" min="1" max="16" step="1" />
@@ -187,6 +183,7 @@ function shiftLonLat(
 interface LayerOpt {
     id: string,
     desc: string,
+    prtzoom: number,
 };
 
 interface AreaMarkerOpt{
@@ -442,7 +439,7 @@ export default class AreaMarker{
         });
 
         this._layer.addEventListener('change', e => {
-            this.zoom = getLayerDefaultZoom(this.layer);
+            this.zoom = this.getLayerPrintZoom(this.layer);
         });
 
         // panel dragging ==========
@@ -853,7 +850,7 @@ export default class AreaMarker{
         if(!opt.coordsys)
             opt.coordsys = opt.grid_coordsys;
 
-        opt.zoom = getLayerDefaultZoom(opt.layer);
+        opt.zoom = this.getLayerPrintZoom(opt.layer);
 
         Object.assign(this, opt);
     }
@@ -891,6 +888,11 @@ export default class AreaMarker{
     }
 
     // utilts ======================
+
+    private getLayerPrintZoom(layer: string): number {
+        const op = Array.from(this._layer.options).find(opt => opt.value === layer);
+        return op? Number.parseInt(op.dataset.prtzoom): 15;
+    }
 
     // 若座標系統是 TM2，直接使用 TM2，減少轉換造成的誤差。
     private getProj(){
