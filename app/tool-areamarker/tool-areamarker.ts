@@ -119,7 +119,7 @@ const toolHTML = Handlebars.compile(`
                     <option value="{{id}}" data-prtzoom="{{prtzoom}}">{{desc}}</option>
                 {{/each}}
             </select>
-            縮放層級<input type="number" class="areamarker-zoom" value="16" min="1" max="16" step="1" />
+            縮放層級<input type="number" class="areamarker-zoom" value="16" min="1" max="17" step="1" />
         </p>
         <p>
             <span class="areamarker-opt">格式</span>
