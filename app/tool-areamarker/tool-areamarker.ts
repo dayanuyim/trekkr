@@ -864,7 +864,7 @@ export default class AreaMarker{
             yspan: this.yspan,
             grid_proj: this.grid_draw? to_proj(this.grid_coordsys): null,
             gpx_wpt: this.gpx_wpt,
-            gpx_trk: this.gpx_wpt,
+            gpx_trk: this.gpx_trk,
             layer: this.layer,
             zoom: this.zoom,
             filetypes: this.filetypes,
