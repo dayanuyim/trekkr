@@ -11,13 +11,16 @@
     transition: top 0.3s ease, left 0.3s ease;
     top: 100px;
     left: 100px;
-    color: var(--text-color);
     box-sizing: border-box;
     padding: 1em;
     min-width: 100px;
     min-height: 100px;
+    color: var(--text-color);
+    touch-action: none;
+    /*
     overflow: hidden;
     resize: both;
+    */
 
     /* glass-like panel */
     background-color: rgba(0, 0, 0, 0.15);
@@ -111,13 +114,66 @@
     transform: translateY(-50%);
 }
 
+/* ---------------- Panel Resizer ------------------ */
+
+:root {
+    --resizer-offset: -18px;
+}
+
+.resizer.hidden {
+    display: none;
+}
+
+.resizer {
+    position: absolute;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    touch-action: none;
+    z-index: 8;
+}
+
+.resizer::after {
+    content: "";
+    width: 12px;
+    height: 12px;
+    box-sizing: border-box;
+    background: rgba(255,255,255,.75);
+    border: 1.5px solid #475569;
+    border-radius: 4px;
+    box-shadow: 0 1px 3px rgb(0 0 0 / 25%);
+    transition: background 100ms, border-color 100ms,
+                transform 100ms;
+}
+
+.resizer:hover::after {
+    background: #DBEAFE;
+    border-color: #2563EB;
+    transform: scale(1.15);
+}
+
+.resizer.active::after {
+    background: #2563EB;
+    border-color: #fff;
+}
+
+.resizer-nw { top:    var(--resizer-offset); left:  var(--resizer-offset);           cursor: nwse-resize; }
+.resizer-ne { top:    var(--resizer-offset); right: var(--resizer-offset);           cursor: nesw-resize; }
+.resizer-sw { bottom: var(--resizer-offset); left:  var(--resizer-offset);           cursor: nesw-resize; }
+.resizer-se { bottom: var(--resizer-offset); right: var(--resizer-offset);           cursor: nwse-resize; }
+.resizer-n  { top:    var(--resizer-offset); left: 50%; transform: translateX(-50%); cursor:   ns-resize; }
+.resizer-s  { bottom: var(--resizer-offset); left: 50%; transform: translateX(-50%); cursor:   ns-resize; }
+.resizer-w  { left:   var(--resizer-offset); top:  50%; transform: translateY(-50%); cursor:   ew-resize; }
+.resizer-e  { right:  var(--resizer-offset); top:  50%; transform: translateY(-50%); cursor:   ew-resize; }
 
 /*****************************************************/
 
 .tool-areamarker.movable {
     cursor: grab;
 }
-.tool-areamarker.movable.dragging {
+.tool-areamarker.movable.panning {
     cursor: grabbing;
 }
 
@@ -254,9 +310,13 @@
     cursor: pointer;
 }
 
-.areamarker-lock:hover{
+.tool-areamarker .areamarker-content button.areamarker-lock {
+    border: none;
+    padding: 0;
+    margin: 0;
     cursor: pointer;
 }
+
 .areamarker-lock.locked .fa-lock-open { display: none; }
 .areamarker-lock:not(.locked) .fa-lock { display: none; }
 .areamarker-lock .fa-lock-open { color: green; }

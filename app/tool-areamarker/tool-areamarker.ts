@@ -62,8 +62,20 @@ const coordsys_profiles = {
 
 const toolHTML = Handlebars.compile(`
 <div class="tool-areamarker" hidden>
-    <span class="areamarker-anchor"><i class="fa-solid fa-thumbtack"></i></span>
-    <button class="areamarker-closer"><i class="fa-solid fa-circle-xmark"></i></button>
+    <section "tool-areamarker-resizers">
+        <div class="resizer resizer-nw" data-dir="nw"></div>
+        <div class="resizer resizer-n"  data-dir="n"></div>
+        <div class="resizer resizer-ne" data-dir="ne"></div>
+        <div class="resizer resizer-w"  data-dir="w"></div>
+        <div class="resizer resizer-e"  data-dir="e"></div>
+        <div class="resizer resizer-sw" data-dir="sw"></div>
+        <div class="resizer resizer-s"  data-dir="s"></div>
+        <div class="resizer resizer-se" data-dir="se"></div>
+    </section>
+    <section>
+        <span class="areamarker-anchor"><i class="fa-solid fa-thumbtack"></i></span>
+        <button class="areamarker-closer"><i class="fa-solid fa-circle-xmark"></i></button>
+    </section>
     <section class="areamarker-header">
         <span class="areamarker-header-title">圖檔匯出設定</span>
     </section>
@@ -71,25 +83,25 @@ const toolHTML = Handlebars.compile(`
         <p>
             <span class="areamarker-opt">左上角</span>
             {{coordsysMenu "areamarker-coordsys"}} <input type="text" class="areamarker-coord" placeholder="X, Y"/>
-            <span class="areamarker-lock areamarker-coord-lock locked">
+            <button class="areamarker-lock areamarker-coord-lock locked" tabindex="-1">
                 <i class="fa-solid fa-lock"></i>
                 <i class="fa-solid fa-lock-open"></i>
-            </span>
+            </button>
         </p>
         <p>
             <span class="areamarker-opt">尺寸</span>
             <span class="areamarker-spans">
                 橫向 <input type="number" class="areamarker-xspan" value="1" min="1" step="1"/> 公里
-                <span class="areamarker-lock areamarker-xspan-lock">
+                <button class="areamarker-lock areamarker-xspan-lock" tabindex="-1">
                     <i class="fa-solid fa-lock"></i>
                     <i class="fa-solid fa-lock-open"></i>
-                </span>
+                </button>
                 &times;
                 縱向 <input type="number" class="areamarker-yspan" value="1" min="1" step="1"/> 公里
-                <span class="areamarker-lock areamarker-yspan-lock">
+                <button class="areamarker-lock areamarker-yspan-lock" tabindex="-1">
                     <i class="fa-solid fa-lock"></i>
                     <i class="fa-solid fa-lock-open"></i>
-                </span>
+                </button>
             </span>
         </p>
         <p>
@@ -414,6 +426,7 @@ export default class AreaMarker{
         this._coord_lock.addEventListener('click', (e) => {
             this._coord.disabled = this.coord_locked = !this.coord_locked;
             this.setPanelMovable();
+            this.setPanelResizer();
         });
 
         this._xspan_lock.addEventListener('click', (e) => {
@@ -443,64 +456,88 @@ export default class AreaMarker{
         });
 
         // panel dragging ==========
-        let resizing = false;
-        let dragging = false;
-        let offset_x = 0;
-        let offset_y = 0;
+        let drag;
 
-        this._base.addEventListener('mousedown', (e) => {
-            if (this.coord_locked) return;
-            if (e.target instanceof HTMLInputElement) return;
+        this._base.addEventListener('pointerdown', (e) => {
+            if (e.target instanceof HTMLSelectElement) return;        // return if in the input fields
+            if (e.target instanceof HTMLInputElement) return;         // return if in the input fields
+            if (e.target instanceof HTMLLabelElement) return;         // return if in the input fields
+            if ((e.target as HTMLElement).closest('button')) return;  // return if in the input fields
+            if (e.pointerType === 'mouse' && e.button !== 0) return;  // return if not left mouse button
 
-            const rect = this._base.getBoundingClientRect();
+            const resizer = (e.target as HTMLElement).closest<HTMLElement>('.resizer');
+            resizer?.classList.add('active');
 
-            // check if the div is resizing
-            const resize_handler_sz = 16;
-            resizing =
-                e.clientX >= rect.right - resize_handler_sz &&
-                e.clientY >= rect.bottom - resize_handler_sz;
-            if (resizing) return;
+            drag = {
+                direction: resizer?.dataset.dir,
+                startX: e.clientX,
+                startY: e.clientY,
+                rect: this._base.getBoundingClientRect(),
+                resizer,
+            };
 
-            // start dragging
-            dragging = true;
-            this._base.classList.add('dragging');
-            offset_x = e.clientX - rect.left;
-            offset_y = e.clientY - rect.top;
+            const panning = !drag.direction && !this.coord_locked;
+            this._base.classList.toggle('panning', panning);         // set panning pointer
+            this._base.setPointerCapture(e.pointerId);               // keep capturing for resizer
+            e.preventDefault();
         });
 
-        document.addEventListener('mousemove', throttle((e) => {
-            if (resizing) this.evalPanelSpans({
-                evalx: !this.xspan_locked,
-                evaly: !this.yspan_locked,
-            });
-        }, 150));
+        document.addEventListener('pointermove', rafThrottle((e) => {
+            if(!drag) return;
 
-        document.addEventListener('mousemove', rafThrottle((e) => {
-            if (dragging){
-                const left = e.clientX - offset_x;
-                const top = e.clientY - offset_y;
+            const dx = e.clientX - drag.startX;
+            const dy = e.clientY - drag.startY;
+            const {direction, rect} = drag;
 
-                // Update position
-                this._base.style.left = `${left}px`;
-                this._base.style.top = `${top}px`;
+            let left = rect.x;
+            let top = rect.y;
+            let right = rect.x + rect.width;
+            let bottom = rect.y + rect.height;
 
-                // Update coord of the position
+            // resizing
+            if(direction){
+                if (direction.includes('w')) left += dx;
+                if (direction.includes('e')) right += dx;
+                if (direction.includes('n')) top += dy;
+                if (direction.includes('s')) bottom += dy;
+
+                this.setPanelPosSize(left, top, right - left, bottom - top);
+
+                this.evalPanelSpans({
+                    evalx: direction.includes('w') || direction.includes('e'),
+                    evaly: direction.includes('n') || direction.includes('s'),
+                });
+
+                if(direction.includes('w') || direction.includes('n'))
+                    this.evalPanelCoord()
+            }
+            // panning
+            else if (!this.coord_locked){
+                left += dx;
+                top += dy;
+                this.setPanelPos(left, top);
                 this.evalPanelCoord()
             }
         }));
 
-        document.addEventListener('mouseup', (e) => {
-            if(resizing){
-                resizing = false;
+        const pointer_done = (e) => {
+            if(!drag) return;
+            const {direction, resizer } = drag;
+            drag = null;
+
+            resizer?.classList.remove('active');
+            this._base.classList.remove('panning');
+
+            if(direction){
                 this.fitPanelResize(true);
             }
-            if(dragging){
-                dragging = false;
-                this._base.classList.remove('dragging');
+            else if (!this.coord_locked){
                 this.evalPanelAlignCoord();
                 this.fitPanelPanning();     // 調整 panel 位置，確保 panel 可見
             }
-        });
+        };
+        document.addEventListener('pointerup', pointer_done);
+        document.addEventListener('pointercancel', pointer_done);
 
         // user inputs =========================
         this._coord.addEventListener('input', e => {
@@ -605,6 +642,7 @@ export default class AreaMarker{
 
     private evalPanelAlignCoord(){
         if(this.coord_locked || !this.grid_align) return;
+        console.log('to aign...');
 
         const scale = 1000;
         const round = (n): number => Math.round(n / scale) * scale;
@@ -670,7 +708,7 @@ export default class AreaMarker{
         }
 
         // 這邊會順便微調一點點 因投影位置造成的 size 差異
-        this.setPanelPosSize(
+        this.setPanelPosSize2(
             this.map.getPixelFromCoordinate(top_left),
             this.map.getPixelFromCoordinate(bottom_right),
         );
@@ -679,31 +717,34 @@ export default class AreaMarker{
     private async fitPanelResize(is_ui_ready=false){
 
         let { x, y, width, height } = this._base.getBoundingClientRect();
-        const [px, py] = is_ui_ready?
-            [ x + width, y + height]:
-            this.map.getPixelFromCoordinate(
-                this.toWebCoord(this.calcProjCoord(this.coord, [this.xspan, -this.yspan])));  //bottom-right
+        let x2, y2;   //bottom-right corner, in pixel
+        let right_bottom = undefined;
 
-        // new width/height
-        if(!is_ui_ready){
-            width = px - x;
-            height = py - y;
+        if(is_ui_ready){
+            x2 = x + width;
+            y2 = y + height;
+        }
+        else{
+            const right_bottom = this.toWebCoord(this.calcProjCoord(this.coord, [this.xspan, -this.yspan]));
+            [x2, y2] = this.map.getPixelFromCoordinate(right_bottom);
+            width = x2 - x;
+            height = y2 - y;
         }
 
         // fit, set size, or do nothing
         const { width: mw, height: mh } = this.map.getTargetElement().getBoundingClientRect();
-        if(width < this.init_width || height < this.init_height || px > mw || py > mh)
-            await this.fitPanel();
+        if(width < this.init_width || height < this.init_height || x2 > mw || y2 > mh)
+            await this.fitPanel(undefined, right_bottom);
         else if(!is_ui_ready)
             this.setPanelSize(width, height);
     }
 
     // ZOOM Fit 之後再放置 Panel。建議必要時才使用，減少畫面跳動
-    private async fitPanel(left_top?: Coordinate, right_bottom?: Coordinate){  //webcoord
+    private async fitPanel(top_left?: Coordinate, bottom_right?: Coordinate){  //webcoord
         // the extent to be fit
-        left_top     = left_top     || this.toWebCoord(this.coord);
-        right_bottom = right_bottom || this.toWebCoord(this.calcProjCoord(this.coord, [this.xspan, -this.yspan]));
-        const extent = boundingExtent([left_top, right_bottom]);
+        top_left     = top_left     || this.toWebCoord(this.coord);
+        bottom_right = bottom_right || this.toWebCoord(this.calcProjCoord(this.coord, [this.xspan, -this.yspan]));
+        const extent = boundingExtent([top_left, bottom_right]);
 
         // min panel w/h to be visible
         const pw = Math.max(this.init_width,  this.init_height * (this.xspan / this.yspan));
@@ -730,19 +771,19 @@ export default class AreaMarker{
         }
 
         // fit the panel
-        this.setPanelPosSize(
-            this.map.getPixelFromCoordinate(left_top),
-            this.map.getPixelFromCoordinate(right_bottom),
+        this.setPanelPosSize2(
+            this.map.getPixelFromCoordinate(top_left),
+            this.map.getPixelFromCoordinate(bottom_right),
         );
     }
 
 
     // ============================================================ 
 
-    private setPanelPos([x, y]: Pixel){
+    private setPanelPos(left, top){
         Object.assign(this._base.style, {
-            top: `${y}px`,
-            left: `${x}px`,
+            left: `${left}px`,
+            top: `${top}px`,
         });
     }
 
@@ -752,20 +793,22 @@ export default class AreaMarker{
         Object.assign(this._base.style, {
             width: `${width}px`,
             height: `${height}px`,
-            minWidth: `${width * 500 / this.xspan }px`,    // set the minWidth pixel to 500 meter
-            minHeight: `${height * 500 / this.yspan }px`,
+            //minWidth: `${width * 500 / this.xspan }px`,    // set the minWidth pixel to 500 meter
+            //minHeight: `${height * 500 / this.yspan }px`,
         });
     }
 
     // The function is to SET the POSITION either.
     // This should be reasonable to align all relative attributes consistent.
-    private setPanelPosSize(top_left_px: Pixel, down_right_px: Pixel){
+    private setPanelPosSize2(top_left_px: Pixel, down_right_px: Pixel){
         const [left, top] = top_left_px;
         const [right, bottom] = down_right_px;
         const width = right - left;
         const height = bottom - top;
-
-        this.setPanelPos(top_left_px);
+        this.setPanelPosSize(left, top, width, height);
+    }
+    private setPanelPosSize(left, top, width, height){
+        this.setPanelPos(left, top);
         this.setPanelSize(width, height);
     }
 
@@ -777,10 +820,20 @@ export default class AreaMarker{
         this._base.classList.toggle('movable', movable);
     }
 
-    private setPanelResizer(){
+    private setPanelResizer() {
+        /*
         this._base.style.resize = this.xspan_locked?
             this.yspan_locked? "none": "vertical":
             this.yspan_locked? "horizontal": "both";
+        */
+        this._base.querySelectorAll<HTMLElement>('.resizer').forEach(resizer => {
+            const dir = resizer.dataset.dir;
+            resizer.classList.toggle('hidden',
+                   (this.xspan_locked && (dir.includes('w') || dir.includes('e')))  // not resizable in x span
+                || (this.yspan_locked && (dir.includes('n') || dir.includes('s')))  // not resizable in y span
+                || (this.coord_locked && (dir.includes('n') || dir.includes('w')))  // not resizable due to the coord
+            );
+        });
     }
 
     // TODO 整合 goto tool ======================
