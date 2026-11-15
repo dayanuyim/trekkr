@@ -141,7 +141,7 @@
     height: 12px;
     box-sizing: border-box;
     background: rgba(255,255,255,.75);
-    border: 1.5px solid #475569;
+    border: 1.5px solid #606060;
     border-radius: 4px;
     box-shadow: 0 1px 3px rgb(0 0 0 / 25%);
     transition: background 100ms, border-color 100ms,
@@ -177,9 +177,28 @@
     cursor: grabbing;
 }
 
+.tool-areamarker:has(.resizer-n.active),
+.tool-areamarker:has(.resizer-s.active) {
+    cursor: ns-resize;
+}
+.tool-areamarker:has(.resizer-e.active),
+.tool-areamarker:has(.resizer-w.active) {
+    cursor: ew-resize;
+}
+.tool-areamarker:has(.resizer-ne.active),
+.tool-areamarker:has(.resizer-sw.active){
+    cursor: nesw-resize;
+}
+.tool-areamarker:has(.resizer-nw.active),
+.tool-areamarker:has(.resizer-se.active){
+    cursor: nwse-resize;
+}
+
 .tool-areamarker.movable .areamarker-anchor {
     visibility: hidden;
 }
+
+/*****************************************************/
 
 .tool-areamarker .areamarker-footer {
     height: 100px;

@@ -469,16 +469,16 @@ export default class AreaMarker{
             resizer?.classList.add('active');
 
             drag = {
-                direction: resizer?.dataset.dir,
+                dir: resizer?.dataset.dir,
                 startX: e.clientX,
                 startY: e.clientY,
                 rect: this._base.getBoundingClientRect(),
                 resizer,
             };
 
-            const panning = !drag.direction && !this.coord_locked;
-            this._base.classList.toggle('panning', panning);         // set panning pointer
-            this._base.setPointerCapture(e.pointerId);               // keep capturing for resizer
+            const panning = !drag.dir && !this.coord_locked;
+            this._base.classList.toggle('panning', panning);  // set panning pointer
+            this._base.setPointerCapture(e.pointerId);        // keep capturing for resizer
             e.preventDefault();
         });
 
@@ -487,7 +487,7 @@ export default class AreaMarker{
 
             const dx = e.clientX - drag.startX;
             const dy = e.clientY - drag.startY;
-            const {direction, rect} = drag;
+            const {dir, rect} = drag;
 
             let left = rect.x;
             let top = rect.y;
@@ -495,20 +495,20 @@ export default class AreaMarker{
             let bottom = rect.y + rect.height;
 
             // resizing
-            if(direction){
-                if (direction.includes('w')) left += dx;
-                if (direction.includes('e')) right += dx;
-                if (direction.includes('n')) top += dy;
-                if (direction.includes('s')) bottom += dy;
+            if(dir){
+                if (dir.includes('w')) left += dx;
+                if (dir.includes('e')) right += dx;
+                if (dir.includes('n')) top += dy;
+                if (dir.includes('s')) bottom += dy;
 
                 this.setPanelPosSize(left, top, right - left, bottom - top);
 
                 this.evalPanelSpans({
-                    evalx: direction.includes('w') || direction.includes('e'),
-                    evaly: direction.includes('n') || direction.includes('s'),
+                    evalx: dir.includes('w') || dir.includes('e'),
+                    evaly: dir.includes('n') || dir.includes('s'),
                 });
 
-                if(direction.includes('w') || direction.includes('n'))
+                if(dir.includes('w') || dir.includes('n'))
                     this.evalPanelCoord()
             }
             // panning
@@ -522,13 +522,13 @@ export default class AreaMarker{
 
         const pointer_done = (e) => {
             if(!drag) return;
-            const {direction, resizer } = drag;
+            const { dir, resizer } = drag;
             drag = null;
 
             resizer?.classList.remove('active');
             this._base.classList.remove('panning');
 
-            if(direction){
+            if(dir){
                 this.fitPanelResize(true);
             }
             else if (!this.coord_locked){

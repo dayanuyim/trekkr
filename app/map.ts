@@ -106,8 +106,8 @@ export class AppMap{
     // Custom condition function
     const zoomCondition = (mapBrowserEvent) => {
       const a = this._tool_areamarker; 
-      const is_areamarker_span_locked = a && !a.hidden && (a.xspan_locked || a.yspan_locked);
-      return !is_areamarker_span_locked;
+      const is_areamarker_locked = a && !a.hidden && (a.coord_locked || a.xspan_locked || a.yspan_locked);
+      return !is_areamarker_locked;
     };
 
     this._map = new Map({
