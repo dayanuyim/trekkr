@@ -29,19 +29,24 @@ export class CtxMenu {
 
   private queryItem(item){
     if(!item.startsWith(".")) item = `.${item}`;
-    return this._menu.querySelector<HTMLAnchorElement>(`a${item}`);
+    return this._menu.querySelector<HTMLAnchorElement>(`a${item}`)?.closest('.ctx-item');
   }
 
   public setItem(item, cb){
     const el = this.queryItem(item);
-    el.addEventListener('click', () => {
+    el?.addEventListener('click', () => {
       cb(el);
       this._menu.classList.remove('visible');
     });
   }
   public setItemClass(item, cls, enabled=true){
     const el = this.queryItem(item);
-    el.classList.toggle(cls, enabled);
+    el?.classList.toggle(cls, enabled);
+  }
+
+  // special class to set
+  public setItemSubicon(item, enabled=true){
+    this.setItemClass(item, 'subicon', enabled);
   }
 }
 

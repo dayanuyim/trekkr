@@ -760,8 +760,8 @@ export class AppMap{
     const ctx = new CtxMenu(map_el, menu);
     map_el.addEventListener('contextmenu', e => {
       this._ctxmenu_coord = this._map.getEventCoordinate(e);
+      ctx.setItemSubicon(".item-save-img", !this._tool_areamarker.hidden);  // dynamic to render
       ctx.show(e);
-      ctx.setItemClass(".item-save-img", 'sub', !this._tool_areamarker.hidden);
     });
 
     map_el.addEventListener("click", e => {
