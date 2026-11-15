@@ -1,4 +1,5 @@
 'use strict';
+import type {Coordinate} from 'ol/coordinate';
 import Overlay from 'ol/Overlay';
 import {toStringXY} from 'ol/coordinate';
 import {toLonLat} from 'ol/proj';
@@ -13,11 +14,19 @@ import Opt from './opt';
 import * as templates from './templates';
 
 const toXY = {
-    wgs84:    (coord) => toStringXY(toLonLat(coord), 7),
+    wgs84:    (coord) => toStringXY(swapXY(toLonLat(coord)), 7), // TODO: dirty fix, 要注意 swap 之後會不會有問題，因為和 function name 不合
     twd97:    (coord) => toStringXY(toTWD97(coord)),
     twd67:    (coord) => toStringXY(toTWD67(coord)),
     taipower: (coord) => toTaipowerCoord(coord),
 };
+
+function swapXY(c: Coordinate){
+    if(c?.length < 2) return;
+    const c0 = c[0];
+    c[0] = c[1]
+    c[1] = c0;
+    return c;
+}
 
 function fmtEle(ele){
     return ele.toFixed(1);
